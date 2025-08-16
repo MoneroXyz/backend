@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Monerizer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="/ui/style.css?v=5" rel="stylesheet" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">MZ</div>
+      <div>
+        <div class="brand-title">Monerizer</div>
+        <div class="sub">Smart 2-leg routing via XMR</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>Get Quote</h2>
+      <form id="quoteForm" class="grid">
+        <label>From <select id="in_pair"></select></label>
+        <label>To <select id="out_pair"></select></label>
+        <label>Amount <input id="amount" type="number" step="any" placeholder="0.01" /></label>
+        <label>Rate
+          <select id="rate_type">
+            <option value="float" selected>Float</option>
+            <option value="fixed">Fixed</option>
+          </select>
+        </label>
+        <div class="wide actions">
+          <button id="btnQuote" type="submit">Get Quote</button>
+        </div>
+      </form>
+
+      <div id="routesWrap" class="routes" hidden>
+        <div id="bestRoute"></div>
+        <button id="toggleOthers" class="ghost sm" hidden>Show other routes</button>
+        <div id="otherRoutes" class="routes-list" hidden></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Start</h2>
+      <div class="grid start">
+        <label>Leg 1 provider <input id="leg1_provider" disabled /></label>
+        <label>Leg 2 provider <input id="leg2_provider" disabled /></label>
+        <label class="wide">Payout address <input id="payout_address" placeholder="Your final-chain address" /></label>
+        <div class="actions wide"><button id="btnStart" disabled>Start</button></div>
+      </div>
+
+      <div id="startResult" class="start-result" hidden>
+        <div class="rows">
+          <div class="row"><span class="k">Swap ID</span><span class="v mono" id="sr_id"></span></div>
+          <div class="row"><span class="k">Deposit</span><span class="v mono" id="sr_dep"></span></div>
+          <div class="row" id="sr_extra_row" hidden><span class="k">Extra / Memo</span><span class="v mono" id="sr_extra"></span></div>
+        </div>
+        <div class="actions" style="margin-top:8px"><button id="btnCopy" class="sm">Copy address</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Track</h2>
+      <div class="grid">
+        <label class="wide">Swap ID <input id="swap_id" placeholder="Paste swap id after starting" /></label>
+        <div class="actions wide">
+          <button id="btnStatus" class="ghost">Get Status</button>
+          <button id="btnWatch">Watch</button>
+          <button id="btnStop" class="ghost" disabled>Stop</button>
+        </div>
+      </div>
+      <div id="statusPanel" class="timeline" hidden></div>
+      <div id="accounting" class="tags" hidden></div>
+    </div>
+
+    <div class="foot">© Monerizer</div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="/ui/app.v5.js"></script>
+</body>
+</html>
