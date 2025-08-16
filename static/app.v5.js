@@ -1,254 +1,277 @@
-// Monerizer UI v5.1 (auto leg2 + correct 'Sending XMR')
-(function(){
-  console.log("Monerizer UI v5.1 loaded");
+/* app.v5.js (robust ID autodetect + proper payloads for backend) */
 
-  function $(s){ return document.querySelector(s); }
-  var UI = {
-    in_pair: $("#in_pair"), out_pair: $("#out_pair"),
-    amount: $("#amount"), rate: $("#rate_type"), btnQuote: $("#btnQuote"),
-    routesWrap: $("#routesWrap"), bestRoute: $("#bestRoute"),
-    toggleOthers: $("#toggleOthers"), otherRoutes: $("#otherRoutes"),
-    leg1: $("#leg1_provider"), leg2: $("#leg2_provider"),
-    payout: $("#payout_address"), btnStart: $("#btnStart"),
-    sr: $("#startResult"), sr_id: $("#sr_id"), sr_dep: $("#sr_dep"), sr_extra: $("#sr_extra"), sr_extra_row: $("#sr_extra_row"), btnCopy: $("#btnCopy"),
-    swap: $("#swap_id"), btnStatus: $("#btnStatus"), btnWatch: $("#btnWatch"), btnStop: $("#btnStop"),
-    statusPanel: $("#statusPanel"), accounting: $("#accounting"), toast: $("#toast")
+let currentSwapId = null;
+let poller = null;
+
+/* ---------- DOM helpers (auto-detect IDs) ---------- */
+function byId(id) { return document.getElementById(id); }
+function pickId(...ids) {
+  for (const id of ids) { const el = byId(id); if (el) return el; }
+  return null;
+}
+function qs(sel) { return document.querySelector(sel); }
+
+/* Try to locate controls by multiple common IDs used in various revisions */
+const UI = {
+  fromSel:        null,
+  toSel:          null,
+  rateSel:        null,
+  amountInput:    null,
+  payoutInput:    null,
+  leg1Input:      null,
+  leg2Input:      null,
+  quoteBtn:       null,
+  startBtn:       null,
+  statusBox:      null,
+  quoteBox:       null,
+  swapIdInput:    null,
+};
+
+function wireDom() {
+  UI.fromSel     = pickId("from_asset", "from", "fromSel");
+  UI.toSel       = pickId("to_asset", "to", "toSel");
+  UI.rateSel     = pickId("rate_type", "rate", "rateSel");
+  UI.amountInput = pickId("amount", "amt", "amountInput");
+  UI.payoutInput = pickId("payout", "payout_address", "dest", "toAddress");
+  UI.leg1Input   = pickId("leg1_provider", "prov1", "l1prov");
+  UI.leg2Input   = pickId("leg2_provider", "prov2", "l2prov");
+  UI.quoteBtn    = pickId("quoteBtn", "getQuoteBtn", "btnQuote");
+  UI.startBtn    = pickId("startBtn", "btnStart");
+  UI.statusBox   = pickId("statusBox", "status", "trackBox");
+  UI.quoteBox    = pickId("quoteResult", "quoteBox", "bestRouteBox");
+  UI.swapIdInput = pickId("swap_id", "swapId", "trackSwapId");
+
+  // As a last resort, fall back to “first two selects are From/To; third is Rate”
+  const selAll = Array.from(document.querySelectorAll("select"));
+  if (!UI.fromSel && selAll.length > 0) UI.fromSel = selAll[0];
+  if (!UI.toSel   && selAll.length > 1) UI.toSel   = selAll[1];
+  if (!UI.rateSel && selAll.length > 2) UI.rateSel = selAll[2];
+
+  // Fallback for buttons/boxes
+  if (!UI.quoteBox)  UI.quoteBox  = qs("#quoteResult, .quote-result") || document.body;
+  if (!UI.statusBox) UI.statusBox = qs("#statusBox, .status-box") || document.body;
+
+  if (!UI.quoteBtn && qs("button")) UI.quoteBtn = qs("button");
+  if (!UI.startBtn && qsAll("button")[1]) UI.startBtn = qsAll("button")[1];
+}
+
+/* ---------- Assets (value encodes asset+network) ---------- */
+const PAIRS = [
+  // label, asset, network
+  ["BTC (BTC)",        "BTC",  "BTC"],
+  ["ETH (ETH)",        "ETH",  "ETH"],
+  ["USDT (ETH)",       "USDT", "ETH"],
+  ["USDT (TRX)",       "USDT", "TRX"],
+  ["USDC (ETH)",       "USDC", "ETH"],
+  ["LTC (LTC)",        "LTC",  "LTC"],
+  ["XMR (XMR)",        "XMR",  "XMR"],
+];
+
+function populatePickers() {
+  if (!UI.fromSel || !UI.toSel) return;
+  UI.fromSel.innerHTML = "";
+  UI.toSel.innerHTML   = "";
+  for (const [label, asset, net] of PAIRS) {
+    const v = `${asset}:${net}`;
+    const o1 = document.createElement("option"); o1.value = v; o1.textContent = label; UI.fromSel.appendChild(o1);
+    const o2 = document.createElement("option"); o2.value = v; o2.textContent = label; UI.toSel.appendChild(o2);
+  }
+  // sensible defaults
+  setIf(UI.fromSel, "USDT:ETH");
+  setIf(UI.toSel,   "BTC:BTC");
+
+  if (UI.rateSel) {
+    UI.rateSel.innerHTML = "";
+    const oF = document.createElement("option"); oF.value = "float"; oF.textContent = "Float";
+    const oX = document.createElement("option"); oX.value = "fixed"; oX.textContent = "Fixed";
+    UI.rateSel.appendChild(oF); UI.rateSel.appendChild(oX);
+    UI.rateSel.value = "float";
+  }
+}
+function setIf(sel, val) { if (sel && [...sel.options].some(o=>o.value===val)) sel.value = val; }
+
+/* ---------- Networking helpers ---------- */
+async function postJSON(url, body) {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {})
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function getJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+/* ---------- Quote ---------- */
+function splitPair(v) {
+  const [asset, network] = String(v || "").split(":");
+  return { asset, network };
+}
+
+async function onQuote() {
+  try {
+    const { asset: in_asset,  network: in_network  } = splitPair(UI.fromSel.value);
+    const { asset: out_asset, network: out_network } = splitPair(UI.toSel.value);
+    const amount    = parseFloat(UI.amountInput?.value || "0");
+    const rate_type = (UI.rateSel?.value || "float").toLowerCase();
+
+    if (!in_asset || !out_asset || !amount || amount <= 0) {
+      alert("Please choose assets and enter a valid amount.");
+      return;
+    }
+
+    const req = { in_asset, in_network, out_asset, out_network, amount, rate_type };
+    const q = await postJSON("/api/quote", req);
+
+    renderQuote(q);
+    if (UI.startBtn) UI.startBtn.disabled = false;
+  } catch (e) {
+    renderQuote({ error: String(e) });
+  }
+}
+
+function renderQuote(q) {
+  if (!UI.quoteBox) return;
+  if (q.error) { UI.quoteBox.innerHTML = `<div class="error">${q.error}</div>`; return; }
+  const opts = q.options || [];
+  const best = opts[q.best_index ?? 0];
+
+  let html = `<h3>Best route</h3>`;
+  if (best) {
+    html += `
+      <div>
+        <div><b>Leg 1:</b> ${best.leg1.provider} → XMR</div>
+        <div><b>Leg 2:</b> ${best.leg2.provider} → ${q.request.out_asset} (${q.request.out_network})</div>
+        <div><b>XMR in:</b> ${best.leg1.amount_to.toFixed(6)}</div>
+        <div><b>Our fee:</b> ${best.fee.our_fee_xmr.toFixed(6)} XMR</div>
+        <div><b>Receive est:</b> ${best.receive_out.toFixed(6)} ${q.request.out_asset}</div>
+      </div>
+    `;
+  } else {
+    html += `<div>No routes</div>`;
+  }
+
+  if (opts.length > 1) {
+    html += `<h4>Other routes</h4>`;
+    opts.forEach((o, i) => {
+      if (i === (q.best_index ?? 0)) return;
+      html += `<div>#${i+1}: ${o.leg1.provider} → XMR → ${o.leg2.provider} — est ${o.receive_out.toFixed(6)} ${q.request.out_asset}</div>`;
+    });
+  }
+
+  UI.quoteBox.innerHTML = html;
+}
+
+/* ---------- Start swap ---------- */
+async function onStart() {
+  try {
+    if (!UI.payoutInput?.value) { alert("Enter payout address"); return; }
+
+    const { asset: in_asset,  network: in_network  } = splitPair(UI.fromSel.value);
+    const { asset: out_asset, network: out_network } = splitPair(UI.toSel.value);
+    const amount    = parseFloat(UI.amountInput?.value || "0");
+    const rate_type = (UI.rateSel?.value || "float").toLowerCase();
+
+    // We’ll simply pick the best route from the last quote:
+    const q = window._lastQuote || await postJSON("/api/quote", { in_asset, in_network, out_asset, out_network, amount, rate_type });
+    window._lastQuote = q;
+    const best = (q.options || [])[q.best_index ?? 0];
+    if (!best) { alert("No route available."); return; }
+
+    const body = {
+      leg1_provider: best.leg1.provider,
+      leg2_provider: best.leg2.provider,
+      in_asset, in_network, out_asset, out_network,
+      amount, payout_address: UI.payoutInput.value,
+      rate_type,
+      our_fee_xmr: (best.fee?.our_fee_xmr ?? 0)
+    };
+
+    const s = await postJSON("/api/start", body);
+    currentSwapId = s.swap_id;
+
+    // show the deposit address (if backend included it) else show leg1 provider deposit from status later
+    UI.quoteBox.innerHTML = `
+      <b>Swap started.</b><br/>
+      Swap ID: <code>${s.swap_id}</code><br/>
+      Deposit: <code>${s.deposit_address || '(provider will show deposit)'}</code>
+    `;
+
+    // start polling
+    startPolling();
+  } catch (e) {
+    alert(String(e));
+  }
+}
+
+/* ---------- Status polling ---------- */
+function startPolling() {
+  if (poller) clearInterval(poller);
+  if (!currentSwapId) return;
+  poller = setInterval(async () => {
+    try {
+      const s = await getJSON(`/api/status/${currentSwapId}`);
+      renderStatus(s);
+    } catch (e) {
+      // keep polling; show last error
+      UI.statusBox.innerHTML = `<div class="error">${String(e)}</div>`;
+    }
+  }, 4000);
+}
+
+function pill(txt) { return `<li>${txt}</li>`; }
+
+function renderStatus(s) {
+  if (!UI.statusBox) return;
+  let html = `<h3>Status: ${s.status}</h3>`;
+  if (Array.isArray(s.steps)) {
+    html += `<ul>${s.steps.map(pill).join("")}</ul>`;
+  }
+
+  if (s.leg1) {
+    html += `<h4>Leg 1</h4>
+      Provider: ${s.leg1.provider || ""}<br>
+      Tx: ${s.leg1.tx_id || ""}<br>
+      Deposit: ${s.leg1.deposit || ""}${s.leg1.extra ? " / memo: " + s.leg1.extra : ""}
+    `;
+  }
+  if (s.leg2 && (s.leg2.tx_id || s.leg2.provider || s.leg2.deposit)) {
+    html += `<h4>Leg 2</h4>
+      Provider: ${s.leg2.provider || ""}<br>
+      Tx: ${s.leg2.tx_id || ""}<br>
+      Deposit: ${s.leg2.deposit || ""}
+    `;
+  }
+
+  if (s.accounting) {
+    const a = s.accounting;
+    html += `<h4>Accounting</h4>
+      XMR received: ${Number(a.xmr_received||0).toFixed(6)}<br>
+      Our fee: ${Number(a.our_fee_xmr||0).toFixed(6)} XMR<br>
+      XMR forwarded: ${Number(a.xmr_forwarded||0).toFixed(6)}<br>
+    `;
+  }
+
+  UI.statusBox.innerHTML = html;
+}
+
+/* ---------- Boot ---------- */
+window.addEventListener("load", () => {
+  wireDom();
+  populatePickers();
+
+  // track the last quote so start() can reuse it
+  window._lastQuote = null;
+
+  if (UI.quoteBtn) UI.quoteBtn.onclick = async () => {
+    await onQuote().then(q => { /* noop */ });
   };
-  var last = { request:null, options:[], best_index:-1, chosen:null, watcher:null };
-
-  var PAIRS = [
-    { value:"ETH|ETH",  label:"ETH (ETH)"  },
-    { value:"BTC|BTC",  label:"BTC (BTC)"  },
-    { value:"LTC|LTC",  label:"LTC (LTC)"  },
-    { value:"USDT|ETH", label:"USDT (ETH)" },
-    { value:"USDT|TRX", label:"USDT (TRX)" },
-    { value:"USDC|ETH", label:"USDC (ETH)" }
-  ];
-
-  function fillPairSelect(sel, defVal){
-    var html = "";
-    for (var i=0;i<PAIRS.length;i++){ html += '<option value="'+PAIRS[i].value+'">'+PAIRS[i].label+'</option>'; }
-    sel.innerHTML = html;
-    sel.value = defVal;
+  if (UI.startBtn) {
+    UI.startBtn.disabled = true;
+    UI.startBtn.onclick = onStart;
   }
-  fillPairSelect(UI.in_pair, "ETH|ETH");
-  fillPairSelect(UI.out_pair, "ETH|ETH");
-
-  function toast(msg, ms){ UI.toast.textContent=msg; UI.toast.hidden=false; setTimeout(function(){ UI.toast.hidden=true; }, ms||3500); }
-  function format(x, d){ if(x===null||x===undefined) x=0; return Number(x).toFixed(d||8); }
-  function providerBadge(name){ var cls = (name==="Exolix"?"green":"blue"); return '<span class="badge '+cls+'">'+name+'</span>'; }
-
-  function routeCard(o, isBest, index){
-    var feeX = format(o.fee.our_fee_xmr, 6);
-    var receive = format(o.receive_out, 8) + " " + last.request.out_asset;
-    return '' +
-    '<div class="route '+(isBest?'best':'')+'">' +
-      '<div class="badges">' +
-        providerBadge(o.leg1.provider) + ' <span class="badge">→</span> ' + providerBadge(o.leg2.provider) +
-        (isBest?'<span class="badge blue">Best</span>':'') +
-      '</div>' +
-      '<div class="rows">' +
-        '<div class="row"><span class="k">Leg 1</span><span class="v">'+format(o.leg1.amount_from,6)+' '+last.request.in_asset+' → '+format(o.leg1.amount_to,6)+' XMR</span></div>' +
-        '<div class="row"><span class="k">Leg 2 (est.)</span><span class="v">'+format(o.leg2.amount_to,8)+' '+last.request.out_asset+'</span></div>' +
-        '<div class="row"><span class="k">Our fee</span><span class="v">'+feeX+' XMR</span></div>' +
-        '<div class="row"><span class="k"><strong>Receive (est.)</strong></span><span class="v"><strong>'+receive+'</strong></span></div>' +
-      '</div>' +
-      '<div class="actions" style="margin-top:8px">' +
-        '<button data-i="'+index+'" class="choose">'+(isBest?'Choose':'Use this route')+'</button>' +
-      '</div>' +
-    '</div>';
-  }
-
-  function api(path, body){
-    return fetch(path, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)})
-      .then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error(t); }); return r.json(); });
-  }
-  function apiGet(path){
-    return fetch(path).then(function(r){ if(!r.ok) return r.text().then(function(t){ throw new Error(t); }); return r.json(); });
-  }
-
-  var form = $("#quoteForm");
-  if (form){
-    form.addEventListener("submit", function(e){
-      e.preventDefault();
-      var inPair  = UI.in_pair.value.split("|");
-      var outPair = UI.out_pair.value.split("|");
-      var req = {
-        in_asset: inPair[0], in_network: inPair[1],
-        out_asset: outPair[0], out_network: outPair[1],
-        amount: parseFloat(UI.amount.value), rate_type: UI.rate.value
-      };
-      if(!req.amount || req.amount <= 0){ toast("Enter a valid amount."); return; }
-
-      UI.btnQuote.disabled = true;
-      api("/api/quote", req).then(function(data){
-        last.request = data.request;
-        last.options = data.options || [];
-        last.best_index = data.best_index;
-        last.chosen = null;
-
-        if(!last.options.length){ UI.routesWrap.hidden=true; toast("No routes available."); return; }
-
-        var best = last.options[(last.best_index>=0?last.best_index:0)];
-        UI.bestRoute.innerHTML = routeCard(best, true, (last.best_index>=0?last.best_index:0));
-
-        var othersHtml = "";
-        for (var i=0;i<last.options.length;i++){
-          if (i === last.best_index) continue;
-          othersHtml += routeCard(last.options[i], false, i);
-        }
-        UI.otherRoutes.innerHTML = othersHtml;
-
-        var count = last.options.length - 1;
-        UI.toggleOthers.hidden = count <= 0;
-        UI.toggleOthers.textContent = count>0 ? ("Show other routes ("+count+")") : "Show other routes";
-        UI.toggleOthers.setAttribute("aria-expanded","false");
-        UI.otherRoutes.hidden = true;
-        UI.routesWrap.hidden = false;
-
-        var bestBtn = UI.bestRoute.querySelector(".choose");
-        if (bestBtn) bestBtn.addEventListener("click", function(){ chooseRoute((last.best_index>=0?last.best_index:0)); });
-        var btns = UI.otherRoutes.querySelectorAll(".choose");
-        for (var j=0;j<btns.length;j++){
-          (function(k){ btns[k].addEventListener("click", function(){ chooseRoute(parseInt(btns[k].getAttribute("data-i"),10)); }); })(j);
-        }
-
-        UI.toggleOthers.onclick = function(){
-          var v = UI.otherRoutes.hidden;
-          UI.otherRoutes.hidden = !v;
-          UI.toggleOthers.textContent = v ? ("Hide other routes ("+count+")") : ("Show other routes ("+count+")");
-          UI.toggleOthers.setAttribute("aria-expanded", v ? "true":"false");
-        };
-
-        toast("Quoted successfully.");
-      }).catch(function(err){
-        console.error(err); toast("Quote error: " + err.message);
-      }).finally(function(){ UI.btnQuote.disabled = false; });
-    });
-  }
-
-  function chooseRoute(i){
-    var o = last.options[i]; if(!o) return;
-    last.chosen = o;
-    UI.leg1.value = o.leg1.provider;
-    UI.leg2.value = "Auto (best at send)";  // <— auto-pick at send time
-    UI.btnStart.disabled = false;
-    toast("Route selected: " + o.leg1.provider + " → Auto");
-  }
-
-  if (UI.btnStart){
-    UI.btnStart.addEventListener("click", function(){
-      if(!last.chosen){ toast("Choose a route first."); return; }
-      var addr = UI.payout.value.trim();
-      if(!addr){ toast("Enter your payout address."); return; }
-
-      var inPair  = UI.in_pair.value.split("|");
-      var outPair = UI.out_pair.value.split("|");
-      var body = {
-        leg1_provider: last.chosen.leg1.provider,
-        leg2_mode: "auto",                              // <— tell backend to auto-pick for leg-2
-        in_asset: inPair[0], in_network: inPair[1],
-        out_asset: outPair[0], out_network: outPair[1],
-        amount: last.request.amount, payout_address: addr, rate_type: last.request.rate_type,
-        our_fee_xmr: last.chosen.fee.our_fee_xmr
-      };
-      UI.btnStart.disabled = true;
-      api("/api/start", body).then(function(d){
-        UI.swap.value = d.swap_id;
-        UI.sr.hidden = false;
-        UI.sr_id.textContent = d.swap_id;
-        UI.sr_dep.textContent = d.deposit_address;
-        if (d.deposit_extra){ UI.sr_extra_row.hidden=false; UI.sr_extra.textContent=d.deposit_extra; } else { UI.sr_extra_row.hidden=true; }
-        if (navigator.clipboard){
-          UI.btnCopy.onclick = function(){ navigator.clipboard.writeText(d.deposit_address).then(function(){ toast("Pay-in address copied."); }); };
-        }
-        toast("Swap created. Send the deposit for Leg 1.");
-      }).catch(function(err){
-        console.error(err); toast("Start error: " + err.message);
-      }).finally(function(){ UI.btnStart.disabled = false; });
-    });
-  }
-
-  function iconFor(state){
-    if (state === "done")   return '<div class="icon done">✓</div>';
-    if (state === "active") return '<div class="icon spin">⟳</div>';
-    return '<div class="icon todo">•</div>';
-  }
-  function step(label, state){
-    return '<div class="step '+state+'">'+iconFor(state)+'<div class="label">'+label+'</div></div>';
-  }
-  function buildSteps(d){
-    function has(k){ return (d.steps||[]).indexOf(k) !== -1; }
-    var complete   = d.status === "complete";
-    var leg1Done   = has("leg1_complete") || d.status === "leg1_complete" || complete;
-    var leg1Proc   = has("leg1_processing") && !leg1Done;
-    var awaiting   = has("waiting_deposit") && !leg1Proc && !leg1Done;
-    var leg2Sent   = has("leg2_sent");            // <— only true after actual transfer
-    var leg2Proc   = has("leg2_processing") && !complete;
-
-    function st(done, active){ return done ? "done" : (active ? "active" : "todo"); }
-    return '' +
-      '<div class="steps">' +
-        step("Receiving deposit", st(!awaiting, awaiting)) +
-        step("Routing (leg 1)",   st(leg1Done, leg1Proc)) +
-        step("Leg 1 done",        st(leg1Done, (!leg1Done && leg1Proc))) +
-        step("Sending XMR",       st(leg2Sent, (!leg2Sent && leg1Done && !leg2Proc && !complete))) +
-        step("Exchanging (leg 2)",st(leg2Proc || complete, (!complete && leg2Proc))) +
-        step("Complete",          st(complete, false)) +
-      '</div>';
-  }
-
-  function renderStatus(id){
-    return apiGet("/api/status/" + id).then(function(d){
-      UI.statusPanel.hidden = false;
-      UI.statusPanel.innerHTML = buildSteps(d) +
-        '<div class="rows" style="margin-top:12px">' +
-          '<div class="row"><span class="k">Leg1</span><span class="v">'+((d.leg1&&d.leg1.tx_id)||"—")+' | deposit: '+((d.leg1&&d.leg1.deposit)||"—")+'</span></div>' +
-          '<div class="row"><span class="k">Leg2</span><span class="v">'+((d.leg2&&d.leg2.tx_id)||"—")+' | deposit: '+((d.leg2&&d.leg2.deposit)||"—")+'</span></div>' +
-        '</div>';
-
-      // Accounting tags: show "to forward" until leg2_sent exists
-      var recv = format(d.accounting && d.accounting.xmr_received);
-      var fee  = format(d.accounting && d.accounting.our_fee_xmr);
-      var toFwdVal = Math.max(0, (d.accounting && d.accounting.xmr_received || 0) - (d.accounting && d.accounting.our_fee_xmr || 0));
-      var toFwd = format(toFwdVal);
-      var fwd   = format(d.accounting && d.accounting.xmr_forwarded);
-      var tags = '<span class="tag">XMR received: '+recv+'</span>' +
-                 '<span class="tag">Our fee: '+fee+'</span>';
-      if ((d.steps||[]).indexOf("leg2_sent") !== -1) {
-        tags += '<span class="tag">XMR forwarded: '+fwd+'</span>';
-      } else {
-        tags += '<span class="tag">XMR to forward: '+toFwd+'</span>';
-      }
-      UI.accounting.hidden = false;
-      UI.accounting.innerHTML = tags;
-
-      return d;
-    });
-  }
-
-  if (UI.btnStatus){
-    UI.btnStatus.addEventListener("click", function(){
-      var id = UI.swap.value.trim(); if(!id){ toast("Enter or start a swap first."); return; }
-      renderStatus(id).catch(function(err){ console.error(err); toast("Status error: " + err.message); });
-    });
-  }
-  if (UI.btnWatch){
-    UI.btnWatch.addEventListener("click", function(){
-      var id = UI.swap.value.trim(); if(!id){ toast("Enter or start a swap first."); return; }
-      if (last.watcher){ clearInterval(last.watcher); }
-      UI.btnStop.disabled = false;
-      last.watcher = setInterval(function(){
-        renderStatus(id).then(function(d){
-          if (d.status==="complete"){ clearInterval(last.watcher); last.watcher=null; UI.btnStop.disabled=true; toast("Swap complete."); }
-        })["catch"](function(){});
-      }, 8000);
-      toast("Watching…");
-    });
-  }
-  if (UI.btnStop){
-    UI.btnStop.addEventListener("click", function(){
-      if (last.watcher){ clearInterval(last.watcher); last.watcher=null; UI.btnStop.disabled=true; toast("Stopped."); }
-    });
-  }
-})();
+});
