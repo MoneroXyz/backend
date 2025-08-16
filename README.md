@@ -1,252 +1,182 @@
-Monerizer — 2-Leg Router (in → XMR → out)
+Monerizer Backend
 
-Monerizer is a tiny FastAPI service + static UI that routes swaps in two legs:
+Monerizer is a privacy-focused swap orchestrator.
+It enforces two-leg routing (ANY_IN → XMR → ANY_OUT) so that all user swaps are shielded through Monero before exiting.
 
-Leg-1: in_asset@in_network → XMR (to our XMR wallet)
+📌 Overview
 
-Leg-2: XMR → out_asset@out_network (from our wallet to the chosen provider)
+Leg 1: User sends IN asset (e.g. ETH, BTC, USDT). Monerizer creates a swap with a provider (Exolix / ChangeNOW). Provider delivers XMR to a unique subaddress in our Monero wallet.
 
-Currently supports assets: BTC, ETH, USDT, USDC, LTC
-Networks: BTC, ETH, TRX, BSC, LTC (XMR is network-less)
+Leg 2: Once enough unlocked XMR is available at that subaddress (minus our fee & reserve), Monerizer sends XMR to a second provider to complete the OUT leg.
 
-UI lives at /ui and talks to the API.
+Privacy guarantee: Providers never see both sides of the swap. User’s IN → our XMR subaddress → OUT.
 
-How it works (high level)
+Fee capture: Our fee is retained in XMR, never converted out. This makes Monerizer inherently profitable in Monero.
 
-Quote (POST /api/quote)
+⚙️ Architecture
 
-Fetches provider estimates for both legs (Exolix + ChangeNOW when available).
+Components:
 
-Builds 2×2 route combos (L1 provider × L2 provider), calculates user receive after fees.
+FastAPI backend (app.py): Manages swap lifecycle, provider API calls, wallet RPC.
 
-Picks best route (highest receive_out). The UI shows best (and any other viable routes).
+UI (index.html, style.css, app.v5.js): Client interface to get quotes, start swaps, track statuses.
 
-Start (POST /api/start)
+Monero wallet RPC: Runs locally, generates subaddresses, tracks balances, sends leg-2 payouts.
 
-You pass the picked leg1_provider and leg2_provider (explicit).
+Providers: Currently Exolix and ChangeNOW are integrated.
 
-Creates Leg-1 order (payout to our XMR wallet). Returns a deposit address for the user.
+Flow:
 
-Status & auto Leg-2 (GET /api/status/{swap_id})
+Quote (/api/quote)
 
-Polls Leg-1 provider; once complete, records xmr_received.
+Queries both providers for IN → XMR and XMR → OUT pairs.
 
-Waits for wallet unlocked balance to be ≥ xmr_received - our_fee_xmr + miner fee reserve.
+Calculates implied provider fee.
 
-Creates Leg-2 order with your chosen leg2_provider (no re-quote), then sends XMR to the provider’s deposit address from our wallet.
+Applies our own fee policy:
 
-Polls Leg-2 provider until complete.
-
-Fee model (transparent)
-
-We mirror the provider’s spread as our fee, in XMR.
-When quoting, we estimate (roughly) the provider spread across the two legs.
-We then set:
-
-our_fee_xmr = min( max(0, spread_leg1 + spread_leg2),  FEE_CAP_RATIO * leg1_xmr )
+our_fee = min(provider_spread, OUR_FEE_MAX_RATIO × leg1_xmr)
 
 
-This means: if the provider’s effective spread is 1 XMR, our fee is also ~1 XMR.
+Our fee is retained in Monero.
 
-A hard cap keeps quotes sane: OUR_FEE_MAX_RATIO (default 0.15) × the XMR received on Leg-1.
+Start swap (/api/start)
 
-The user-visible output in quotes (receive_out) already subtracts our fee.
+User chooses leg1_provider + leg2_provider.
 
-At runtime:
+Backend creates leg-1 order at provider.
 
-accounting.xmr_received — XMR from Leg-1 provider to our wallet
+Monerizer requests a new XMR subaddress via wallet RPC.
 
-accounting.our_fee_xmr — our fee withheld (in XMR)
+Provider instructed to pay out XMR to that subaddress.
 
-accounting.xmr_forwarded — XMR we sent to Leg-2
+Swap status = waiting_deposit.
 
-Miner fee & reserve (Leg-2 send):
-Monero network fee is paid by our wallet. We leave a tiny headroom XMR_SEND_FEE_RESERVE (default 0.00030 XMR) so sends never fail.
+Leg 1 complete
 
-Example
-Leg-1 credits 0.2700 XMR, our mirrored fee computes to 0.0130 XMR.
-We forward ≈ 0.2570 XMR (minus tiny reserve for the miner fee).
+When provider marks order done and Monerizer detects unlocked balance at that subaddress, status = leg1_complete.
 
-Requirements
+Leg 2 auto-execution
 
-Python 3.11+ (Windows)
+Monerizer checks:
 
-FastAPI + Uvicorn (installed via pip)
-
-Monero node running locally (daemon RPC at 127.0.0.1:18081)
-
-Monero wallet RPC (our hot wallet) at 127.0.0.1:18083 pointing to that node
-
-Provider API access:
-
-Exolix: API key (sent as Authorization: Bearer … if you supply a raw token)
-
-ChangeNOW: API key (some pairs can be temporarily disabled by CN)
-
-If ChangeNOW returns “pair_is_inactive”, those legs will be omitted automatically; Exolix-only routes still work.
-
-Environment variables
-
-Create a .env next to app.py:
-
-# Providers
-CHANGENOW_API_KEY=your_cn_key_here
-EXOLIX_API_KEY=your_exolix_key_or_bearer_token
-
-# Our wallet (Leg-1 payout target)
-XMR_OUR_RECEIVE_ADDRESS=44...  # Your XMR primary/subaddress
-
-# Wallet RPC (Leg-2 sender)
-XMR_WALLET_RPC_URL=http://127.0.0.1:18083/json_rpc
-XMR_WALLET_RPC_USER=          # leave blank if using --disable-rpc-login
-XMR_WALLET_RPC_PASS=
-
-# Fee knobs
-OUR_FEE_MAX_RATIO=0.15        # cap: up to 15% of the leg-1 XMR received
-XMR_SEND_FEE_RESERVE=0.00030  # headroom for Monero miner fee when sending
-
-Run the stack (Windows / PowerShell)
-1) Start the Monero daemon (already synced chain folder)
-cd "E:\MoneroCLI\monero-x86_64-w64-mingw32-v0.18.4.1"
-
-.\monerod.exe `
-  --data-dir "E:\MoneroCLI\blockchain" `
-  --rpc-bind-ip 127.0.0.1 `
-  --rpc-bind-port 18081 `
-  --confirm-external-bind
+unlocked_balance(subaddress) ≥ (received_xmr - our_fee) + XMR_SEND_FEE_RESERVE
 
 
-Health check:
+If true → send XMR from wallet to leg2 provider deposit.
 
-Invoke-RestMethod http://127.0.0.1:18081/get_info |
-  Select-Object height,target_height,synchronized,offline
+Swap status = leg2_in_progress.
 
-2) Start the wallet RPC (using your wallet “smartRPC”)
-cd "E:\MoneroCLI\monero-x86_64-w64-mingw32-v0.18.4.1"
+Completion
 
+Provider finishes OUT delivery.
+
+Status = done.
+
+💰 Fee Policy
+
+Basis: Our fee mirrors provider spread but capped.
+
+Formula:
+
+our_fee = min(provider_fee, OUR_FEE_MAX_RATIO × leg1_xmr)  
+
+
+Retention: Fee stays in Monero. We never pay it forward.
+
+Reserve: A small constant (XMR_SEND_FEE_RESERVE, default 0.00030) is subtracted to ensure transactions succeed without dust errors.
+
+Example:
+
+User swaps 1 ETH → Exolix converts → 10 XMR received.
+
+Provider implied fee = 1%. Our cap = 15%.
+
+Our fee = 0.1 XMR (1%).
+
+Available for leg-2 = 9.9 − 0.0003 = 9.8997 XMR.
+
+🔀 Swap Status Lifecycle
+
+created → Swap object created.
+
+waiting_deposit → Awaiting IN deposit to provider.
+
+leg1_in_progress → Provider processing leg 1.
+
+leg1_complete → Provider marked done and payout detected at subaddress.
+
+leg2_in_progress → Monerizer sent XMR to second provider.
+
+done → OUT asset delivered.
+
+failed → Any unrecoverable error.
+
+🗂️ Wallet & Subaddress Logic
+
+Wallet file: smartRPC (local only).
+
+No RPC auth (runs on 127.0.0.1:18083).
+
+Subaddresses:
+
+Each swap generates a fresh subaddress.
+
+Ensures one-to-one mapping: swap ↔ XMR subaddress.
+
+Avoids mixing and allows precise balance tracking.
+
+Balance check:
+
+We poll RPC get_balance(account_index, address_index) until unlocked balance is enough to trigger leg-2.
+
+🖥️ Setup (Windows)
+Run Monero daemon:
+.\monerod.exe --data-dir "E:\MoneroCLI\blockchain" `
+  --rpc-bind-ip 127.0.0.1 --rpc-bind-port 18081 `
+  --prune-blockchain --confirm-external-bind
+
+Run Wallet RPC:
 .\monero-wallet-rpc.exe `
-  --rpc-bind-ip 127.0.0.1 `
-  --rpc-bind-port 18083 `
-  --disable-rpc-login `
-  --daemon-address 127.0.0.1:18081 `
   --wallet-file "E:\MoneroCLI\monero-x86_64-w64-mingw32-v0.18.4.1\smartRPC" `
-  --password 1234
+  --password "1234" `
+  --rpc-bind-port 18083 `
+  --disable-rpc-login --confirm-external-bind
 
+Run backend:
+uvicorn app:app --host 127.0.0.1 --port 8899 --reload
 
-Quick checks:
+🌐 UI
 
-# Wallet RPC version
-Invoke-RestMethod -Uri http://127.0.0.1:18083/json_rpc -Method Post -ContentType 'application/json' `
-  -Body '{"jsonrpc":"2.0","id":"0","method":"get_version"}'
+/ui/ → Main entrypoint.
 
-# Wallet scan height
-Invoke-RestMethod -Uri http://127.0.0.1:18083/json_rpc -Method Post -ContentType 'application/json' `
-  -Body '{"jsonrpc":"2.0","id":"0","method":"get_height"}'
+index.html → Structure.
 
-3) Run Monerizer API + UI
-cd E:\backend
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python -m uvicorn app:app --host 127.0.0.1 --port 8899 --reload
+style.css → Styling.
 
+app.v5.js → Logic (quotes, start, status).
 
-Open the UI at: http://127.0.0.1:8899/ui/
+Current state:
 
-API
-POST /api/quote → QuoteResponse
+Pair selector fixed.
 
-Input:
+Quote button functional again.
 
-{
-  "in_asset": "ETH",
-  "in_network": "ETH",
-  "out_asset": "ETH",
-  "out_network": "ETH",
-  "amount": 0.05,
-  "rate_type": "float"
-}
+Timeline shows Deposit → Routing → Sending → Done.
 
+Visual design = basic (to be improved).
 
-Output:
+📜 Changelog
+Aug 2025
 
-options[] (each with leg1, leg2, fee, receive_out)
+Added subaddress per swap.
 
-best_index (highest receive_out)
+Changed leg1_complete detection → requires payout on subaddress.
 
-If a provider is down/disabled for a pair (e.g., CN returns pair_is_inactive), those legs are omitted and you’ll see fewer options.
+Added auto leg-2 execution once unlocked funds available.
 
-POST /api/start → StartSwapResponse
+Updated fee policy docs.
 
-Start the route you chose:
+Updated UI (pair selector fix, working quote).
 
-{
-  "leg1_provider": "Exolix",
-  "leg2_provider": "Exolix",
-  "in_asset": "ETH",
-  "in_network": "ETH",
-  "out_asset": "ETH",
-  "out_network": "ETH",
-  "amount": 0.05,
-  "payout_address": "0x...",
-  "rate_type": "float",
-  "our_fee_xmr": 0.0123
-}
-
-GET /api/status/{swap_id}
-
-Returns:
-
-status (e.g., waiting_deposit, leg1_processing, leg1_complete, waiting_unlock, leg2_sent, leg2_processing, complete)
-
-steps[] (progress trail)
-
-leg1, leg2 (provider IDs, deposit addresses)
-
-accounting (xmr_received, our_fee_xmr, xmr_forwarded)
-
-Debug helpers (optional)
-
-POST /api/quote_debug — raw leg quotes (to see what each provider returned)
-
-POST /api/cn_probe — shows CN endpoint responses/HTTP codes for the current pair
-
-UI notes
-
-Asset lists: USDT(ETH) & USDT(TRX) are separate choices with the network auto-set.
-
-Routes panel shows best route (and any other viable ones). If ChangeNOW omits a pair, you’ll see fewer routes.
-
-Run status chips: Receiving deposit → Waiting unlock → Sending XMR → Routing → Done.
-
-Troubleshooting
-
-Quote shows only Exolix
-Likely CN disabled that pair (pair_is_inactive) — try POST /api/cn_probe to confirm.
-
-Leg-2 didn’t start yet
-Check wallet unlocked balance vs. needed forward:
-
-xmr_received - our_fee_xmr + XMR_SEND_FEE_RESERVE must be ≤ unlocked.
-
-When enough unlocks, server auto-creates Leg-2 and sends.
-
-Manual Leg-2 send (emergency)
-You can query the swap, create a provider order yourself, and transfer from wallet RPC to the provider’s XMR deposit address. (Only needed if you intentionally bypass the server’s auto flow.)
-
-Security
-
-Keep .env local.
-
-Wallet RPC is bound to 127.0.0.1 with --disable-rpc-login in your setup; do not expose it externally.
-
-API keys are read from env vars; never commit them.
-
-Roadmap (nice-to-haves)
-
-Provider-agnostic fallbacks for disabled pairs
-
-More assets/networks
-
-Better UI timelines & historical list
-
-Robust persistence instead of in-memory SWAPS{}
+README merged + expanded.
