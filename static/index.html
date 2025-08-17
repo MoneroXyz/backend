@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Monerizer — Swap via XMR hop</title>
+  <title>Monerizer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="/ui/style.css" rel="stylesheet" />
 </head>
@@ -11,103 +11,95 @@
     <div class="brand">MZ</div>
     <div class="title">
       <h1>Monerizer</h1>
-      <div class="sub">ANY → XMR → ANY · non-KYC routing · per-swap subaddress</div>
+      <div class="sub">Smart 2-leg routing via XMR</div>
     </div>
   </div>
 
   <div class="wrap">
-    <!-- QUOTE -->
+    <!-- Get Quote -->
     <div class="card">
-      <h2>1) Get quote</h2>
+      <h2>Get Quote</h2>
       <div class="grid g-quote">
-        <div class="row">
-          <label>From asset
-            <select id="fromAsset"></select>
+        <div class="row gap">
+          <label class="w-320">From
+            <div class="row gap">
+              <select id="fromAsset" class="w-120"></select>
+              <select id="fromNet"   class="w-120"></select>
+            </div>
           </label>
         </div>
-        <div class="row">
-          <label>From network
-            <select id="fromNet"></select>
+        <div class="row gap">
+          <label class="w-320">To
+            <div class="row gap">
+              <select id="toAsset" class="w-120"></select>
+              <select id="toNet"   class="w-120"></select>
+            </div>
           </label>
         </div>
-        <div class="row">
-          <label>To asset
-            <select id="toAsset"></select>
-          </label>
-        </div>
-        <div class="row">
-          <label>To network
-            <select id="toNet"></select>
-          </label>
-        </div>
-        <div class="row align-end">
+        <div class="row gap">
           <label>Amount
-            <input id="amount" class="w-320" type="number" step="any" value="100" />
+            <input id="amount" type="number" step="0.00000001" value="0.2" />
           </label>
         </div>
-        <div class="row">
-          <label>Rate type
-            <select id="rateType">
-              <option value="float">Floating</option>
-              <option value="fixed">Fixed</option>
-            </select>
+        <div class="row gap">
+          <label>Rate
+            <div class="row gap">
+              <select id="rateType">
+                <option value="float">Float</option>
+                <option value="fixed">Fixed</option>
+              </select>
+            </div>
           </label>
         </div>
         <div class="row align-end">
-          <button id="btnQuote">Get Quotes</button>
+          <button id="btnQuote">Get Quote</button>
         </div>
       </div>
 
-      <div id="quoteBox" class="routes muted" style="margin-top:12px;">Quotes will appear here…</div>
+      <div id="quoteBox" class="routes"></div>
+      <div class="row gap hidden" id="otherRoutesRow">
+        <button id="btnShowOthers" class="badge">Show other routes</button>
+      </div>
     </div>
 
-    <!-- START -->
+    <!-- Start -->
     <div class="card">
-      <h2>2) Start swap</h2>
+      <h2>Start</h2>
       <div class="grid g-start">
-        <div class="row">
-          <label>Leg-1 provider
-            <select id="leg1Prov">
-              <!-- Default list; JS will also auto-augment from quotes -->
-              <option>ChangeNOW</option>
-              <option>Exolix</option>
-              <option>SimpleSwap</option>
-            </select>
-          </label>
-        </div>
-        <div class="row">
-          <label>Leg-2 provider
-            <select id="leg2Prov">
-              <option value="">Auto (use chosen route)</option>
-              <option>ChangeNOW</option>
-              <option>Exolix</option>
-              <option>SimpleSwap</option>
-            </select>
-          </label>
-        </div>
-        <div class="row wide">
-          <label>Payout address (final OUT)
-            <input id="payout" placeholder="Your destination address" />
-          </label>
-        </div>
-        <div class="row align-end">
-          <button id="btnStart">Create &amp; Start</button>
+        <label>Leg 1 provider
+          <select id="leg1Prov">
+            <option>ChangeNOW</option>
+            <option>Exolix</option>
+            <option>SimpleSwap</option>
+          </select>
+        </label>
+        <label>Leg 2 provider
+          <select id="leg2Prov">
+            <option>ChangeNOW</option>
+            <option>Exolix</option>
+            <option>SimpleSwap</option>
+          </select>
+        </label>
+        <label>Payout address
+          <input id="payout" type="text" placeholder="Recipient address" />
+        </label>
+        <div class="wide row gap">
+          <button id="btnStart">Start</button>
         </div>
       </div>
 
       <div id="startOut" class="start-out hidden">
-        <div class="kv"><div class="muted">Swap ID</div><code id="sid"></code></div>
-        <div class="kv"><div class="muted">Deposit</div><code id="deposit"></code><span id="memoWrap"></span></div>
-        <div class="muted" style="margin-top:6px">Send your <b>FROM</b> asset to the deposit above. Status will track below.</div>
+        <div class="kv"><div class="muted">Swap ID</div><div><code id="sid"></code></div></div>
+        <div class="kv"><div class="muted">Deposit</div><div><code id="deposit"></code><span id="memoWrap"></span></div></div>
       </div>
     </div>
 
-    <!-- STATUS -->
+    <!-- Track -->
     <div class="card">
-      <h2>3) Status</h2>
+      <h2>Track</h2>
       <div class="row gap">
-        <input id="swapId" class="w-320" placeholder="Paste Swap ID (or auto-filled)" />
-        <button id="btnStatus">Refresh</button>
+        <input id="swapId" class="w-320" type="text" placeholder="Swap ID" />
+        <button id="btnStatus">Get Status</button>
         <button id="btnWatch">Watch</button>
         <button id="btnStop">Stop</button>
       </div>
