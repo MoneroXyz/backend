@@ -56,10 +56,14 @@
         </div>
       </div>
 
-      <div id="quoteBox" class="routes"></div>
+      <!-- NEW: best route first -->
+      <div id="bestRoute" class="routes"></div>
+
+      <!-- NEW: toggle + hidden other routes -->
       <div class="row gap hidden" id="otherRoutesRow">
-        <button id="btnShowOthers" class="badge">Show other routes</button>
+        <button id="btnToggleRoutes" class="badge">Show other routes</button>
       </div>
+      <div id="otherRoutes" class="routes hidden"></div>
     </div>
 
     <!-- Start -->

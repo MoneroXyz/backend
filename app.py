@@ -36,7 +36,7 @@ SWEEP_INTERVAL_S = float(os.getenv("SWEEP_INTERVAL_S", "8"))
 SS_BASE = "https://api.simpleswap.io/v1"
 
 # ================== APP ==================
-APP_VERSION = "0.4.9"
+APP_VERSION = "0.4.8"
 app = FastAPI(title="Monerizer MVP", version=APP_VERSION)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.mount("/ui", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static"), html=True), name="ui")
@@ -131,16 +131,6 @@ def _ss_params(base: dict) -> dict:
         p["api_key"] = SS_KEY
     return p
 
-def _ex_default_net(asset: str, hint: Optional[str]) -> Optional[str]:
-    if hint:
-        return hint
-    a = (asset or "").upper()
-    if a in {"BTC","ETH","LTC","TRX","BSC","XMR"}:
-        return a
-    if a in {"USDT","USDC"}:
-        return "ETH"
-    return None
-
 # -------- ChangeNOW --------
 async def cn_estimate(frm: str, to: str, amt: float, frm_net: Optional[str] = None, to_net: Optional[str] = None, flow: str = "standard"):
     h = _cn_headers()
@@ -193,79 +183,26 @@ async def cn_info(tx_id: str):
 
 # -------- Exolix --------
 async def ex_rate(frm: str, net_from: Optional[str], to: str, net_to: Optional[str], amt: float, rate_type: str = "float"):
-    nf = _ex_default_net(frm, net_from)
-    nt = _ex_default_net(to, net_to)
     p = {"coinFrom": frm, "coinTo": to, "amount": str(amt), "rateType": rate_type}
-    if nf: p["networkFrom"] = nf
-    if nt: p["networkTo"] = nt
-
+    if net_from: p["networkFrom"] = net_from
+    if net_to: p["networkTo"] = net_to
     async with httpx.AsyncClient(timeout=15) as c:
         r = await c.get("https://exolix.com/api/v2/rate", params=p, headers=_ex_headers())
         if r.status_code == 200:
-            try:
-                j = r.json()
-                if float(j.get("toAmount") or 0) > 0:
-                    return j
-            except Exception:
-                pass
-
+            j = r.json()
+            if float(j.get("toAmount") or 0) > 0:
+                return j
+        # fallback without nets
         p2 = {"coinFrom": frm, "coinTo": to, "amount": str(amt), "rateType": rate_type}
         r2 = await c.get("https://exolix.com/api/v2/rate", params=p2, headers=_ex_headers())
-        if r2.status_code == 200:
-            try:
-                return r2.json()
-            except Exception:
-                return {"toAmount": 0.0, "fromAmount": amt}
-        return {"toAmount": 0.0, "fromAmount": amt}
+        return r2.json() if r2.status_code == 200 else {"toAmount": 0.0, "fromAmount": amt}
 
 async def ex_create(frm: str, net_from: Optional[str], to: str, net_to: Optional[str], amt: float, withdrawal: str, rate_type: str = "float"):
-    """
-    Accept 200 or 201 (Created) as success. Fill networks if missing.
-    """
-    nf = _ex_default_net(frm, net_from)
-    nt = _ex_default_net(to, net_to)
-
-    def _body(nff: Optional[str], ntt: Optional[str]):
-        b = {
-            "coinFrom": frm,
-            "coinTo": to,
-            "amount": str(amt),
-            "withdrawalAddress": withdrawal,
-            "rateType": rate_type,
-        }
-        if nff: b["networkFrom"] = nff
-        if ntt: b["networkTo"] = ntt
-        return b
-
+    b = {"coinFrom": frm, "coinTo": to, "networkFrom": net_from, "networkTo": net_to, "amount": amt, "withdrawalAddress": withdrawal, "rateType": rate_type}
     async with httpx.AsyncClient(timeout=20) as c:
-        r = await c.post("https://exolix.com/api/v2/transactions", json=_body(nf, nt), headers=_ex_headers())
-
-        if r.status_code in (200, 201):
-            try:
-                return r.json()
-            except Exception:
-                raise HTTPException(502, f"Exolix create returned non-JSON {r.status_code}: {r.text[:400]}")
-
-        if not nf and not nt:
-            r2 = await c.post("https://exolix.com/api/v2/transactions", json=_body(None, None), headers=_ex_headers())
-            if r2.status_code in (200, 201):
-                try:
-                    return r2.json()
-                except Exception:
-                    raise HTTPException(502, f"Exolix create returned non-JSON {r2.status_code}: {r2.text[:400]}")
-            detail2 = r2.text
-            try:
-                detail2 = str(r2.json())
-            except Exception:
-                detail2 = (detail2 or "")[:500]
-            raise HTTPException(502, f"Exolix create failed ({r2.status_code}): {detail2}")
-
-        detail = r.text
-        try:
-            detail = str(r.json())
-        except Exception:
-            detail = (detail or "")[:500]
-        raise HTTPException(502, f"Exolix create failed ({r.status_code}): {detail}")
+        r = await c.post("https://exolix.com/api/v2/transactions", json=b, headers=_ex_headers())
+        r.raise_for_status()
+        return r.json()
 
 async def ex_info(tx_id: str):
     async with httpx.AsyncClient(timeout=15) as c:
@@ -278,10 +215,13 @@ def _ss_fixed(rate_type: str) -> str:
     return "true" if rate_type == "fixed" else "false"
 
 def _ss_map_net(asset: str, net: Optional[str]) -> Optional[str]:
+    """
+    Map our networks to SimpleSwap's expected names. Omit for native coins.
+    """
     if not net: return None
     a = (asset or "").upper()
     n = (net or "").upper()
-    natives = {"BTC","LTC","XMR","ETH"}
+    natives = {"BTC","LTC","XMR","ETH"}  # ETH coin is native (no 'erc20')
     if a in natives: return None
     if n == "ETH": return "erc20"
     if n == "TRX": return "trc20"
@@ -319,90 +259,58 @@ async def ss_estimate(frm: str, to: str, amt: float, net_from: Optional[str], ne
         if nt: params["network_to"] = nt
         async with httpx.AsyncClient(timeout=12) as c:
             r = await c.get(f"{SS_BASE}/get_estimated", params=params)
-
-            n = 0.0
-            raw = None
+            # SimpleSwap sometimes returns bare numbers (text/plain)
             try:
                 j = r.json()
-                raw = j
-                if isinstance(j, dict):
-                    v = j.get("estimated_amount") or j.get("to_amount") or j.get("amount")
-                    if v is not None:
-                        n = float(v)
-                elif isinstance(j, (int, float)):
-                    n = float(j)
-                elif isinstance(j, str):
-                    n = float(j.strip())
             except Exception:
+                txt = (r.text or "").strip()
                 try:
-                    n = float((r.text or "").strip())
-                    raw = {"plain": r.text}
+                    # try parse numeric
+                    num = float(txt)
+                    j = {"estimated_amount": num, "_text": txt}
                 except Exception:
-                    raw = {"_text": r.text}
-
-            return {
-                "toAmount": n if r.status_code == 200 else 0.0,
-                "_raw": raw if raw is not None else {"note": "no body parsed"},
-                "_status": r.status_code,
-                "_params": params,
-                "_url": str(r.request.url),
-            }
+                    j = {"_text": txt}
+            resolved_url = str(r.request.url)
+            if r.status_code == 200:
+                try:
+                    n = float(j.get("estimated_amount") or j.get("toAmount") or 0)
+                except Exception:
+                    n = 0.0
+                return {"toAmount": n, "_raw": j, "_status": r.status_code, "_params": params, "_url": resolved_url}
+            else:
+                return {"toAmount": 0.0, "_raw": j, "_status": r.status_code, "_params": params, "_url": resolved_url}
 
     nf = _ss_map_net(frm, net_from)
     nt = _ss_map_net(to,  net_to)
     j = await _call(nf, nt)
     if (j.get("toAmount") or 0) > 0:
         return j
+    # fallback: try without network hints
     return await _call(None, None)
 
-async def ss_create(frm: str, to: str, amt: float, payout_address: str,
-                    net_from: Optional[str], net_to: Optional[str],
-                    rate_type: str, refund_address: Optional[str] = None):
-    if not SS_KEY:
-        raise HTTPException(502, "SimpleSwap create failed: missing API key")
-
-    def _body(nf: Optional[str], nt: Optional[str]):
-        b = {
+async def ss_create(frm: str, to: str, amt: float, payout_address: str, net_from: Optional[str], net_to: Optional[str], rate_type: str, refund_address: Optional[str] = None):
+    def _params(nf: Optional[str], nt: Optional[str]):
+        p = _ss_params({
             "currency_from": frm.lower(),
             "currency_to": to.lower(),
             "amount": str(amt),
             "address_to": payout_address,
-            "fixed": "true" if rate_type == "fixed" else "false",
-        }
-        if refund_address:
-            b["refund_address"] = refund_address
-        if nf: b["network_from"] = nf
-        if nt: b["network_to"] = nt
-        return b
-
+            "fixed": _ss_fixed(rate_type),
+        })
+        if refund_address: p["refund_address"] = refund_address
+        if nf: p["network_from"] = nf
+        if nt: p["network_to"] = nt
+        return p
     nf = _ss_map_net(frm, net_from)
     nt = _ss_map_net(to,  net_to)
-
-    headers = {"Accept": "application/json", "Content-Type": "application/json"}
-    q = {"api_key": SS_KEY}
-
     async with httpx.AsyncClient(timeout=20) as c:
-        r = await c.post(f"{SS_BASE}/create_exchange", json=_body(nf, nt), params=q, headers=headers)
-        if r.status_code in (200, 201):
-            try:
-                return r.json()
-            except Exception:
-                raise HTTPException(502, f"SimpleSwap create returned non-JSON {r.status_code}: {r.text[:400]}")
-
-        r2 = await c.post(f"{SS_BASE}/create_exchange", json=_body(None, None), params=q, headers=headers)
-        if r2.status_code in (200, 201):
-            try:
-                return r2.json()
-            except Exception:
-                raise HTTPException(502, f"SimpleSwap create returned non-JSON {r2.status_code}: {r2.text[:400]}")
-
-        detail = r2.text
-        try:
-            dj = r2.json()
-            detail = str(dj)
-        except Exception:
-            detail = (detail or "")[:500]
-        raise HTTPException(502, f"SimpleSwap create failed ({r2.status_code}): {detail}")
+        r = await c.get(f"{SS_BASE}/get_exchange", params=_params(nf, nt))
+        if r.status_code == 200:
+            return r.json()
+        # fallback without networks
+        r2 = await c.get(f"{SS_BASE}/get_exchange", params=_params(None, None))
+        r2.raise_for_status()
+        return r2.json()
 
 async def ss_info(exchange_id: str):
     params = _ss_params({"id": exchange_id})
@@ -446,6 +354,16 @@ async def sum_received_for_subaddr(address_index: int) -> float:
         pass
     return total
 
+async def wallet_unlocked_balance() -> float:
+    """
+    Return wallet-wide unlocked balance (in XMR) for account 0.
+    """
+    try:
+        res = await wallet_rpc("get_balance", {"account_index": 0})
+        return float(res.get("unlocked_balance", 0)) / 1e12
+    except Exception:
+        return 0.0
+
 # ================== QUOTE ==================
 def _mirror_fee(provider_spread_xmr: float, leg1_xmr: float) -> float:
     return float(min(max(0.0, provider_spread_xmr), max(0.0, leg1_xmr) * FEE_CAP_RATIO))
@@ -479,7 +397,7 @@ async def _estimate_leg2_from_xmr(provider: str, out_asset: str, out_network: st
 @app.post("/api/quote", response_model=QuoteResponse)
 async def api_quote(req: QuoteRequest):
     global _last_quote_req
-    _last_quote_req = req.model_dump()
+    _last_quote_req = req.model_dump()  # keep for diagnostics
 
     providers = ["ChangeNOW", "Exolix", "SimpleSwap"]
     leg1_results: Dict[str, float] = {}
@@ -566,19 +484,8 @@ async def api_start(req: StartSwapRequest):
         deposit_extra = leg1.get("depositExtraId") or None
         leg1_tx_id = leg1.get("id") or leg1.get("transaction_id") or ""
     elif req.leg1_provider == "SimpleSwap":
-        deposit_address = (
-            leg1.get("address_from")
-            or leg1.get("deposit")
-            or leg1.get("payinAddress")
-            or leg1.get("payinAddressString")
-            or ""
-        )
-        deposit_extra = (
-            leg1.get("extra_id")
-            or leg1.get("memo_from")
-            or leg1.get("payinExtraId")
-            or None
-        )
+        deposit_address = leg1.get("deposit") or ""
+        deposit_extra = leg1.get("extra_id") or None
         leg1_tx_id = leg1.get("id") or ""
 
     async with SWAPS_LOCK:
@@ -600,6 +507,7 @@ async def api_start(req: StartSwapRequest):
             "leg2": {
                 "provider": req.leg2_provider,
                 "created": False,
+                "creating": False,   # anti-duplicate guard
                 "order": None,
                 "tx_id": "",
                 "status": "pending"
@@ -640,49 +548,77 @@ async def _send_from_wallet_to(provider_deposit_addr: str, amount_xmr: float) ->
         raise HTTPException(502, f"Wallet send error: {e}")
 
 async def _maybe_create_leg2_and_send(swap: Dict):
-    if swap["leg2"]["created"]:
+    # Already created (or being created)? bail.
+    if swap["leg2"].get("created"):
         return
+    if swap["leg2"].get("creating"):
+        return
+
     subidx = swap["subaddr_index"]
+
+    # 1) Total received (locked + unlocked) on THIS swap subaddress
     rx_total = await sum_received_for_subaddr(subidx)
-    need = max(0.0, (rx_total - float(swap.get("our_fee_xmr", 0.0)) - SEND_FEE_RESERVE))
-    if need <= 0:
+
+    # 2) Target to route based on what this subaddress received
+    our_fee = float(swap.get("our_fee_xmr", 0.0))
+    need_total = max(0.0, rx_total - our_fee - SEND_FEE_RESERVE)
+    if need_total <= 0:
+        # Nothing for this swap yet
         return
 
-    req = swap["req"]
-    leg2 = await _create_leg2_order(
-        provider=swap["leg2"]["provider"],
-        out_asset=req["out_asset"],
-        out_network=req["out_network"],
-        amount_xmr=need,
-        payout_address=req["payout_address"],
-        rate_type=req["rate_type"]
-    )
+    # 3) Wallet-wide unlocked balance
+    wallet_unl = await wallet_unlocked_balance()
+    spendable_now = max(0.0, wallet_unl - SEND_FEE_RESERVE)
 
-    deposit_addr = ""
-    if swap["leg2"]["provider"] == "ChangeNOW":
-        deposit_addr = leg2.get("payinAddress") or leg2.get("payinAddressString") or ""
-        swap["leg2"]["tx_id"] = leg2.get("id") or leg2.get("exchangeId") or ""
-    elif swap["leg2"]["provider"] == "Exolix":
-        deposit_addr = leg2.get("depositAddress") or ""
-        swap["leg2"]["tx_id"] = leg2.get("id") or leg2.get("transaction_id") or ""
-    elif swap["leg2"]["provider"] == "SimpleSwap":
-        deposit_addr = (
-            leg2.get("address_from")
-            or leg2.get("deposit")
-            or leg2.get("payinAddress")
-            or leg2.get("payinAddressString")
-            or ""
+    # 4) Amount we can send now
+    send_amt = min(need_total, spendable_now)
+    if send_amt <= 0:
+        swap["leg2"]["status"] = "awaiting_wallet_unlocked"
+        return
+
+    # 5) Create leg-2 once (guard)
+    swap["leg2"]["creating"] = True
+    try:
+        req = swap["req"]
+        leg2 = await _create_leg2_order(
+            provider=swap["leg2"]["provider"],
+            out_asset=req["out_asset"],
+            out_network=req["out_network"],
+            amount_xmr=send_amt,
+            payout_address=req["payout_address"],
+            rate_type=req["rate_type"]
         )
-        swap["leg2"]["tx_id"] = leg2.get("id") or ""
 
-    if not deposit_addr:
-        raise HTTPException(502, "Leg-2 provider did not return a deposit address")
+        # 6) Provider deposit address
+        deposit_addr = ""
+        if swap["leg2"]["provider"] == "ChangeNOW":
+            deposit_addr = leg2.get("payinAddress") or leg2.get("payinAddressString") or ""
+            swap["leg2"]["tx_id"] = leg2.get("id") or leg2.get("exchangeId") or ""
+        elif swap["leg2"]["provider"] == "Exolix":
+            deposit_addr = leg2.get("depositAddress") or ""
+            swap["leg2"]["tx_id"] = leg2.get("id") or leg2.get("transaction_id") or ""
+        elif swap["leg2"]["provider"] == "SimpleSwap":
+            deposit_addr = leg2.get("deposit") or ""
+            swap["leg2"]["tx_id"] = leg2.get("id") or ""
 
-    tx_hash = await _send_from_wallet_to(deposit_addr, need)
-    swap["last_sent_txid"] = tx_hash
-    swap["leg2"]["order"] = leg2
-    swap["leg2"]["created"] = True
-    swap["timeline"].append("routing_xmr_to_leg2")
+        if not deposit_addr:
+            swap["leg2"]["creating"] = False  # allow retry
+            raise HTTPException(502, "Leg-2 provider did not return a deposit address")
+
+        # 7) Send from wallet (wallet-wide unlocked draw)
+        tx_hash = await _send_from_wallet_to(deposit_addr, send_amt)
+
+        # 8) Mark created
+        swap["last_sent_txid"] = tx_hash
+        swap["leg2"]["order"] = leg2
+        swap["leg2"]["created"] = True
+        swap["leg2"]["status"] = "routing"
+        swap["timeline"].append("routing_xmr_to_leg2")
+
+    except Exception as e:
+        swap["leg2"]["creating"] = False
+        swap["leg2"]["status"] = f"leg2_create_error:{e}"
+        raise
 
 @app.get("/api/status/{swap_id}")
 async def api_status(swap_id: str):
@@ -765,7 +701,8 @@ async def api_diag_providers():
                     mnj = mn.json()
                 except Exception:
                     mnj = {"_text": mn.text}
-            info["simpleswap_min"] = {"status": mn.status_code, "params": mn_params, "raw": mnj, "url": str(mn.request.url)}
+                mn_url = str(mn.request.url)
+            info["simpleswap_min"] = {"status": mn.status_code, "params": mn_params, "raw": mnj, "url": mn_url}
 
             test = await ss_estimate(r["in_asset"], "XMR", r["amount"], r["in_network"], None, r.get("rate_type","float"))
             info["simpleswap_test"] = test
