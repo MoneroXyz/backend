@@ -1,39 +1,28 @@
-/* Monerizer UI (v6) - best route + show/hide others + status lights */
-
+/* Monerizer UI (v7.1) – best route first + toggle others + proper status lights */
 const ASSETS = [
   { symbol: "USDT", name: "Tether USD", networks: ["ETH","TRX","BSC"] },
   { symbol: "USDC", name: "USD Coin", networks: ["ETH"] },
-  { symbol: "BTC",  name: "Bitcoin", networks: ["BTC"] },
-  { symbol: "ETH",  name: "Ethereum", networks: ["ETH"] },
-  { symbol: "LTC",  name: "Litecoin", networks: ["LTC"] },
-  { symbol: "XMR",  name: "Monero", networks: ["XMR"] },
+  { symbol: "BTC",  name: "Bitcoin",   networks: ["BTC"] },
+  { symbol: "ETH",  name: "Ethereum",  networks: ["ETH"] },
+  { symbol: "LTC",  name: "Litecoin",  networks: ["LTC"] },
+  { symbol: "XMR",  name: "Monero",    networks: ["XMR"] },
 ];
 
-let chosen = null;           // chosen route (object)
-let pollTimer = null;        // watch loop
-let lastQuote = null;        // full quote response (to re-render others)
-let othersVisible = false;   // toggle state for other routes
+let chosen = null;
+let pollTimer = null;
 
-// ------------- DOM helpers -------------
 const $ = (id) => document.getElementById(id);
 const fmt = (n, d=8) => Number(n ?? 0).toFixed(d).replace(/\.?0+$/,"");
 
-function setHidden(el, hide) {
-  if (!el) return;
-  if (hide) el.classList.add("hidden");
-  else el.classList.remove("hidden");
-}
-
-// ------------- Populate selects -------------
+/* ---------- Populate selects ---------- */
 function fillAssets() {
   const fa = $("fromAsset"), ta = $("toAsset");
   fa.innerHTML = ""; ta.innerHTML = "";
   for (const a of ASSETS) {
-    fa.add(new Option(a.symbol, a.symbol));
-    ta.add(new Option(a.symbol, a.symbol));
+    fa.add(new Option(`${a.symbol}`, a.symbol));
+    ta.add(new Option(`${a.symbol}`, a.symbol));
   }
-  fa.value = "USDT";
-  ta.value = "BTC";
+  fa.value = "USDT"; ta.value = "BTC";
   fillNetworks("from");
   fillNetworks("to");
 }
@@ -48,16 +37,28 @@ function fillNetworks(side) {
 $("fromAsset").addEventListener("change", () => fillNetworks("from"));
 $("toAsset").addEventListener("change", () => fillNetworks("to"));
 
-// ------------- Quote -------------
+/* ---------- Provider selects helper ---------- */
+function ensureProviderOptionsFromQuotes(q) {
+  const provs = new Set();
+  (q?.options || []).forEach(o => {
+    if (o?.leg1?.provider) provs.add(o.leg1.provider);
+    if (o?.leg2?.provider) provs.add(o.leg2.provider);
+  });
+  ["ChangeNOW","Exolix","SimpleSwap"].forEach(p => provs.add(p));
+  const l1 = $("leg1Prov"), l2 = $("leg2Prov");
+  const have = (sel, name) => [...sel.options].some(o => o.value === name);
+  provs.forEach(p => {
+    if (!have(l1,p)) l1.add(new Option(p,p));
+    if (!have(l2,p)) l2.add(new Option(p,p));
+  });
+}
+
+/* ---------- Quote ---------- */
 $("btnQuote").addEventListener("click", async () => {
   try {
     $("btnQuote").disabled = true;
     chosen = null;
-    lastQuote = null;
-    othersVisible = false;
-    $("bestRoute").innerHTML = "";
-    $("otherRoutes").innerHTML = "";
-    setHidden($("otherRoutesRow"), true);
+    $("quoteBox").innerHTML = `<div class="muted">Fetching quotes…</div>`;
 
     const body = {
       in_asset: $("fromAsset").value,
@@ -67,107 +68,110 @@ $("btnQuote").addEventListener("click", async () => {
       amount: Number($("amount").value),
       rate_type: $("rateType").value
     };
-
     const r = await fetch("/api/quote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(body)
     });
     if (!r.ok) throw new Error(`Quote HTTP ${r.status}`);
     const data = await r.json();
-    lastQuote = data;
 
     if (!data?.options?.length) {
-      $("bestRoute").innerHTML = `<div class="route">No routes returned.</div>`;
+      $("quoteBox").innerHTML = `<div class="muted">No routes returned.</div>`;
       return;
     }
-
-    // Render best route only
-    renderBestRoute(data);
-    // Prepare other routes (hidden by default)
-    renderOtherRoutes(data);
-
-    // show toggle button if there are other routes
-    const countOthers = Math.max(0, (data.options?.length || 0) - 1);
-    if (countOthers > 0) {
-      $("btnToggleRoutes").textContent = `Show ${countOthers} other route${countOthers>1?"s":""}`;
-      setHidden($("otherRoutesRow"), false);
-      setHidden($("otherRoutes"), true);
-      othersVisible = false;
-    } else {
-      setHidden($("otherRoutesRow"), true);
-      setHidden($("otherRoutes"), true);
-    }
+    ensureProviderOptionsFromQuotes(data);
+    renderRoutesBestFirst(data);
   } catch (e) {
-    $("bestRoute").innerHTML = `<div class="route">Failed to quote: ${e}</div>`;
+    $("quoteBox").innerHTML = `<div class="muted">Failed to quote: ${e}</div>`;
   } finally {
     $("btnQuote").disabled = false;
   }
 });
 
-$("btnToggleRoutes").addEventListener("click", () => {
-  if (!lastQuote || !lastQuote.options) return;
-  const countOthers = Math.max(0, (lastQuote.options.length || 0) - 1);
-  othersVisible = !othersVisible;
-  setHidden($("otherRoutes"), !othersVisible);
-  $("btnToggleRoutes").textContent = othersVisible
-    ? `Hide ${countOthers} other route${countOthers>1?"s":""}`
-    : `Show ${countOthers} other route${countOthers>1?"s":""}`;
-});
+function renderRoutesBestFirst(q) {
+  const box = $("quoteBox");
+  box.innerHTML = "";
 
-// Helpers to render a single route card
-function routeCard(opt, req, rank) {
-  return `
-<div class="kv"><div><b>${opt.leg1.provider}</b> → <b>${opt.leg2.provider}</b></div><span class="badge">rank #${rank}${rank===1 ? " · BEST" : ""}</span></div>
-<div class="kv"><div class="muted">Leg 1</div><div>${fmt(opt.leg1.amount_from,6)} ${req.in_asset} → ${fmt(opt.leg1.amount_to,6)} XMR</div></div>
-<div class="kv"><div class="muted">Leg 2 (est)</div><div>${fmt(opt.leg2.amount_to,6)} ${req.out_asset}</div></div>
-<div class="kv"><div class="muted">Our fee</div><div>${fmt(opt.fee.our_fee_xmr,6)} XMR</div></div>
-<div class="kv"><div class="muted">Receive (est.)</div><div><b>${fmt(opt.receive_out,8)} ${req.out_asset}</b></div></div>
-<div class="row gap">
-  <button class="btn-choose" data-rank="${rank}">Choose</button>
-</div>`;
-}
+  // sort already done server-side, but be safe:
+  const routes = [...q.options].sort((a,b)=> (b.receive_out - a.receive_out));
+  const best = routes[0];
+  const rest = routes.slice(1);
 
-function bindChooseButtons(q) {
-  [...document.querySelectorAll(".btn-choose")].forEach(btn => {
+  // BEST card
+  const bestEl = document.createElement("div");
+  bestEl.className = "route";
+  bestEl.innerHTML = `
+    <div class="kv">
+      <div><strong>${best.leg1.provider}</strong> → <strong>${best.leg2.provider}</strong> <span class="best-tag">BEST</span></div>
+      <div class="badge">rank #1</div>
+    </div>
+    <div class="row"><div class="kv"><div>Leg 1</div><div>${fmt(best.leg1.amount_from,6)} ${q.request.in_asset} → ${fmt(best.leg1.amount_to,6)} XMR</div></div></div>
+    <div class="row"><div class="kv"><div>Our fee</div><div>${fmt(best.fee.our_fee_xmr,6)} XMR</div></div></div>
+    <div class="row"><div class="kv"><div>Leg 2 (est)</div><div>${fmt(best.leg2.amount_to,6)} ${q.request.out_asset}</div></div></div>
+    <div class="row"><div class="kv"><div><strong>Receive (est.)</strong></div><div><strong>${fmt(best.receive_out,8)} ${q.request.out_asset}</strong></div></div></div>
+    <div class="row"><button class="btn-choose" data-i="0">Choose best</button></div>
+  `;
+  box.appendChild(bestEl);
+
+  // Toggle for others
+  const toggleWrap = document.createElement("div");
+  toggleWrap.className = "toggle-wrap";
+  const btnId = "btnToggleOthers";
+  toggleWrap.innerHTML = `
+    <button id="${btnId}" class="toggle-btn">${rest.length ? `Show ${rest.length} more route${rest.length>1?"s":""}` : "No other routes"}</button>
+  `;
+  box.appendChild(toggleWrap);
+
+  const othersWrap = document.createElement("div");
+  othersWrap.id = "othersWrap";
+  othersWrap.className = rest.length ? "": "hidden";
+  rest.forEach((opt, i) => {
+    const el = document.createElement("div");
+    el.className = "route";
+    el.innerHTML = `
+      <div class="kv">
+        <div><strong>${opt.leg1.provider}</strong> → <strong>${opt.leg2.provider}</strong></div>
+        <div class="badge">rank #${i+2}</div>
+      </div>
+      <div class="row"><div class="kv"><div>Leg 1</div><div>${fmt(opt.leg1.amount_from,6)} ${q.request.in_asset} → ${fmt(opt.leg1.amount_to,6)} XMR</div></div></div>
+      <div class="row"><div class="kv"><div>Our fee</div><div>${fmt(opt.fee.our_fee_xmr,6)} XMR</div></div></div>
+      <div class="row"><div class="kv"><div>Leg 2 (est)</div><div>${fmt(opt.leg2.amount_to,6)} ${q.request.out_asset}</div></div></div>
+      <div class="row"><div class="kv"><div><strong>Receive (est.)</strong></div><div><strong>${fmt(opt.receive_out,8)} ${q.request.out_asset}</strong></div></div></div>
+      <div class="row"><button class="btn-choose" data-i="${i+1}">Choose</button></div>
+    `;
+    othersWrap.appendChild(el);
+  });
+  if (rest.length) box.appendChild(othersWrap);
+
+  // Toggle behavior
+  setTimeout(() => {
+    const b = $(btnId);
+    if (b && rest.length) {
+      b.addEventListener("click", () => {
+        const isHidden = othersWrap.classList.toggle("hidden");
+        b.textContent = isHidden ? `Show ${rest.length} more route${rest.length>1?"s":""}` : "Hide other routes";
+      });
+    } else if (b && !rest.length) {
+      b.disabled = true;
+    }
+  }, 0);
+
+  // Hook choose buttons (best + others)
+  [...box.querySelectorAll(".btn-choose")].forEach(btn => {
     btn.addEventListener("click", () => {
-      const rank = Number(btn.dataset.rank);
-      const i = Math.max(0, rank - 1);
-      chosen = q.options[i];
-      $("leg1Prov").value = chosen.leg1.provider;
-      $("leg2Prov").value = chosen.leg2.provider || "";
-      $("startOut").classList.add("hidden");
+      const idx = Number(btn.dataset.i);
+      const route = routes[idx];
+      chosen = route;
+      $("leg1Prov").value = route.leg1.provider;
+      $("leg2Prov").value = route.leg2.provider || "";
+      $("startOut").classList.add("hidden"); // reset start section
       $("btnStart").dataset.ctx = JSON.stringify(q.request);
-      document.querySelector(".card h2:nth-of-type(2)")?.scrollIntoView({behavior:"smooth", block:"start"});
     });
   });
 }
 
-function renderBestRoute(q) {
-  const best = q.options[0];
-  $("bestRoute").innerHTML = `<div class="route">${routeCard(best, q.request, 1)}</div>`;
-  bindChooseButtons(q);
-}
-
-function renderOtherRoutes(q) {
-  const rest = (q.options || []).slice(1);
-  if (rest.length === 0) {
-    $("otherRoutes").innerHTML = "";
-    return;
-  }
-  const frag = document.createDocumentFragment();
-  rest.forEach((opt, idx) => {
-    const d = document.createElement("div");
-    d.className = "route";
-    d.innerHTML = routeCard(opt, q.request, idx + 2);
-    frag.appendChild(d);
-  });
-  $("otherRoutes").innerHTML = "";
-  $("otherRoutes").appendChild(frag);
-  bindChooseButtons(q);
-}
-
-// ------------- Start -------------
+/* ---------- Start ---------- */
 $("btnStart").addEventListener("click", async () => {
   try {
     if (!chosen) return alert("Choose a route first.");
@@ -190,12 +194,12 @@ $("btnStart").addEventListener("click", async () => {
 
     $("btnStart").disabled = true;
     const r = await fetch("/api/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(body)
     });
     const j = await r.json();
-    if (!r.ok) throw new Error(j?.detail || r.status);
+    if (!r.ok) throw new Error(j?.detail || JSON.stringify(j));
 
     $("sid").textContent = j.swap_id;
     $("deposit").textContent = j.deposit_address || "";
@@ -209,7 +213,7 @@ $("btnStart").addEventListener("click", async () => {
   }
 });
 
-// ------------- Status (watch / lights) -------------
+/* ---------- Status ---------- */
 $("btnStatus").addEventListener("click", () => fetchStatus());
 $("btnWatch").addEventListener("click", () => {
   if (pollTimer) clearInterval(pollTimer);
@@ -217,10 +221,7 @@ $("btnWatch").addEventListener("click", () => {
   pollTimer = setInterval(fetchStatus, 3000);
 });
 $("btnStop").addEventListener("click", () => {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 });
 
 async function fetchStatus() {
@@ -235,97 +236,33 @@ async function fetchStatus() {
   }
 }
 
-/* === UPDATED: step inference so pill #1 doesn't skip === */
-function computeStepsFromSwap(swap) {
-  // Buckets for provider status strings (lowercased)
-  const WAITING = new Set([
-    "waiting", "waiting_for_deposit", "awaiting", "new",
-    "no_deposits", "pending", "hold", "need_kyt"
-  ]);
-  const PROCESS = new Set(["confirming", "exchanging", "sending", "processing"]);
-  const DONE    = new Set(["finished", "success", "completed", "complete", "done", "paid", "refunded"]);
-
-  const leg1Info = (swap.leg1 && swap.leg1.provider_info) || {};
-  const leg2Info = (swap.leg2 && swap.leg2.provider_info) || {};
-
-  const leg1Status = (leg1Info.status || leg1Info.state || "").toString().toLowerCase();
-  const leg2Status = (leg2Info.status || leg2Info.state || "").toString().toLowerCase();
-
-  // defaults
-  let waitingDeposit  = true;
-  let leg1Processing  = false;
-  let leg1Complete    = false;
-  let waitingUnlock   = false;
-  let leg2Sent        = false;
-  let leg2Processing  = false;
-  let complete        = false;
-
-  // If we have no provider_info yet (right after start), still show "waiting deposit"
-  // Keep waitingDeposit ON while provider says "waiting/awaiting/pending".
-  if (leg1Status) {
-    if (WAITING.has(leg1Status)) {
-      waitingDeposit = true;
-    } else if (PROCESS.has(leg1Status)) {
-      waitingDeposit = false;
-      leg1Processing = true;
-    } else if (DONE.has(leg1Status)) {
-      waitingDeposit = false;
-      leg1Complete = true;
-    } else {
-      // unknown string: be conservative, keep waiting ON until we see PROCESS/DONE
-      waitingDeposit = true;
-    }
-  } else {
-    // no status yet -> still waiting for deposit
-    waitingDeposit = true;
-  }
-
-  // After leg1 complete but before leg2 is created, we wait for wallet unlock
-  if (leg1Complete && !(swap.leg2 && swap.leg2.created)) waitingUnlock = true;
-
-  // Leg 2 creation / send
-  if (swap.leg2 && swap.leg2.created) {
-    waitingUnlock = false;
-    leg2Sent = true;
-  }
-  if (swap.last_sent_txid) leg2Sent = true;
-
-  // Leg 2 provider lifecycle
-  if (PROCESS.has(leg2Status) && !DONE.has(leg2Status)) leg2Processing = true;
-  if (DONE.has(leg2Status)) { leg2Sent = true; leg2Processing = false; complete = true; }
-
-  // timeline hints
-  const tl = new Set(swap.timeline || []);
-  if (tl.has("routing_xmr_to_leg2")) { leg2Sent = true; waitingUnlock = false; }
-
-  return { waitingDeposit, leg1Processing, leg1Complete, waitingUnlock, leg2Sent, leg2Processing, complete };
-}
-
-function drawSteps(swap) {
+function drawSteps(s) {
   const el = $("statusSteps");
   el.innerHTML = "";
-  const steps = computeStepsFromSwap(swap);
-  const order = [
-    ["waiting deposit",  steps.waitingDeposit],
-    ["leg1 processing",  steps.leg1Processing],
-    ["leg1 complete",    steps.leg1Complete],
-    ["waiting unlock",   steps.waitingUnlock],
-    ["leg2 sent",        steps.leg2Sent],
-    ["leg2 processing",  steps.leg2Processing],
-    ["complete",         steps.complete],
-  ];
-  for (const [name, on] of order) {
+
+  // This must match backend "timeline" semantics
+  const tl = Array.isArray(s?.timeline) ? s.timeline : [];
+  const names = ["created","waiting_deposit","leg1_processing","leg1_complete","awaiting_wallet_unlocked","routing_xmr_to_leg2","leg2_processing","complete"];
+
+  names.forEach(name => {
     const d = document.createElement("div");
-    d.className = "step" + (on ? " on" : "");
-    d.textContent = name;
+    const isOn = tl.includes(name) || s?.status === name;
+    d.className = "step" + (isOn ? " on" : "");
+    d.textContent = name.replaceAll("_"," ");
     el.appendChild(d);
-  }
+  });
+
   const pre = $("statusJson");
-  pre.textContent = JSON.stringify(swap, null, 2);
+  pre.textContent = JSON.stringify(s, null, 2);
   pre.classList.remove("hidden");
 }
 
-// ------------- boot -------------
+/* ---------- boot ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   fillAssets();
+  // Ensure provider dropdowns include all providers
+  ["ChangeNOW","Exolix","SimpleSwap"].forEach(p => {
+    if (![...$("leg1Prov").options].some(o=>o.value===p)) $("leg1Prov").add(new Option(p,p));
+    if (![...$("leg2Prov").options].some(o=>o.value===p)) $("leg2Prov").add(new Option(p,p));
+  });
 });
