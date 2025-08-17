@@ -314,17 +314,24 @@ async def ss_estimate(frm: str, to: str, amt: float, net_from: Optional[str], ne
     return await _call(None, None)
 
 
-async def ss_create(frm: str, to: str, amt: float, payout_address: str, net_from: Optional[str], net_to: Optional[str], rate_type: str, refund_address: Optional[str] = None):
+# -------- SimpleSwap create/fetch (strict POST + query api_key, boolean fixed) ----
+async def ss_create(frm: str, to: str, amt: float, payout_address: str,
+                    net_from: Optional[str], net_to: Optional[str],
+                    rate_type: str, refund_address: Optional[str] = None):
+    """
+    Create a SimpleSwap order using POST /create_exchange.
+    We pass api_key as a QUERY PARAM (not in JSON body), and send booleans as real booleans.
+    Also include network_from / network_to only when required (ERC20/TRC20/BEP20).
+    """
     nf = _ss_map_net(frm, net_from)
     nt = _ss_map_net(to,  net_to)
+
     body = {
-        "id": f"mx_{uuid.uuid4().hex[:16]}",
         "currency_from": frm.lower(),
         "currency_to": to.lower(),
-        "amount": float(amt),
+        "amount": str(amt),
         "address_to": payout_address,
-        "fixed": _ss_fixed(rate_type),
-        "api_key": SS_KEY
+        "fixed": (rate_type == "fixed"),  # boolean
     }
     if refund_address:
         body["refund_address"] = refund_address
@@ -333,16 +340,28 @@ async def ss_create(frm: str, to: str, amt: float, payout_address: str, net_from
     if nt:
         body["network_to"] = nt
 
-    async with httpx.AsyncClient(timeout=20) as c:
-        # POST JSON (fixes: "id should not be empty")
-        r = await c.post(f"{SS_BASE}/create_exchange", json=body)
-        if r.status_code >= 400:
-            # bubble exact message
-            try:
-                raise HTTPException(502, f"SimpleSwap create failed ({r.status_code}): {r.json()}")
-            except Exception:
-                raise HTTPException(502, f"SimpleSwap create failed ({r.status_code}): {r.text}")
+    params = {}
+    if SS_KEY:
+        params["api_key"] = SS_KEY
+
+    async with httpx.AsyncClient(timeout=25) as c:
+        r = await c.post(f"{SS_BASE}/create_exchange",
+                         params=params,  # api_key in QUERY
+                         json=body,      # clean JSON body
+                         headers={"Accept":"application/json",
+                                  "Content-Type":"application/json"})
+        # If their key is not enabled for create_exchange, SimpleSwap returns 401.
+        # Bubble up a clear error to the UI.
+        if r.status_code != 200:
+            # include response text for debugging in the UI
+            raise HTTPException(
+                502,
+                f"SimpleSwap create failed ({r.status_code}): {r.text}"
+            )
         return r.json()
+   
+
+
 
 async def ss_info(exchange_id: str):
     params = _ss_params({"id": exchange_id})
