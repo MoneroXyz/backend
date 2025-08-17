@@ -236,87 +236,83 @@ async def ex_info(tx_id: str):
         return r.json()
 
 # -------- SimpleSwap (v1 + network mapping + fallback + POST create) --------
-def _ss_fixed(rate_type: str) -> bool:
-    return True if rate_type == "fixed" else False
+# -------- SimpleSwap (v1 + network mapping + fallback) --------
+def _ss_fixed(rate_type: str) -> str:
+    return "true" if rate_type == "fixed" else "false"
 
 def _ss_map_net(asset: str, net: Optional[str]) -> Optional[str]:
-    """
-    Map our networks to SimpleSwap's expected names. Omit for native coins if they truly don't want it.
-    """
-    if not net: return None
+    if not net:
+        return None
     a = (asset or "").upper()
     n = (net or "").upper()
-    natives = {"BTC","LTC","XMR","ETH"}  # ETH native coin
-    if a in natives:
+    # native coins: omit network
+    if a in {"BTC", "LTC", "XMR", "ETH"}:
         return None
-    if n == "ETH": return "erc20"
-    if n == "TRX": return "trc20"
-    if n == "BSC": return "bep20"
+    if n == "ETH":
+        return "erc20"
+    if n == "TRX":
+        return "trc20"
+    if n == "BSC":
+        return "bep20"
     return None
 
-async def ss_min(frm: str, to: str, net_from: Optional[str], net_to: Optional[str], rate_type: str):
-    params = _ss_params({
-        "currency_from": frm.lower(),
-        "currency_to": to.lower(),
-        "fixed": str(_ss_fixed(rate_type)).lower(),
-    })
-    nf = _ss_map_net(frm, net_from)
-    nt = _ss_map_net(to,  net_to)
-    if nf: params["network_from"] = nf
-    if nt: params["network_to"] = nt
-    async with httpx.AsyncClient(timeout=12) as c:
-        r = await c.get(f"{SS_BASE}/get_min", params=params)
-        if r.status_code == 200:
-            try:
-                return float(r.json().get("min") or 0)
-            except Exception:
-                return 0.0
-    return 0.0
-
 async def ss_estimate(frm: str, to: str, amt: float, net_from: Optional[str], net_to: Optional[str], rate_type: str):
+    """
+    SimpleSwap /get_estimated sometimes returns a bare number (e.g., 85.99),
+    sometimes a numeric string ("85.99"), and sometimes a JSON object with
+    'estimated_amount'. Normalize all of those to float.
+    """
+    async def _normalize_estimated(r: httpx.Response) -> dict:
+        text = r.text
+        try:
+            j = r.json()
+        except Exception:
+            j = text  # not JSON -> likely raw number or error page
+
+        n = 0.0
+        if r.status_code == 200:
+            # shapes: number, "number", or {"estimated_amount": "..."}
+            if isinstance(j, (int, float)):
+                n = float(j)
+            elif isinstance(j, str):
+                with contextlib.suppress(Exception):
+                    n = float(j.strip())
+            elif isinstance(j, dict):
+                with contextlib.suppress(Exception):
+                    n = float(j.get("estimated_amount") or j.get("toAmount") or 0)
+        # include useful debug fields
+        return {
+            "toAmount": n,
+            "_raw": j,
+            "_status": r.status_code,
+            "_url": str(r.request.url),
+        }
+
     async def _call(nf: Optional[str], nt: Optional[str]):
         params = _ss_params({
             "currency_from": frm.lower(),
             "currency_to": to.lower(),
             "amount": str(amt),
-            "fixed": str(_ss_fixed(rate_type)).lower(),
+            "fixed": _ss_fixed(rate_type),
         })
         if nf: params["network_from"] = nf
         if nt: params["network_to"] = nt
         async with httpx.AsyncClient(timeout=12) as c:
             r = await c.get(f"{SS_BASE}/get_estimated", params=params)
-            try:
-                j = r.json()
-            except Exception:
-                # sometimes the API returns a bare number; try to parse
-                try:
-                    n = float(r.text.strip())
-                    return {"toAmount": n, "_raw": r.text, "_status": r.status_code, "_params": params, "_url": str(r.request.url)}
-                except Exception:
-                    j = {"_text": r.text}
-            if r.status_code == 200:
-                # API may return {"estimated_amount": "85.99"} OR plain number
-                v = j.get("estimated_amount")
-                n = 0.0
-                try:
-                    if v is None:
-                        # sometimes they return plain string number in body
-                        n = float(str(j).strip()) if isinstance(j, str) else 0.0
-                    else:
-                        n = float(v)
-                except Exception:
-                    n = 0.0
-                return {"toAmount": n, "_raw": j, "_status": r.status_code, "_params": params, "_url": str(r.request.url)}
-            else:
-                return {"toAmount": 0.0, "_raw": j, "_status": r.status_code, "_params": params, "_url": str(r.request.url)}
+            out = await _normalize_estimated(r)
+            out["_params"] = params
+            return out
 
     nf = _ss_map_net(frm, net_from)
     nt = _ss_map_net(to,  net_to)
+
+    # try with networks first
     j = await _call(nf, nt)
     if (j.get("toAmount") or 0) > 0:
         return j
-    # fallback: try without network hints
+    # then fallback with no network hints
     return await _call(None, None)
+
 
 async def ss_create(frm: str, to: str, amt: float, payout_address: str, net_from: Optional[str], net_to: Optional[str], rate_type: str, refund_address: Optional[str] = None):
     nf = _ss_map_net(frm, net_from)
