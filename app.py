@@ -314,54 +314,107 @@ async def ss_estimate(frm: str, to: str, amt: float, net_from: Optional[str], ne
     return await _call(None, None)
 
 
-# -------- SimpleSwap create/fetch (strict POST + query api_key, boolean fixed) ----
-async def ss_create(frm: str, to: str, amt: float, payout_address: str,
-                    net_from: Optional[str], net_to: Optional[str],
-                    rate_type: str, refund_address: Optional[str] = None):
+# -------- SimpleSwap create (robust auth: ?api_key=..., header, legacy GET fallback) --------
+async def ss_create(frm: str,
+                    to: str,
+                    amt: float,
+                    payout_address: str,
+                    net_from: Optional[str],
+                    net_to: Optional[str],
+                    rate_type: str,
+                    refund_address: Optional[str] = None):
     """
-    Create a SimpleSwap order using POST /create_exchange.
-    We pass api_key as a QUERY PARAM (not in JSON body), and send booleans as real booleans.
-    Also include network_from / network_to only when required (ERC20/TRC20/BEP20).
+    Create a SimpleSwap order with several auth styles:
+      1) POST /create_exchange  with ?api_key=... in query
+      2) POST /create_exchange  with X-Api-Key header
+      3) GET  /get_exchange     with params (legacy fallback)
+    Normalizes the deposit field to 'deposit'.
     """
     nf = _ss_map_net(frm, net_from)
     nt = _ss_map_net(to,  net_to)
 
-    body = {
+    payload = {
         "currency_from": frm.lower(),
         "currency_to": to.lower(),
         "amount": str(amt),
         "address_to": payout_address,
-        "fixed": (rate_type == "fixed"),  # boolean
+        "fixed": "true" if rate_type == "fixed" else "false",
     }
-    if refund_address:
-        body["refund_address"] = refund_address
-    if nf:
-        body["network_from"] = nf
-    if nt:
-        body["network_to"] = nt
+    if nf: payload["network_from"] = nf
+    if nt: payload["network_to"]   = nt
+    if refund_address: payload["refund_address"] = refund_address
 
-    params = {}
-    if SS_KEY:
-        params["api_key"] = SS_KEY
+    async def _normalize(j: dict) -> dict:
+        # Normalize deposit address for your UI / storage
+        if "deposit" not in j:
+            if j.get("address_from"):       # SimpleSwap's field
+                j["deposit"] = j["address_from"]
+            elif j.get("payinAddress"):     # some providers use this
+                j["deposit"] = j["payinAddress"]
+        return j
 
-    async with httpx.AsyncClient(timeout=25) as c:
-        r = await c.post(f"{SS_BASE}/create_exchange",
-                         params=params,  # api_key in QUERY
-                         json=body,      # clean JSON body
-                         headers={"Accept":"application/json",
-                                  "Content-Type":"application/json"})
-        # If their key is not enabled for create_exchange, SimpleSwap returns 401.
-        # Bubble up a clear error to the UI.
-        if r.status_code != 200:
-            # include response text for debugging in the UI
-            raise HTTPException(
-                502,
-                f"SimpleSwap create failed ({r.status_code}): {r.text}"
-            )
-        return r.json()
+    async with httpx.AsyncClient(timeout=30) as c:
+        # ---- Try 1: POST + api_key in QUERY ----
+        try:
+            url1 = httpx.URL(f"{SS_BASE}/create_exchange").copy_add_param("api_key", SS_KEY)
+            r1 = await c.post(url1, json=payload, headers={"Content-Type":"application/json"})
+            j1 = None
+            try: j1 = r1.json()
+            except Exception: pass
+            if r1.status_code == 200 and isinstance(j1, dict):
+                return await _normalize(j1)
+        except Exception:
+            pass
+
+        # ---- Try 2: POST + X-Api-Key header ----
+        try:
+            url2 = f"{SS_BASE}/create_exchange"
+            r2 = await c.post(url2, json=payload, headers={
+                "Content-Type":"application/json",
+                "X-Api-Key": SS_KEY
+            })
+            j2 = None
+            try: j2 = r2.json()
+            except Exception: pass
+            if r2.status_code == 200 and isinstance(j2, dict):
+                return await _normalize(j2)
+        except Exception:
+            pass
+
+        # ---- Try 3: legacy GET creation ----
+        try:
+            params = {
+                "currency_from": payload["currency_from"],
+                "currency_to": payload["currency_to"],
+                "amount": payload["amount"],
+                "address_to": payload["address_to"],
+                "fixed": payload["fixed"],
+                "api_key": SS_KEY,
+            }
+            if nf: params["network_from"] = nf
+            if nt: params["network_to"]   = nt
+            if refund_address: params["refund_address"] = refund_address
+
+            r3 = await c.get(f"{SS_BASE}/get_exchange", params=params)
+            j3 = None
+            try: j3 = r3.json()
+            except Exception: pass
+            if r3.status_code == 200 and isinstance(j3, dict):
+                return await _normalize(j3)
+
+            # If all failed, surface the most informative error (prefer r2, then r1, then r3)
+            if r2 is not None:
+                raise HTTPException(status_code=502, detail=f"SimpleSwap create failed ({r2.status_code}): {r2.text}")
+            if r1 is not None:
+                raise HTTPException(status_code=502, detail=f"SimpleSwap create failed ({r1.status_code}): {r1.text}")
+            raise HTTPException(status_code=502, detail=f"SimpleSwap create failed ({r3.status_code}): {r3.text}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"SimpleSwap create failed: {e}")
+
+
    
-
-
 
 async def ss_info(exchange_id: str):
     params = _ss_params({"id": exchange_id})
