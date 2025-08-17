@@ -1,19 +1,17 @@
-/* Monerizer UI (v6) – matches FastAPI contract exactly */
-
+/* Monerizer UI (v7) – best route first + toggle others */
 const ASSETS = [
   { symbol: "USDT", name: "Tether USD", networks: ["ETH","TRX","BSC"] },
-  { symbol: "USDC", name: "USD Coin",   networks: ["ETH"] },
+  { symbol: "USDC", name: "USD Coin", networks: ["ETH"] },
   { symbol: "BTC",  name: "Bitcoin",    networks: ["BTC"] },
   { symbol: "ETH",  name: "Ethereum",   networks: ["ETH"] },
   { symbol: "LTC",  name: "Litecoin",   networks: ["LTC"] },
   { symbol: "XMR",  name: "Monero",     networks: ["XMR"] },
 ];
 
-let chosen = null;     // chosen route (object)
-let pollTimer = null;  // watch loop
+let chosen = null;
+let pollTimer = null;
 
-// ---------- DOM helpers ----------
-const $  = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 const fmt = (n, d=8) => Number(n ?? 0).toFixed(d).replace(/\.?0+$/,"");
 
 // ---------- Populate selects ----------
@@ -25,7 +23,8 @@ function fillAssets() {
     ta.add(new Option(`${a.symbol}`, a.symbol));
   }
   fa.value = "USDT"; ta.value = "BTC";
-  fillNetworks("from"); fillNetworks("to");
+  fillNetworks("from");
+  fillNetworks("to");
 }
 function fillNetworks(side) {
   const assetSel = $(side === "from" ? "fromAsset" : "toAsset");
@@ -33,12 +32,23 @@ function fillNetworks(side) {
   const a = ASSETS.find(x => x.symbol === assetSel.value);
   netSel.innerHTML = "";
   (a?.networks || []).forEach(n => netSel.add(new Option(n, n)));
-  // pick the first network; special-case XMR
   if (a?.symbol === "XMR") netSel.value = "XMR";
 }
-
 $("fromAsset").addEventListener("change", () => fillNetworks("from"));
 $("toAsset").addEventListener("change", () => fillNetworks("to"));
+
+// ---------- Provider selects helper ----------
+function ensureProviderOptionsFromQuotes(q) {
+  const provs = new Set();
+  (q?.options || []).forEach(o => {
+    if (o?.leg1?.provider) provs.add(o.leg1.provider);
+    if (o?.leg2?.provider) provs.add(o.leg2.provider);
+  });
+  ["ChangeNOW","Exolix","SimpleSwap"].forEach(p => provs.add(p));
+  const l1 = $("leg1Prov"), l2 = $("leg2Prov");
+  const have = (sel, name) => [...sel.options].some(o => o.value === name);
+  provs.forEach(p => { if (!have(l1,p)) l1.add(new Option(p,p)); if (!have(l2,p)) l2.add(new Option(p,p)); });
+}
 
 // ---------- Quote ----------
 $("btnQuote").addEventListener("click", async () => {
@@ -46,7 +56,6 @@ $("btnQuote").addEventListener("click", async () => {
     $("btnQuote").disabled = true;
     chosen = null;
     $("quoteBox").innerHTML = `<div class="muted">Fetching quotes…</div>`;
-
     const body = {
       in_asset:   $("fromAsset").value,
       in_network: $("fromNet").value,
@@ -55,20 +64,14 @@ $("btnQuote").addEventListener("click", async () => {
       amount:     Number($("amount").value),
       rate_type:  $("rateType").value
     };
-
-    const r = await fetch("/api/quote", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const r = await fetch("/api/quote", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(body) });
     if (!r.ok) throw new Error(`Quote HTTP ${r.status}`);
     const data = await r.json();
 
-    if (!data?.options?.length) {
-      $("quoteBox").innerHTML = `<div class="muted">No routes returned.</div>`;
-      return;
-    }
+    if (!data?.options?.length) { $("quoteBox").innerHTML = `<div class="muted">No routes returned.</div>`; return; }
 
-    renderRoutes(data);
+    ensureProviderOptionsFromQuotes(data);
+    renderRoutesBestFirst(data);
   } catch (e) {
     $("quoteBox").innerHTML = `<div class="muted">Failed to quote: ${e}</div>`;
   } finally {
@@ -76,47 +79,78 @@ $("btnQuote").addEventListener("click", async () => {
   }
 });
 
-function renderRoutes(q) {
+function renderRoutesBestFirst(q) {
   const box = $("quoteBox");
   box.innerHTML = "";
 
-  q.options.forEach((opt, i) => {
-    const el = document.createElement("div");
-    el.className = "route";
-    el.innerHTML = `
-      <div class="kv"><div>
-        <span class="badge">${opt.leg1.provider}</span> → <span class="badge">${opt.leg2.provider}</span>
-      </div><div class="muted">best rank #${i+1}${i===0 ? " · BEST" : ""}</div></div>
+  // sort already done server-side, but be safe:
+  const routes = [...q.options].sort((a,b)=> (b.receive_out - a.receive_out));
+  const best = routes[0];
+  const rest = routes.slice(1);
 
-      <div class="kv"><div class="muted">Leg 1</div>
-        <div>${fmt(opt.leg1.amount_from,6)} ${q.request.in_asset} → ${fmt(opt.leg1.amount_to,6)} XMR</div></div>
+  // BEST card
+  const bestEl = document.createElement("div");
+  bestEl.className = "route";
+  bestEl.innerHTML = `
+    <div class="kv">
+      <div><span class="badge">${best.leg1.provider}</span> → <span class="badge">${best.leg2.provider}</span><span class="best-tag">BEST</span></div>
+      <div class="muted">rank #1</div>
+    </div>
+    <div class="kv"><div class="muted">Leg 1</div><div>${fmt(best.leg1.amount_from,6)} ${q.request.in_asset} → ${fmt(best.leg1.amount_to,6)} XMR</div></div>
+    <div class="kv"><div class="muted">Our fee</div><div>${fmt(best.fee.our_fee_xmr,6)} XMR</div></div>
+    <div class="kv"><div class="muted">Leg 2 (est)</div><div>${fmt(best.leg2.amount_to,6)} ${q.request.out_asset}</div></div>
+    <div class="kv"><div class="muted">Receive (est.)</div><div><b>${fmt(best.receive_out,8)} ${q.request.out_asset}</b></div></div>
+    <div class="row"><button class="btn-choose" data-i="0">Choose best</button></div>
+  `;
+  box.appendChild(bestEl);
 
-      <div class="kv"><div class="muted">Leg 2 (est)</div>
-        <div>${fmt(opt.leg2.amount_to,6)} ${q.request.out_asset}</div></div>
+  // Toggle for others
+  if (rest.length) {
+    const toggle = document.createElement("div");
+    const btnId = "btnToggleOthers";
+    toggle.innerHTML = `<div class="row"><button id="${btnId}">Show ${rest.length} more route${rest.length>1?"s":""}</button></div>`;
+    box.appendChild(toggle);
 
-      <div class="kv"><div class="muted">Our fee</div>
-        <div>${fmt(opt.fee.our_fee_xmr,6)} XMR</div></div>
+    const othersWrap = document.createElement("div");
+    othersWrap.id = "othersWrap";
+    othersWrap.className = "hidden";
+    rest.forEach((opt, i) => {
+      const el = document.createElement("div");
+      el.className = "route";
+      el.innerHTML = `
+        <div class="kv">
+          <div><span class="badge">${opt.leg1.provider}</span> → <span class="badge">${opt.leg2.provider}</span></div>
+          <div class="muted">rank #${i+2}</div>
+        </div>
+        <div class="kv"><div class="muted">Leg 1</div><div>${fmt(opt.leg1.amount_from,6)} ${q.request.in_asset} → ${fmt(opt.leg1.amount_to,6)} XMR</div></div>
+        <div class="kv"><div class="muted">Our fee</div><div>${fmt(opt.fee.our_fee_xmr,6)} XMR</div></div>
+        <div class="kv"><div class="muted">Leg 2 (est)</div><div>${fmt(opt.leg2.amount_to,6)} ${q.request.out_asset}</div></div>
+        <div class="kv"><div class="muted">Receive (est.)</div><div><b>${fmt(opt.receive_out,8)} ${q.request.out_asset}</b></div></div>
+        <div class="row"><button class="btn-choose" data-i="${i+1}">Choose</button></div>
+      `;
+      othersWrap.appendChild(el);
+    });
+    box.appendChild(othersWrap);
 
-      <div class="kv"><div class="muted">Receive (est.)</div>
-        <div><b>${fmt(opt.receive_out,8)} ${q.request.out_asset}</b></div></div>
+    // toggle behavior
+    setTimeout(() => {
+      const b = $(btnId);
+      b?.addEventListener("click", () => {
+        const on = othersWrap.classList.toggle("hidden");
+        b.textContent = on ? `Show ${rest.length} more route${rest.length>1?"s":""}` : "Hide other routes";
+      });
+    }, 0);
+  }
 
-      <div class="row">
-        <button data-i="${i}" class="btn-choose">Choose</button>
-      </div>
-    `;
-    box.appendChild(el);
-  });
-
-  // hook choose buttons
+  // Hook choose buttons (best + others)
   [...document.querySelectorAll(".btn-choose")].forEach(btn => {
     btn.addEventListener("click", () => {
-      const i = Number(btn.dataset.i);
-      chosen = q.options[i];
-      // prefill providers and remember fee
-      $("leg1Prov").value = chosen.leg1.provider;
-      $("leg2Prov").value = chosen.leg2.provider || "";
+      const idx = Number(btn.dataset.i);
+      const route = routes[idx];
+      chosen = route;
+      $("leg1Prov").value = route.leg1.provider;
+      $("leg2Prov").value = route.leg2.provider || "";
       $("startOut").classList.add("hidden");
-      // stash request context for start()
       $("btnStart").dataset.ctx = JSON.stringify(q.request);
     });
   });
@@ -132,7 +166,7 @@ $("btnStart").addEventListener("click", async () => {
     const reqCtx = JSON.parse($("btnStart").dataset.ctx || "{}");
     const body = {
       leg1_provider: $("leg1Prov").value,
-      leg2_provider: $("leg2Prov").value || null, // let server auto if blank
+      leg2_provider: $("leg2Prov").value || null,
       in_asset:   reqCtx.in_asset,
       in_network: reqCtx.in_network,
       out_asset:  reqCtx.out_asset,
@@ -144,11 +178,7 @@ $("btnStart").addEventListener("click", async () => {
     };
 
     $("btnStart").disabled = true;
-
-    const r = await fetch("/api/start", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const r = await fetch("/api/start", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(body) });
     const j = await r.json();
     if (!r.ok) throw new Error(j?.detail || r.status);
 
@@ -171,9 +201,7 @@ $("btnWatch").addEventListener("click", () => {
   fetchStatus();
   pollTimer = setInterval(fetchStatus, 3000);
 });
-$("btnStop").addEventListener("click", () => {
-  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-});
+$("btnStop").addEventListener("click", () => { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } });
 
 async function fetchStatus() {
   const id = $("swapId").value.trim();
@@ -182,28 +210,19 @@ async function fetchStatus() {
     const r = await fetch(`/api/status/${encodeURIComponent(id)}`);
     const j = await r.json();
     drawSteps(j);
-  } catch (e) {
-    console.error(e);
-  }
+  } catch (e) { console.error(e); }
 }
 
 function drawSteps(s) {
-  const steps = s?.steps || [];
-  const status = s?.status || "";
   const el = $("statusSteps");
   el.innerHTML = "";
-
-  const names = [
-    "waiting_deposit","leg1_processing","leg1_complete",
-    "waiting_unlock","leg2_sent","leg2_processing","complete"
-  ];
+  const names = ["waiting_deposit","leg1_processing","leg1_complete","waiting_unlock","leg2_sent","leg2_processing","complete"];
   names.forEach(name => {
     const d = document.createElement("div");
-    d.className = "step" + (steps.includes(name) || status === name ? " on" : "");
+    d.className = "step" + ((s?.steps || []).includes(name) || s?.status === name ? " on" : "");
     d.textContent = name.replaceAll("_"," ");
     el.appendChild(d);
   });
-
   const pre = $("statusJson");
   pre.textContent = JSON.stringify(s, null, 2);
   pre.classList.remove("hidden");
@@ -212,4 +231,9 @@ function drawSteps(s) {
 // ---------- boot ----------
 document.addEventListener("DOMContentLoaded", () => {
   fillAssets();
+  // Ensure provider dropdowns include SimpleSwap by default
+  ["ChangeNOW","Exolix","SimpleSwap"].forEach(p => {
+    if (![...$("leg1Prov").options].some(o=>o.value===p)) $("leg1Prov").add(new Option(p,p));
+    if (![...$("leg2Prov").options].some(o=>o.value===p)) $("leg2Prov").add(new Option(p,p));
+  });
 });

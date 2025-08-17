@@ -1,109 +1,123 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>MZ · Monerizer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <link rel="stylesheet" href="/ui/style.css?v=6"/>
+  <meta charset="utf-8" />
+  <title>Monerizer — Swap via XMR hop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="/ui/style.css" rel="stylesheet" />
 </head>
 <body>
-  <header class="top">
+  <div class="top">
     <div class="brand">MZ</div>
     <div class="title">
       <h1>Monerizer</h1>
-      <div class="sub">Smart 2-leg routing via XMR</div>
+      <div class="sub">ANY → XMR → ANY · non-KYC routing · per-swap subaddress</div>
     </div>
-  </header>
+  </div>
 
-  <main class="wrap">
+  <div class="wrap">
     <!-- QUOTE -->
-    <section class="card">
-      <h2>Get Quote</h2>
+    <div class="card">
+      <h2>1) Get quote</h2>
       <div class="grid g-quote">
-        <label>From
-          <div class="row">
+        <div class="row">
+          <label>From asset
             <select id="fromAsset"></select>
+          </label>
+        </div>
+        <div class="row">
+          <label>From network
             <select id="fromNet"></select>
-          </div>
-        </label>
-
-        <label>To
-          <div class="row">
+          </label>
+        </div>
+        <div class="row">
+          <label>To asset
             <select id="toAsset"></select>
+          </label>
+        </div>
+        <div class="row">
+          <label>To network
             <select id="toNet"></select>
-          </div>
-        </label>
-
-        <label>Amount
-          <input id="amount" type="number" step="0.00000001" value="100"/>
-        </label>
-
-        <label>Rate
-          <select id="rateType">
-            <option value="float">Float</option>
-            <option value="fixed">Fixed</option>
-          </select>
-        </label>
-
+          </label>
+        </div>
         <div class="row align-end">
-          <button id="btnQuote">Get Quote</button>
+          <label>Amount
+            <input id="amount" class="w-320" type="number" step="any" value="100" />
+          </label>
+        </div>
+        <div class="row">
+          <label>Rate type
+            <select id="rateType">
+              <option value="float">Floating</option>
+              <option value="fixed">Fixed</option>
+            </select>
+          </label>
+        </div>
+        <div class="row align-end">
+          <button id="btnQuote">Get Quotes</button>
         </div>
       </div>
 
-      <div id="quoteBox" class="routes"></div>
-    </section>
+      <div id="quoteBox" class="routes muted" style="margin-top:12px;">Quotes will appear here…</div>
+    </div>
 
     <!-- START -->
-    <section class="card">
-      <h2>Start</h2>
+    <div class="card">
+      <h2>2) Start swap</h2>
       <div class="grid g-start">
-        <label>Leg 1 provider
-          <select id="leg1Prov">
-            <option value="ChangeNOW">ChangeNOW</option>
-            <option value="Exolix">Exolix</option>
-          </select>
-        </label>
-
-        <label>Leg 2 provider
-          <select id="leg2Prov">
-            <option value="">Auto (best at send)</option>
-            <option value="ChangeNOW">ChangeNOW</option>
-            <option value="Exolix">Exolix</option>
-          </select>
-        </label>
-
-        <label class="wide">Payout address
-          <input id="payout" placeholder="Customer’s final-chain address"/>
-        </label>
-
+        <div class="row">
+          <label>Leg-1 provider
+            <select id="leg1Prov">
+              <!-- Default list; JS will also auto-augment from quotes -->
+              <option>ChangeNOW</option>
+              <option>Exolix</option>
+              <option>SimpleSwap</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
+          <label>Leg-2 provider
+            <select id="leg2Prov">
+              <option value="">Auto (use chosen route)</option>
+              <option>ChangeNOW</option>
+              <option>Exolix</option>
+              <option>SimpleSwap</option>
+            </select>
+          </label>
+        </div>
+        <div class="row wide">
+          <label>Payout address (final OUT)
+            <input id="payout" placeholder="Your destination address" />
+          </label>
+        </div>
         <div class="row align-end">
-          <button id="btnStart">Start</button>
+          <button id="btnStart">Create &amp; Start</button>
         </div>
       </div>
 
       <div id="startOut" class="start-out hidden">
-        <div><b>Swap ID:</b> <code id="sid"></code></div>
-        <div><b>Deposit:</b> <code id="deposit"></code> <span id="memoWrap" class="muted"></span></div>
+        <div class="kv"><div class="muted">Swap ID</div><code id="sid"></code></div>
+        <div class="kv"><div class="muted">Deposit</div><code id="deposit"></code><span id="memoWrap"></span></div>
+        <div class="muted" style="margin-top:6px">Send your <b>FROM</b> asset to the deposit above. Status will track below.</div>
       </div>
-    </section>
+    </div>
 
-    <!-- TRACK -->
-    <section class="card">
-      <h2>Track</h2>
+    <!-- STATUS -->
+    <div class="card">
+      <h2>3) Status</h2>
       <div class="row gap">
-        <input id="swapId" class="w-320" placeholder="Paste swap id after starting"/>
-        <button id="btnStatus">Get Status</button>
+        <input id="swapId" class="w-320" placeholder="Paste Swap ID (or auto-filled)" />
+        <button id="btnStatus">Refresh</button>
         <button id="btnWatch">Watch</button>
         <button id="btnStop">Stop</button>
       </div>
-
       <div id="statusSteps" class="steps"></div>
       <pre id="statusJson" class="pre hidden"></pre>
-    </section>
-  </main>
+    </div>
 
-  <footer class="foot">© Monerizer</footer>
+    <div class="foot">© Monerizer</div>
+  </div>
 
-  <script src="/ui/app.v5.js?v=6"></script>
+  <script src="/ui/app.v5.js"></script>
 </body>
 </html>
