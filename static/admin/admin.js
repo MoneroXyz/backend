@@ -7,8 +7,9 @@
   const pageInfo = $("#pageInfo");
   let page = 1, pageSize = 25;
 
-  const to6 = v => (v == null ? "—" : Number(v).toFixed(6));
-  const to2 = v => (v == null ? "—" : Number(v).toFixed(2));
+  const to6 = v => (v == null || Number.isNaN(Number(v)) ? "—" : Number(v).toFixed(6));
+  const to2 = v => (v == null || Number.isNaN(Number(v)) ? "—" : Number(v).toFixed(2));
+  const safe = x => (x == null ? "" : String(x));
 
   async function fetchList() {
     const params = new URLSearchParams();
@@ -23,8 +24,8 @@
   }
 
   function pill(text) {
-    const cls = text;
-    return `<span class="pill ${cls}">${text}</span>`;
+    const cls = text || "active";
+    return `<span class="pill ${cls}">${text || "active"}</span>`;
   }
 
   function renderTable(j) {
@@ -69,7 +70,22 @@
     return { local, tz, utc };
   }
 
-  function safeStr(x) { return (x == null ? "" : String(x)); }
+  const kv = (k, v) => `<div class="kv"><div class="k"><b>${k}</b></div><div class="v">${v}</div></div>`;
+
+  // Build a fee line where % is "pending" until gross > 0; once gross > 0,
+  // show backend-provided % if present, otherwise compute feeXMR/gross*100.
+  function feeLine(label, feeXMR, feePct, feeUSD, gross) {
+    let pctText = "pending";
+    if (gross > 0) {
+      let pct = (feePct != null ? Number(feePct) : null);
+      if ((pct == null || Number.isNaN(pct)) && feeXMR != null) {
+        const f = Number(feeXMR);
+        pct = (Number.isFinite(f) ? (f / gross) * 100 : null);
+      }
+      pctText = (pct == null || !Number.isFinite(pct)) ? "—" : `${to2(pct)}%`;
+    }
+    return kv(label, `${to6(feeXMR)} XMR (${pctText}) — $${to2(feeUSD)}`);
+  }
 
   function renderDetail(j) {
     $("#detail").style.display = "block";
@@ -79,41 +95,39 @@
 
     const req = s.req || {};
     const t = fmtLocalWithTZ(s.created || 0);
-    const sum = `
-      <div class="kv"><b>ID:</b> ${s.id || ""}</div>
-      <div class="kv"><b>Created:</b> ${t.local} <span class="muted">(${t.tz})</span></div>
-      <div class="kv"><b>Created (UTC):</b> ${t.utc}</div>
-      <div class="kv"><b>Leg1:</b> ${s.leg1?.provider || ""}</div>
-      <div class="kv"><b>Leg2:</b> ${s.leg2?.provider || ""}</div>
-      <div class="kv"><b>IN:</b> ${req.in_asset || ""} / ${req.in_network || ""} — ${req.amount ?? ""}</div>
-      <div class="kv"><b>OUT:</b> ${req.out_asset || ""} / ${req.out_network || ""}</div>
-      <div class="kv"><b>Subaddress:</b> ${s.subaddr || ""}</div>
-      <div class="kv"><b>Last send txid:</b> ${s.last_sent_txid || ""}</div>
-    `;
-    $("#d_summary").innerHTML = sum;
 
-    const met = `
-      <div class="kv"><b>XMR/USD:</b> $${to2(m.xmr_usd)}</div>
-      <div class="kv"><b>Gross XMR seen:</b> ${to6(m.gross_xmr_seen)}</div>
-      <div class="kv"><b>Net XMR estimated:</b> ${to6(m.net_xmr_estimated)}</div>
-      <hr />
-      <div class="kv"><b>Our fee:</b> ${to6(m.our_fee_xmr)} XMR (${to2(m.our_fee_pct)}%) — $${to2(m.our_fee_usd)}</div>
-      <div class="kv"><b>Provider fee:</b> ${to6(m.provider_fee_xmr)} XMR (${to2(m.provider_fee_pct)}%) — $${to2(m.provider_fee_usd)}</div>
-    `;
-    $("#d_metrics").innerHTML = met;
+    const summaryHtml = [
+      kv("ID:", safe(s.id)),
+      kv("Created:", `${t.local} <span class="muted">(${t.tz})</span>`),
+      kv("Created (UTC):", t.utc),
+      kv("Leg1:", safe(s.leg1?.provider)),
+      kv("Leg2:", safe(s.leg2?.provider)),
+      kv("IN:", `${safe(req.in_asset)} / ${safe(req.in_network)} — ${safe(req.amount)}`),
+      kv("OUT:", `${safe(req.out_asset)} / ${safe(req.out_network)}`),
+      kv("Subaddress:", safe(s.subaddr)),
+      kv("Last send txid:", safe(s.last_sent_txid)),
+    ].join("");
+    $("#d_summary").innerHTML = summaryHtml;
 
-    // Providers & their IDs section
-    const leg1Prov = safeStr(s.leg1?.provider);
-    const leg2Prov = safeStr(s.leg2?.provider);
-    const leg1Id = safeStr(s.leg1?.tx_id);
-    const leg2Id = safeStr(s.leg2?.tx_id);
-    const prov = `
-      <div class="kv"><b>Leg1 provider:</b> ${leg1Prov}</div>
-      <div class="kv"><b>Leg1 provider ID:</b> ${leg1Id || "—"}</div>
-      <div class="kv"><b>Leg2 provider:</b> ${leg2Prov}</div>
-      <div class="kv"><b>Leg2 provider ID:</b> ${leg2Id || "—"}</div>
-    `;
-    $("#d_providers").innerHTML = prov;
+    const gross = Number(m.gross_xmr_seen || 0);
+
+    const metricsHtml = [
+      kv("XMR/USD:", `$${to2(m.xmr_usd)}`),
+      kv("Gross XMR seen:", to6(m.gross_xmr_seen)),
+      kv("Net XMR estimated:", to6(m.net_xmr_estimated)),
+      "<hr />",
+      feeLine("Our fee:", m.our_fee_xmr, m.our_fee_pct, m.our_fee_usd, gross),
+      feeLine("Provider fee:", m.provider_fee_xmr, m.provider_fee_pct, m.provider_fee_usd, gross),
+    ].join("");
+    $("#d_metrics").innerHTML = metricsHtml;
+
+    const providersHtml = [
+      kv("Leg1 provider:", safe(s.leg1?.provider)),
+      kv("Leg1 provider ID:", safe(s.leg1?.tx_id) || "—"),
+      kv("Leg2 provider:", safe(s.leg2?.provider)),
+      kv("Leg2 provider ID:", safe(s.leg2?.tx_id) || "—"),
+    ].join("");
+    $("#d_providers").innerHTML = providersHtml;
 
     // Raw toggle (hidden by default)
     const raw = $("#d_raw");

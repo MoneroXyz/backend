@@ -604,24 +604,61 @@ async def admin_get_swap(swap_id: str):
     if not s:
         raise HTTPException(404, "Swap not found")
 
-    # compute a few extras: gross_xmr seen (pool+in) for this subaddress
     try:
         subidx = s.get("subaddr_index")
         gross_xmr = await sum_received_for_subaddr(subidx) if isinstance(subidx, int) else 0.0
     except Exception:
         gross_xmr = 0.0
 
-    # Estimated net XMR we forward: gross - fee - reserve
     try:
         net_xmr = max(0.0, gross_xmr - float(s.get("our_fee_xmr", 0.0)) - SEND_FEE_RESERVE)
     except Exception:
         net_xmr = 0.0
 
+    # Add USD + % convenience fields
+    try:
+        prices = await coingecko_prices()
+        xmr_usd = float(prices.get("XMR", 0.0) or 0.0)
+    except Exception:
+        xmr_usd = 0.0
+
+    our_fee_xmr = float(s.get("our_fee_xmr") or 0.0)
+    reserve = float(SEND_FEE_RESERVE or 0.0)
+
+    gross_for_pct = float(gross_xmr or 0.0)
+    if gross_for_pct <= 0.0:
+        gross_for_pct = float((net_xmr or 0.0) + our_fee_xmr + reserve)
+
+    our_fee_pct = (our_fee_xmr / gross_for_pct * 100.0) if gross_for_pct > 0 else None
+    our_fee_usd = our_fee_xmr * xmr_usd
+
+    # Provider fee (optional if you store it later; else None)
+    provider_spread_xmr = None
+    provider_fee_pct = None
+    provider_fee_usd = None
+    with contextlib.suppress(Exception):
+        provider_spread_xmr = float(
+            s.get("fee", {}).get("provider_spread_xmr") or
+            s.get("provider_spread_xmr") or 0.0
+        )
+        if provider_spread_xmr == 0.0:
+            provider_spread_xmr = None
+    if provider_spread_xmr is not None and gross_for_pct > 0:
+        provider_fee_pct = provider_spread_xmr / gross_for_pct * 100.0
+        provider_fee_usd = provider_spread_xmr * xmr_usd
+
     return {
         "swap": s,
         "metrics": {
-            "gross_xmr_seen": gross_xmr,
-            "our_fee_xmr": s.get("our_fee_xmr"),
-            "net_xmr_estimated": net_xmr
+            "gross_xmr_seen": float(gross_xmr or 0.0),
+            "our_fee_xmr": our_fee_xmr,
+            "net_xmr_estimated": float(net_xmr or 0.0),
+            "xmr_usd": xmr_usd,
+            "our_fee_pct": our_fee_pct,
+            "our_fee_usd": our_fee_usd,
+            "provider_fee_xmr": provider_spread_xmr,
+            "provider_fee_pct": provider_fee_pct,
+            "provider_fee_usd": provider_fee_usd,
         }
     }
+    

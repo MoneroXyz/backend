@@ -11,7 +11,7 @@
     .card { background: #111; border: 1px solid #222; border-radius: 14px; padding: 16px; }
     input, select, button { background: #0b0b0b; color: #eee; border: 1px solid #222; border-radius: 10px; padding: 8px 10px; }
     table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #222; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #222; vertical-align: top; }
     a { color: #7ccfff; text-decoration: none; }
     a:hover { text-decoration: underline; }
     .pill { padding: 3px 8px; border-radius: 999px; font-size: 12px; border: 1px solid #333; }
@@ -21,9 +21,13 @@
     .muted { color: #aaa; font-size: 12px; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     pre { white-space: pre-wrap; word-break: break-word; background: #0b0b0b; border: 1px solid #222; border-radius: 10px; padding: 10px; }
+
+    /* Key–value rows: tidy alignment */
+    .kv { display: grid; grid-template-columns: 180px 1fr; gap: 8px; align-items: start; }
+    .kv .k { color: #aaa; }
+    .kv .v { word-break: break-all; }
+
     hr { border: none; border-top: 1px solid #222; margin: 10px 0; }
-    .kv { margin: 2px 0; }
-    .kv b { display: inline-block; width: 150px; color: #aaa; }
   </style>
 </head>
 <body>

@@ -234,7 +234,173 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "8a639a15-e042-4004-8da4-9a0a11eb6c7b"
+        "trace_id": "12bdf56f-ec72-412e-8b99-376773e19e1f"
+      }
+    },
+    "leg2": {
+      "provider": "Exolix",
+      "created": false,
+      "creating": false,
+      "order": null,
+      "tx_id": "",
+      "status": "pending"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit"
+    ],
+    "last_sent_txid": null
+  },
+  "f4f0540a-c1b4-4151-b044-bf1162d57fdb": {
+    "id": "f4f0540a-c1b4-4151-b044-bf1162d57fdb",
+    "created": 1755533243.0857663,
+    "req": {
+      "leg1_provider": "SimpleSwap",
+      "leg2_provider": "Exolix",
+      "in_asset": "ETH",
+      "in_network": "ETH",
+      "out_asset": "BTC",
+      "out_network": "BTC",
+      "amount": 0.2,
+      "payout_address": "bc1qglkucvgcgds0wrx399dfucrm3fsuk6a2ce2l9a",
+      "rate_type": "float",
+      "our_fee_xmr": 0.061142791719555056
+    },
+    "subaddr_index": 99,
+    "subaddr": "86DfWV7ZkWdT1EZFYnJh3b2szD82njpTzAKpAMFraKiKeQhkCoUTHcg9JLqCNSMGzrVsyzYgRd9ujizEFPPbbWFN4yDEmcP",
+    "our_fee_xmr": 0.061142791719555056,
+    "leg1": {
+      "provider": "SimpleSwap",
+      "order": {
+        "address_from": "0x66B41Ba277ed815ce26279072018405fBB1cFF7D",
+        "address_to": "86DfWV7ZkWdT1EZFYnJh3b2szD82njpTzAKpAMFraKiKeQhkCoUTHcg9JLqCNSMGzrVsyzYgRd9ujizEFPPbbWFN4yDEmcP",
+        "amount_from": "0.2",
+        "amount_to": "3.1898501",
+        "currencies": {
+          "eth": {
+            "address_explorer": "https://etherscan.io/address/{}",
+            "confirmations_from": "",
+            "contract_address": null,
+            "extra_id": "",
+            "has_extra_id": false,
+            "image": "https://static.simpleswap.io/images/currencies-logo/eth.svg",
+            "isFiat": false,
+            "name": "Ethereum",
+            "network": "eth",
+            "precision": null,
+            "symbol": "eth",
+            "tx_explorer": "https://etherscan.io/tx/{}",
+            "validation_address": "^(0x)[0-9A-Fa-f]{40}$",
+            "validation_extra": null,
+            "warnings_from": [
+              "Please deposit ETH using the main Ethereum (ETH) network."
+            ],
+            "warnings_to": []
+          },
+          "xmr": {
+            "address_explorer": null,
+            "confirmations_from": "",
+            "contract_address": null,
+            "extra_id": "",
+            "has_extra_id": false,
+            "image": "https://static.simpleswap.io/images/currencies-logo/xmr.svg",
+            "isFiat": false,
+            "name": "Monero",
+            "network": "xmr",
+            "precision": null,
+            "symbol": "xmr",
+            "tx_explorer": "https://xmrchain.net/search?value={}",
+            "validation_address": "^[48][a-zA-Z|\\d]{94}([a-zA-Z|\\d]{11})?$",
+            "validation_extra": null,
+            "warnings_from": [],
+            "warnings_to": []
+          }
+        },
+        "currency_from": "eth",
+        "currency_to": "xmr",
+        "expected_amount": "0.2",
+        "extra_id_from": null,
+        "extra_id_to": null,
+        "id": "00j9oak4ld96t16s",
+        "redirect_url": null,
+        "status": "waiting",
+        "timestamp": "2025-08-18T16:07:05.766Z",
+        "tx_from": null,
+        "tx_to": null,
+        "type": "floating",
+        "updated_at": "2025-08-18T16:07:05.766Z",
+        "user_refund_address": null,
+        "user_refund_extra_id": null,
+        "valid_until": null,
+        "trace_id": "bc86ba12-594a-418c-afdd-7b836741c923",
+        "deposit": "0x66B41Ba277ed815ce26279072018405fBB1cFF7D"
+      },
+      "tx_id": "00j9oak4ld96t16s",
+      "deposit_address": "0x66B41Ba277ed815ce26279072018405fBB1cFF7D",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "address_from": "0x66B41Ba277ed815ce26279072018405fBB1cFF7D",
+        "address_to": "86DfWV7ZkWdT1EZFYnJh3b2szD82njpTzAKpAMFraKiKeQhkCoUTHcg9JLqCNSMGzrVsyzYgRd9ujizEFPPbbWFN4yDEmcP",
+        "amount_from": "0.2",
+        "amount_to": "3.1898501",
+        "currencies": {
+          "eth": {
+            "address_explorer": "https://etherscan.io/address/{}",
+            "confirmations_from": "",
+            "contract_address": null,
+            "extra_id": "",
+            "has_extra_id": false,
+            "image": "https://static.simpleswap.io/images/currencies-logo/eth.svg",
+            "isFiat": false,
+            "name": "Ethereum",
+            "network": "eth",
+            "precision": null,
+            "symbol": "eth",
+            "tx_explorer": "https://etherscan.io/tx/{}",
+            "validation_address": "^(0x)[0-9A-Fa-f]{40}$",
+            "validation_extra": null,
+            "warnings_from": [
+              "Please deposit ETH using the main Ethereum (ETH) network."
+            ],
+            "warnings_to": []
+          },
+          "xmr": {
+            "address_explorer": null,
+            "confirmations_from": "",
+            "contract_address": null,
+            "extra_id": "",
+            "has_extra_id": false,
+            "image": "https://static.simpleswap.io/images/currencies-logo/xmr.svg",
+            "isFiat": false,
+            "name": "Monero",
+            "network": "xmr",
+            "precision": null,
+            "symbol": "xmr",
+            "tx_explorer": "https://xmrchain.net/search?value={}",
+            "validation_address": "^[48][a-zA-Z|\\d]{94}([a-zA-Z|\\d]{11})?$",
+            "validation_extra": null,
+            "warnings_from": [],
+            "warnings_to": []
+          }
+        },
+        "currency_from": "eth",
+        "currency_to": "xmr",
+        "expected_amount": "0.2",
+        "extra_id_from": null,
+        "extra_id_to": null,
+        "id": "00j9oak4ld96t16s",
+        "redirect_url": null,
+        "status": "waiting",
+        "timestamp": "2025-08-18T16:07:05.766Z",
+        "tx_from": null,
+        "tx_to": null,
+        "type": "floating",
+        "updated_at": "2025-08-18T16:07:05.766Z",
+        "user_refund_address": null,
+        "user_refund_extra_id": null,
+        "valid_until": null,
+        "trace_id": "9433b4e6-a72b-41e0-814d-f1e14632804e"
       }
     },
     "leg2": {
