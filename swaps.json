@@ -36,7 +36,7 @@
       "tx_id": "7a491bbf24b135",
       "deposit_address": "0xeD4c6Cc85200703816EC464645888387c9914C7d",
       "deposit_extra": null,
-      "status": "waiting_deposit",
+      "status": "expired",
       "provider_info": {
         "id": "7a491bbf24b135",
         "status": "waiting",
@@ -81,9 +81,55 @@
     },
     "timeline": [
       "created",
-      "waiting_deposit"
+      "waiting_deposit",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired"
     ],
-    "last_sent_txid": null
+    "last_sent_txid": null,
+    "expired": true
   },
   "7f01055e-3724-457e-919a-53524421cbf9": {
     "id": "7f01055e-3724-457e-919a-53524421cbf9",
@@ -172,7 +218,7 @@
       "tx_id": "zlgsqv8zup744zwk",
       "deposit_address": "0x5065B440f69feF2689142E1085d629202Aaa2d9e",
       "deposit_extra": null,
-      "status": "waiting_deposit",
+      "status": "expired",
       "provider_info": {
         "address_from": "0x5065B440f69feF2689142E1085d629202Aaa2d9e",
         "address_to": "84vhKfoVWh1R8zUPu8LBrZU7Wp4TmBW3cBaYiET5W3WeEcU1dc8u8KQPHiRSiQJ1QqJjjyLfjhPygFZKiXXcwRaT4Ew4QwN",
@@ -234,7 +280,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "12bdf56f-ec72-412e-8b99-376773e19e1f"
+        "trace_id": "c2615de8-4bd4-48ca-8f19-6414c64f5b5f"
       }
     },
     "leg2": {
@@ -247,9 +293,31 @@
     },
     "timeline": [
       "created",
-      "waiting_deposit"
+      "waiting_deposit",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired",
+      "expired"
     ],
-    "last_sent_txid": null
+    "last_sent_txid": null,
+    "expired": true
   },
   "f4f0540a-c1b4-4151-b044-bf1162d57fdb": {
     "id": "f4f0540a-c1b4-4151-b044-bf1162d57fdb",
@@ -396,11 +464,11 @@
         "tx_from": null,
         "tx_to": null,
         "type": "floating",
-        "updated_at": "2025-08-18T16:07:05.766Z",
+        "updated_at": "2025-08-18T16:08:00.714Z",
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "9433b4e6-a72b-41e0-814d-f1e14632804e"
+        "trace_id": "b9d38fca-dac2-4803-a00c-9026480c4db8"
       }
     },
     "leg2": {

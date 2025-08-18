@@ -23,9 +23,19 @@
     renderTable(j);
   }
 
-  function pill(text) {
-    const cls = text || "active";
-    return `<span class="pill ${cls}">${text || "active"}</span>`;
+  // Map backend bucket -> label shown in UI
+  function prettyStatusLabel(bucket) {
+    const b = (bucket || "").toLowerCase();
+    if (b === "finished") return "Completed";
+    if (b === "failed") return "Failed";
+    if (b === "expired") return "Expired";
+    return "Active";
+  }
+
+  function pill(bucket) {
+    const cls = (bucket || "active").toLowerCase(); // keep original class names
+    const label = prettyStatusLabel(bucket);
+    return `<span class="pill ${cls}">${label}</span>`;
   }
 
   function renderTable(j) {
@@ -72,8 +82,7 @@
 
   const kv = (k, v) => `<div class="kv"><div class="k"><b>${k}</b></div><div class="v">${v}</div></div>`;
 
-  // Build a fee line where % is "pending" until gross > 0; once gross > 0,
-  // show backend-provided % if present, otherwise compute feeXMR/gross*100.
+  // Fee line: show "pending" % until gross > 0; once >0 compute if backend didn't provide.
   function feeLine(label, feeXMR, feePct, feeUSD, gross) {
     let pctText = "pending";
     if (gross > 0) {

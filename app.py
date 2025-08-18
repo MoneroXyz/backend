@@ -426,6 +426,26 @@ async def api_status(swap_id: str):
         with contextlib.suppress(Exception):
             if swap["leg1"].get("tx_id"):
                 swap["leg1"]["provider_info"] = await _provider_info(swap["leg1"]["provider"], swap["leg1"]["tx_id"])
+                         # ---- Expire if user never paid the provider's pay-in address within 2 hours ----
+        try:
+            now = time.time()
+            age = now - float(swap.get("created", now))
+            pinfo = swap["leg1"].get("provider_info") or {}
+            st = str(pinfo.get("status") or pinfo.get("state") or pinfo.get("stage") or "").lower()
+
+            # If provider explicitly says expired/canceled/timeout => expire immediately
+            explicit_expired = any(x in st for x in ["expired", "canceled", "cancelled", "timeout", "timed out", "unpaid"])
+
+            # Still waiting/unpaid (provider hasn't seen the user's payment)
+            waiting_terms = ["waiting", "unpaid", "no payment", "await", "new", "pending"]
+            still_waiting = any(w in st for w in waiting_terms) or (st.strip() == "")
+
+            if explicit_expired or (age > 2*60*60 and still_waiting and not swap["leg2"].get("created")):
+                swap["expired"] = True
+                swap["leg1"]["status"] = "expired"
+                swap.setdefault("timeline", []).append("expired")
+        except Exception:
+            pass
 
         with contextlib.suppress(Exception):
             if swap["leg2"].get("tx_id"):
@@ -540,15 +560,20 @@ def _match_query(swap: Dict, q: str) -> bool:
     return any(ql in str(x).lower() for x in fields)
 
 def _compute_status_bucket(swap: Dict) -> str:
-    # Buckets: active / finished / failed
+    # Expired takes precedence
+    if swap.get("expired"):
+        return "expired"
+
     leg2_status = (swap.get("leg2", {}) or {}).get("status", "") or ""
     if "error" in leg2_status.lower():
         return "failed"
+
     with contextlib.suppress(Exception):
         pinfo = swap.get("leg2", {}).get("provider_info", {}) or {}
         st = (pinfo.get("status") or pinfo.get("state") or pinfo.get("stage") or "").lower()
         if any(x in st for x in ["finished", "completed", "done"]):
             return "finished"
+
     return "active"
 
 @app.get("/api/admin/swaps")

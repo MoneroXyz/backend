@@ -16,8 +16,9 @@
     a:hover { text-decoration: underline; }
     .pill { padding: 3px 8px; border-radius: 999px; font-size: 12px; border: 1px solid #333; }
     .pill.active { color: #ddd; border-color: #444; }
-    .pill.finished { color: #9dd49d; border-color: #2f4; }
+    .pill.finished { color: #9dd49d; border-color: #2f4; }   /* used for “Completed” */
     .pill.failed { color: #f88; border-color: #f44; }
+    .pill.expired { color: #f0c674; border-color: #c9a54a; }
     .muted { color: #aaa; font-size: 12px; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     pre { white-space: pre-wrap; word-break: break-word; background: #0b0b0b; border: 1px solid #222; border-radius: 10px; padding: 10px; }
@@ -38,8 +39,9 @@
       <select id="status">
         <option value="">All statuses</option>
         <option value="active">Active</option>
-        <option value="finished">Finished</option>
+        <option value="finished">Completed</option> <!-- value stays 'finished' -->
         <option value="failed">Failed</option>
+        <option value="expired">Expired</option>
       </select>
       <input id="q" placeholder="Search swaps (id, assets, providers…)" />
       <button id="btnSearch">Search</button>
