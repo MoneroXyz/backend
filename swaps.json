@@ -126,6 +126,7 @@
       "expired",
       "expired",
       "expired",
+      "expired",
       "expired"
     ],
     "last_sent_txid": null,
@@ -280,7 +281,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "c2615de8-4bd4-48ca-8f19-6414c64f5b5f"
+        "trace_id": "b755ebe9-db3d-4aef-b057-7a671dab6628"
       }
     },
     "leg2": {
@@ -294,6 +295,7 @@
     "timeline": [
       "created",
       "waiting_deposit",
+      "expired",
       "expired",
       "expired",
       "expired",
@@ -468,7 +470,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "b9d38fca-dac2-4803-a00c-9026480c4db8"
+        "trace_id": "36eb0877-a011-47eb-9646-824590840c37"
       }
     },
     "leg2": {
