@@ -1,14 +1,15 @@
 # app.py
-import os, time, uuid, httpx, asyncio, contextlib
+import os, time, uuid, httpx, asyncio, contextlib, json
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional, Literal, Dict, List
 from dotenv import load_dotenv
 
-# --- robust .env loading ---
+# --- robust .env loading (handles Windows / different CWDs) ---
 env_loaded = False
 for candidate in [Path(__file__).with_name(".env"), Path.cwd() / ".env"]:
     if candidate.exists():
@@ -46,6 +47,29 @@ from providers import (
     ss_estimate, ss_create, ss_info,
     _ss_map_net, _ss_params, SS_BASE
 )
+
+# ============== Persistence (very light JSON) ==============
+STORAGE_PATH = os.path.join(os.path.dirname(__file__), "swaps.json")
+
+def _load_swaps_from_disk() -> Dict[str, Dict]:
+    try:
+        if os.path.exists(STORAGE_PATH):
+            with open(STORAGE_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+    except Exception:
+        pass
+    return {}
+
+def _save_swaps_to_disk():
+    try:
+        tmp = STORAGE_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(SWAPS, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, STORAGE_PATH)
+    except Exception:
+        pass
 
 # ================== MODELS ==================
 class QuoteRequest(BaseModel):
@@ -307,6 +331,7 @@ async def api_start(req: StartSwapRequest):
             "timeline": ["created", "waiting_deposit"],
             "last_sent_txid": None,
         }
+    _save_swaps_to_disk()
 
     return StartSwapResponse(
         swap_id=swap_id,
@@ -388,6 +413,8 @@ async def _maybe_create_leg2_and_send(swap: Dict):
     except Exception as e:
         swap["leg2"]["status"] = f"leg2_create_error:{e}"
         swap["leg2"]["creating"] = False
+    finally:
+        _save_swaps_to_disk()
 
 @app.get("/api/status/{swap_id}")
 async def api_status(swap_id: str):
@@ -409,6 +436,7 @@ async def api_status(swap_id: str):
 
     async with SWAPS_LOCK:
         SWAPS[swap_id] = swap
+    _save_swaps_to_disk()
     return swap
 
 # background sweeper
@@ -426,6 +454,15 @@ async def _sweeper():
 
 @app.on_event("startup")
 async def on_start():
+    # load persisted swaps (if any)
+    try:
+        loaded = _load_swaps_from_disk()
+        if isinstance(loaded, dict) and loaded:
+            async with SWAPS_LOCK:
+                SWAPS.update(loaded)
+    except Exception:
+        pass
+
     print(f"[startup] .env loaded={env_loaded} CN_KEY={'yes' if bool(CN_KEY) else 'no'} EX_KEY={'yes' if bool(_EX_KEY) else 'no'} SS_KEY={'yes' if bool(SS_KEY) else 'no'} SS_BASE={SS_BASE}")
     asyncio.create_task(_sweeper())
 
@@ -480,3 +517,111 @@ async def api_diag_providers():
 @app.get("/api/diag/version")
 async def api_diag_version():
     return {"version": APP_VERSION, "SS_BASE": SS_BASE}
+
+# ============== Admin UI route ==============
+@app.get("/ui/admin")
+async def admin_ui():
+    admin_index = os.path.join(os.path.dirname(__file__), "static", "admin", "index.html")
+    if not os.path.exists(admin_index):
+        raise HTTPException(404, "Admin UI not found. Did you add static/admin/index.html?")
+    return FileResponse(admin_index)
+
+# ============== Admin API ==============
+def _match_query(swap: Dict, q: str) -> bool:
+    if not q: return True
+    ql = q.lower()
+    fields = [
+        swap.get("id", ""),
+        swap.get("subaddr", ""),
+        json.dumps(swap.get("req", {})),
+        json.dumps(swap.get("leg1", {})),
+        json.dumps(swap.get("leg2", {})),
+    ]
+    return any(ql in str(x).lower() for x in fields)
+
+def _compute_status_bucket(swap: Dict) -> str:
+    # Buckets: active / finished / failed
+    leg2_status = (swap.get("leg2", {}) or {}).get("status", "") or ""
+    if "error" in leg2_status.lower():
+        return "failed"
+    with contextlib.suppress(Exception):
+        pinfo = swap.get("leg2", {}).get("provider_info", {}) or {}
+        st = (pinfo.get("status") or pinfo.get("state") or pinfo.get("stage") or "").lower()
+        if any(x in st for x in ["finished", "completed", "done"]):
+            return "finished"
+    return "active"
+
+@app.get("/api/admin/swaps")
+async def admin_list_swaps(
+    status: Optional[str] = None,   # "active" | "finished" | "failed" | None
+    q: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 25
+):
+    page = max(1, int(page))
+    page_size = min(100, max(1, int(page_size)))
+
+    # Snapshot without holding the lock too long
+    async with SWAPS_LOCK:
+        items = list(SWAPS.values())
+
+    rows = []
+    for s in items:
+        bucket = _compute_status_bucket(s)
+        if status and bucket != status:
+            continue
+        if not _match_query(s, q or ""):
+            continue
+        rows.append({
+            "id": s.get("id"),
+            "created_ts": s.get("created"),
+            "in_asset": s.get("req", {}).get("in_asset"),
+            "in_network": s.get("req", {}).get("in_network"),
+            "out_asset": s.get("req", {}).get("out_asset"),
+            "out_network": s.get("req", {}).get("out_network"),
+            "amount": s.get("req", {}).get("amount"),
+            "leg1_provider": s.get("leg1", {}).get("provider"),
+            "leg2_provider": s.get("leg2", {}).get("provider"),
+            "status_bucket": bucket,
+            "leg2_status": s.get("leg2", {}).get("status"),
+            "our_fee_xmr": s.get("our_fee_xmr"),
+        })
+
+    total = len(rows)
+    start = (page - 1) * page_size
+    end = start + page_size
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "items": rows[start:end]
+    }
+
+@app.get("/api/admin/swaps/{swap_id}")
+async def admin_get_swap(swap_id: str):
+    async with SWAPS_LOCK:
+        s = SWAPS.get(swap_id)
+    if not s:
+        raise HTTPException(404, "Swap not found")
+
+    # compute a few extras: gross_xmr seen (pool+in) for this subaddress
+    try:
+        subidx = s.get("subaddr_index")
+        gross_xmr = await sum_received_for_subaddr(subidx) if isinstance(subidx, int) else 0.0
+    except Exception:
+        gross_xmr = 0.0
+
+    # Estimated net XMR we forward: gross - fee - reserve
+    try:
+        net_xmr = max(0.0, gross_xmr - float(s.get("our_fee_xmr", 0.0)) - SEND_FEE_RESERVE)
+    except Exception:
+        net_xmr = 0.0
+
+    return {
+        "swap": s,
+        "metrics": {
+            "gross_xmr_seen": gross_xmr,
+            "our_fee_xmr": s.get("our_fee_xmr"),
+            "net_xmr_estimated": net_xmr
+        }
+    }

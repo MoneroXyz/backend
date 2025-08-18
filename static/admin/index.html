@@ -9,7 +9,7 @@
     body { max-width: 1100px; margin: 24px auto; }
     .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
     .card { background: #111; border: 1px solid #222; border-radius: 14px; padding: 16px; }
-    input, select { background: #0b0b0b; color: #eee; border: 1px solid #222; border-radius: 10px; padding: 8px 10px; }
+    input, select, button { background: #0b0b0b; color: #eee; border: 1px solid #222; border-radius: 10px; padding: 8px 10px; }
     table { width: 100%; border-collapse: collapse; margin-top: 12px; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #222; }
     a { color: #7ccfff; text-decoration: none; }
@@ -21,6 +21,9 @@
     .muted { color: #aaa; font-size: 12px; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     pre { white-space: pre-wrap; word-break: break-word; background: #0b0b0b; border: 1px solid #222; border-radius: 10px; padding: 10px; }
+    hr { border: none; border-top: 1px solid #222; margin: 10px 0; }
+    .kv { margin: 2px 0; }
+    .kv b { display: inline-block; width: 150px; color: #aaa; }
   </style>
 </head>
 <body>
@@ -62,7 +65,11 @@
   </div>
 
   <div class="card" id="detail" style="margin-top:16px; display:none;">
-    <h3 id="d_title">Swap</h3>
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <h3 id="d_title">Swap</h3>
+      <button id="btnRaw">Show raw</button>
+    </div>
+
     <div class="grid-2">
       <div>
         <h4>Summary</h4>
@@ -73,8 +80,11 @@
         <div id="d_metrics"></div>
       </div>
     </div>
-    <h4 style="margin-top:12px;">Raw</h4>
-    <pre id="d_raw"></pre>
+
+    <h4 style="margin-top:12px;">Providers / IDs</h4>
+    <div id="d_providers"></div>
+
+    <pre id="d_raw" style="display:none; margin-top:12px;"></pre>
   </div>
 
   <script src="/ui/admin/admin.js"></script>
