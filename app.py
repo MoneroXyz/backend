@@ -502,21 +502,40 @@ async def api_status(swap_id: str):
                 if not tl or tl[-1] != "refunded":
                     tl.append("refunded")
 
-        # ---- Expire if user never paid the provider's pay-in address within 2 hours ----
+        # ---- Expire if user never paid within 2 hours (more robust) ----
         try:
             now = time.time()
-            age = now - float(swap.get("created", now))
+            created = float(swap.get("created", now))
+            age = now - created
+
             pinfo = swap["leg1"].get("provider_info") or {}
             st = str(pinfo.get("status") or pinfo.get("state") or pinfo.get("stage") or "").lower()
 
-            # If provider explicitly says expired/canceled/timeout => expire immediately
+            # Explicit provider expiry states
             explicit_expired = any(x in st for x in ["expired", "canceled", "cancelled", "timeout", "timed out", "unpaid"])
+            # If provider indicates refund, don't expire
+            explicitly_refunded = any(x in st for x in ["refunded", "refund", "returned", "sent back", "reimbursed"])
 
-            # Still waiting/unpaid (provider hasn't seen the user's payment)
             waiting_terms = ["waiting", "unpaid", "no payment", "await", "new", "pending"]
             still_waiting = any(w in st for w in waiting_terms) or (st.strip() == "")
 
-            should_expire = explicit_expired or (age > 2*60*60 and still_waiting and not swap["leg2"].get("created"))
+            # Did any XMR ever arrive to our subaddress?
+            rx_any = False
+            with contextlib.suppress(Exception):
+                subidx = swap.get("subaddr_index")
+                if isinstance(subidx, int):
+                    rx_any = (await sum_received_for_subaddr(subidx)) > 0
+
+            leg2_not_started = not bool(swap["leg2"].get("created"))
+
+            should_expire = False
+            if explicit_expired and not explicitly_refunded:
+                should_expire = True
+            elif (age > 2 * 60 * 60) and leg2_not_started and not rx_any and not explicitly_refunded:
+                should_expire = True
+            elif (age > 2 * 60 * 60) and leg2_not_started and still_waiting and not explicitly_refunded:
+                should_expire = True
+
             if should_expire and not swap.get("expired"):
                 swap["expired"] = True
                 swap["leg1"]["status"] = "expired"
