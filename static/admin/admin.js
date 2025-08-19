@@ -31,7 +31,7 @@
     if (b === "finished")  return "Completed";
     if (b === "failed")    return "Failed";
     if (b === "expired")   return "Expired";
-    if (b === "refunded")  return "Refunded"; // NEW
+    if (b === "refunded")  return "Refunded";
     return "Active";
   }
 
@@ -88,40 +88,38 @@
 
   const kv = (k, v) => `<div class="kv"><div>${k}</div><div>${v}</div></div>`;
 
-  // Try to discover an actual OUT amount from various common places
+  // Try to discover OUT amount from several common fields if backend didn't store req.out_amount
   function getOutAmount(swap) {
+    const req = swap.req || {};
+    if (req.out_amount != null && req.out_amount !== "") return req.out_amount;
+
+    const l2 = swap.leg2 || {};
     const cands = [
-      swap?.amount_out,
-      swap?.leg2?.amount_out,
-      swap?.leg2?.order?.withdrawal?.amount,
-      swap?.leg2?.provider_info?.withdrawal?.amount,
-      swap?.leg2?.provider_info?.payout?.amount,
-      swap?.leg2?.order?.toAmount,
-      swap?.leg2?.provider_info?.toAmount,
+      l2?.provider_info?.withdrawal?.amount,
+      l2?.provider_info?.toAmount,
+      l2?.provider_info?.amount_out,
+      l2?.order?.withdrawal?.amount,
+      l2?.order?.toAmount,
     ];
     for (const v of cands) {
-      const n = Number(v);
-      if (Number.isFinite(n) && n > 0) return n;
+      if (v != null && v !== "") return v;
     }
     return null;
   }
 
-  // Fee line with robust fallbacks:
-  // - if feeXMR is missing, compute from (gross - net)
-  // - if % missing, compute from feeXMR / gross
-  function feeLine(label, feeXMR, feePct, feeUSD, gross, net) {
-    let xmr = (feeXMR != null && Number.isFinite(Number(feeXMR))) ? Number(feeXMR) : null;
-    if ((xmr == null || Number.isNaN(xmr)) && Number.isFinite(gross) && gross > 0 && Number.isFinite(Number(net))) {
-      xmr = Math.max(0, gross - Number(net));
+  // Fee line with % that falls back to pending if gross is 0
+  function feeLine(label, feeXMR, feePct, feeUSD, gross) {
+    let pctText = "pending";
+    if (gross > 0) {
+      let pct = (feePct != null ? Number(feePct) : null);
+      if ((pct == null || Number.isNaN(pct)) && feeXMR != null) {
+        const f = Number(feeXMR);
+        pct = (Number.isFinite(f) ? (f / gross) * 100 : null);
+      }
+      pctText = (pct == null || !Number.isFinite(pct)) ? "—" : `${to2(pct)}%`;
     }
-
-    let pct = (feePct != null && Number.isFinite(Number(feePct))) ? Number(feePct) : null;
-    if ((pct == null || Number.isNaN(pct)) && Number.isFinite(gross) && gross > 0 && xmr != null) {
-      pct = (xmr / gross) * 100;
-    }
-
-    const pctText = (pct == null || !Number.isFinite(pct)) ? "—" : `${to2(pct)}%`;
-    return kv(label, `${to6(xmr)} XMR (${pctText}) — $${to2(feeUSD)}`);
+    const usdText = (feeUSD == null || Number.isNaN(Number(feeUSD))) ? "—" : to2(feeUSD);
+    return kv(label, `${to6(feeXMR)} XMR (${pctText}) — $${usdText}`);
   }
 
   function renderDetail(j) {
@@ -134,8 +132,8 @@
 
     const req = s.req || {};
     const t = fmtLocalWithTZ(s.created || 0);
-
     const outAmt = getOutAmount(s);
+
     const summaryHtml = [
       kv("ID:", safe(s.id)),
       kv("Created:", `${t.local} (${t.tz})`),
@@ -143,21 +141,20 @@
       kv("Leg1:", safe(s.leg1?.provider)),
       kv("Leg2:", safe(s.leg2?.provider)),
       kv("IN:", `${safe(req.in_asset)} / ${safe(req.in_network)} — ${safe(req.amount)}`),
-      kv("OUT:", `${safe(req.out_asset)} / ${safe(req.out_network)}${outAmt != null ? " — " + to6(outAmt) : ""}`),
+      kv("OUT:", `${safe(req.out_asset)} / ${safe(req.out_network)}${outAmt != null ? " — " + safe(outAmt) : ""}`),
       kv("Subaddress:", safe(s.subaddr)),
       kv("Last send txid:", safe(s.last_sent_txid)),
     ].join("");
     $("#d_summary").innerHTML = summaryHtml;
 
     const gross = Number(m.gross_xmr_seen || 0);
-    const net   = Number(m.net_xmr_estimated || 0);
     const metricsHtml = [
       kv("XMR/USD:", `$${to2(m.xmr_usd)}`),
       kv("Gross XMR seen:", to6(m.gross_xmr_seen)),
       kv("Net XMR estimated:", to6(m.net_xmr_estimated)),
       `<hr style="border:none;border-top:1px solid #1f1f1f;margin:8px 0;" />`,
-      feeLine("Our fee:", m.our_fee_xmr, m.our_fee_pct, m.our_fee_usd, gross, net),
-      feeLine("Provider fee:", m.provider_fee_xmr, m.provider_fee_pct, m.provider_fee_usd, gross, net),
+      feeLine("Our fee:", m.our_fee_xmr, m.our_fee_pct, m.our_fee_usd, gross),
+      feeLine("Provider fee:", m.provider_fee_xmr, m.provider_fee_pct, m.provider_fee_usd, gross),
     ].join("");
     $("#d_metrics").innerHTML = metricsHtml;
 

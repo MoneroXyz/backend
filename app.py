@@ -743,22 +743,36 @@ async def admin_get_swap(swap_id: str):
         gross_for_pct = float((net_xmr or 0.0) + our_fee_xmr + reserve)
 
     our_fee_pct = (our_fee_xmr / gross_for_pct * 100.0) if gross_for_pct > 0 else None
-    our_fee_usd = our_fee_xmr * xmr_usd
+    our_fee_usd = our_fee_xmr * (xmr_usd or 0.0)
 
-    # Provider fee (optional if you store it later; else None)
+    # ----- Provider fee (robust) -----
     provider_spread_xmr = None
-    provider_fee_pct = None
-    provider_fee_usd = None
     with contextlib.suppress(Exception):
         provider_spread_xmr = float(
-            s.get("fee", {}).get("provider_spread_xmr") or
-            s.get("provider_spread_xmr") or 0.0
+            s.get("fee", {}).get("provider_spread_xmr")
+            or s.get("provider_spread_xmr")
+            or 0.0
         )
         if provider_spread_xmr == 0.0:
             provider_spread_xmr = None
+
+    provider_fee_pct = None
     if provider_spread_xmr is not None and gross_for_pct > 0:
         provider_fee_pct = provider_spread_xmr / gross_for_pct * 100.0
-        provider_fee_usd = provider_spread_xmr * xmr_usd
+
+    # Always show a USD number (fallback to $0.00 instead of "—")
+    provider_fee_usd = (provider_spread_xmr or 0.0) * (xmr_usd or 0.0)
+
+    # ----- Try to read an OUT amount reported by leg-2 provider -----
+    out_amount_reported = None
+    with contextlib.suppress(Exception):
+        p2 = (s.get("leg2", {}) or {}).get("provider_info") or {}
+        # scan common keys across providers
+        for k in ["toAmount", "amountTo", "amount_out", "to_amount", "outAmount", "toAmountFloat"]:
+            v = p2.get(k)
+            if v is not None and v != "":
+                out_amount_reported = float(v)
+                break
 
     return {
         "swap": s,
@@ -766,11 +780,12 @@ async def admin_get_swap(swap_id: str):
             "gross_xmr_seen": float(gross_xmr or 0.0),
             "our_fee_xmr": our_fee_xmr,
             "net_xmr_estimated": float(net_xmr or 0.0),
-            "xmr_usd": xmr_usd,
+            "xmr_usd": float(xmr_usd or 0.0),
             "our_fee_pct": our_fee_pct,
             "our_fee_usd": our_fee_usd,
             "provider_fee_xmr": provider_spread_xmr,
             "provider_fee_pct": provider_fee_pct,
             "provider_fee_usd": provider_fee_usd,
+            "out_amount_reported": out_amount_reported,  # << new for UI
         }
     }
