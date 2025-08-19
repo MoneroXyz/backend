@@ -44,7 +44,7 @@ function ensureProviderOptionsFromQuotes(q) {
     if (o?.leg1?.provider) provs.add(o.leg1.provider);
     if (o?.leg2?.provider) provs.add(o.leg2.provider);
   });
-  ["ChangeNOW","Exolix","SimpleSwap"].forEach(p => provs.add(p));
+  ["ChangeNOW","Exolix","SimpleSwap","StealthEX"].forEach(p => provs.add(p));
   const l1 = $("leg1Prov"), l2 = $("leg2Prov");
   const have = (sel, name) => [...sel.options].some(o => o.value === name);
   provs.forEach(p => {
@@ -261,7 +261,7 @@ function drawSteps(s) {
 document.addEventListener("DOMContentLoaded", () => {
   fillAssets();
   // Ensure provider dropdowns include all providers
-  ["ChangeNOW","Exolix","SimpleSwap"].forEach(p => {
+  ["ChangeNOW","Exolix","SimpleSwap","StealthEX"].forEach(p => {
     if (![...$("leg1Prov").options].some(o=>o.value===p)) $("leg1Prov").add(new Option(p,p));
     if (![...$("leg2Prov").options].some(o=>o.value===p)) $("leg2Prov").add(new Option(p,p));
   });

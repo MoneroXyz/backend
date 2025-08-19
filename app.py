@@ -45,7 +45,8 @@ from providers import (
     cn_estimate, cn_create, cn_info,
     ex_rate, ex_create, ex_info,
     ss_estimate, ss_create, ss_info,
-    _ss_map_net, _ss_params, SS_BASE
+    _ss_map_net, _ss_params, SS_BASE,
+    sx_estimate, sx_create, sx_info,  # [StealthEX] add imports
 )
 
 # ============== Persistence (very light JSON) ==============
@@ -112,8 +113,8 @@ class QuoteResponse(BaseModel):
     best_index: int
 
 class StartSwapRequest(BaseModel):
-    leg1_provider: Literal["ChangeNOW","Exolix","SimpleSwap"]
-    leg2_provider: Optional[Literal["ChangeNOW","Exolix","SimpleSwap"]] = None
+    leg1_provider: Literal["ChangeNOW","Exolix","SimpleSwap","StealthEX"]  # [StealthEX] added
+    leg2_provider: Optional[Literal["ChangeNOW","Exolix","SimpleSwap","StealthEX"]] = None  # [StealthEX] added
     in_asset: str
     in_network: str
     out_asset: str
@@ -164,6 +165,9 @@ async def _estimate_leg1_to_xmr(provider: str, req: QuoteRequest) -> Optional[fl
     if provider == "SimpleSwap":
         j = await ss_estimate(req.in_asset, "XMR", req.amount, req.in_network, None, req.rate_type)
         return float(j.get("toAmount", 0) or 0)
+    if provider == "StealthEX":  # [StealthEX]
+        j = await sx_estimate(req.in_asset, "XMR", req.amount, req.in_network, None, req.rate_type)
+        return float(j.get("toAmount", 0) or 0)
     return 0.0
 
 async def _estimate_leg2_from_xmr(provider: str, out_asset: str, out_network: str,
@@ -179,13 +183,16 @@ async def _estimate_leg2_from_xmr(provider: str, out_asset: str, out_network: st
     if provider == "SimpleSwap":
         j = await ss_estimate("XMR", out_asset, xmr_in, None, out_network, rate_type)
         return float(j.get("toAmount", 0) or 0)
+    if provider == "StealthEX":  # [StealthEX]
+        j = await sx_estimate("XMR", out_asset, xmr_in, None, out_network, rate_type)
+        return float(j.get("toAmount", 0) or 0)
     return 0.0
 
 @app.post("/api/quote", response_model=QuoteResponse)
 async def api_quote(req: QuoteRequest):
     global _last_quote_req
     _last_quote_req = req.model_dump()  # for diagnostics
-    providers = ["ChangeNOW", "Exolix", "SimpleSwap"]
+    providers = ["ChangeNOW", "Exolix", "SimpleSwap", "StealthEX"]  # [StealthEX] include in quotes
 
     leg1_results: Dict[str, float] = {}
     for p in providers:
@@ -274,6 +281,8 @@ async def _create_leg1_order(provider: str, req: StartSwapRequest, xmr_subaddr: 
         return await ex_create(req.in_asset, req.in_network, "XMR", "XMR", req.amount, xmr_subaddr, req.rate_type)
     if provider == "SimpleSwap":
         return await ss_create(req.in_asset, "XMR", req.amount, xmr_subaddr, req.in_network, None, req.rate_type, refund_address)
+    if provider == "StealthEX":  # [StealthEX]
+        return await sx_create(req.in_asset, "XMR", req.amount, xmr_subaddr, req.in_network, None, req.rate_type, refund_address)
     raise HTTPException(400, f"Unsupported leg1 provider: {provider}")
 
 async def _create_leg2_order(provider: str, out_asset: str, out_network: str, amount_xmr: float, payout_address: str, rate_type: str) -> Dict:
@@ -283,6 +292,8 @@ async def _create_leg2_order(provider: str, out_asset: str, out_network: str, am
         return await ex_create("XMR", "XMR", out_asset, out_network, amount_xmr, payout_address, rate_type)
     if provider == "SimpleSwap":
         return await ss_create("XMR", out_asset, amount_xmr, payout_address, None, out_network, rate_type, None)
+    if provider == "StealthEX":  # [StealthEX]
+        return await sx_create("XMR", out_asset, amount_xmr, payout_address, None, out_network, rate_type, None)
     raise HTTPException(400, f"Unsupported leg2 provider: {provider}")
 
 @app.post("/api/start", response_model=StartSwapResponse)
@@ -312,6 +323,10 @@ async def api_start(req: StartSwapRequest):
     elif req.leg1_provider == "SimpleSwap":
         deposit_address = leg1.get("deposit") or ""
         deposit_extra = leg1.get("extra_id") or None
+        leg1_tx_id = leg1.get("id") or ""
+    elif req.leg1_provider == "StealthEX":  # [StealthEX] normalize fields
+        deposit_address = leg1.get("depositAddress") or ""
+        deposit_extra = leg1.get("depositExtraId") or None
         leg1_tx_id = leg1.get("id") or ""
 
     async with SWAPS_LOCK:
@@ -356,6 +371,7 @@ async def _provider_info(provider: str, tx_id: str) -> Dict:
     if provider == "ChangeNOW": return await cn_info(tx_id)
     if provider == "Exolix": return await ex_info(tx_id)
     if provider == "SimpleSwap": return await ss_info(tx_id)
+    if provider == "StealthEX": return await sx_info(tx_id)  # [StealthEX]
     return {}
 
 async def _send_from_wallet_to(provider_deposit_addr: str, amount_xmr: float) -> str:
@@ -408,6 +424,9 @@ async def _maybe_create_leg2_and_send(swap: Dict):
             swap["leg2"]["tx_id"] = leg2.get("id") or leg2.get("transaction_id") or ""
         elif swap["leg2"]["provider"] == "SimpleSwap":
             deposit_addr = leg2.get("deposit") or ""
+            swap["leg2"]["tx_id"] = leg2.get("id") or ""
+        elif swap["leg2"]["provider"] == "StealthEX":  # [StealthEX]
+            deposit_addr = leg2.get("depositAddress") or ""
             swap["leg2"]["tx_id"] = leg2.get("id") or ""
 
         if not deposit_addr:
