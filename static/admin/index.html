@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Monerizer — Admin</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/ui/style.css" />
+  <style>
+    body { max-width: 1100px; margin: 24px auto; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .card { background: #111; border: 1px solid #222; border-radius: 14px; padding: 16px; }
+    input, select, button { background: #0b0b0b; color: #eee; border: 1px solid #222; border-radius: 10px; padding: 8px 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #222; vertical-align: top; }
+    a { color: #7ccfff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .pill { padding: 3px 8px; border-radius: 999px; font-size: 12px; border: 1px solid #333; }
+    .pill.active { color: #ddd; border-color: #444; }
+    .pill.finished { color: #9dd49d; border-color: #2f4; }   /* used for “Completed” */
+    .pill.failed { color: #f88; border-color: #f44; }
+    .pill.expired { color: #f0c674; border-color: #c9a54a; }
+    .muted { color: #aaa; font-size: 12px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #0b0b0b; border: 1px solid #222; border-radius: 10px; padding: 10px; }
+
+    /* Key–value rows: tidy alignment */
+    .kv { display: grid; grid-template-columns: 180px 1fr; gap: 8px; align-items: start; }
+    .kv .k { color: #aaa; }
+    .kv .v { word-break: break-all; }
+
+    hr { border: none; border-top: 1px solid #222; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>Monerizer — Admin</h2>
+
+  <div class="card">
+    <div class="row">
+      <select id="status">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="finished">Completed</option> <!-- value stays 'finished' -->
+        <option value="failed">Failed</option>
+        <option value="expired">Expired</option>
+      </select>
+      <input id="q" placeholder="Search swaps (id, assets, providers…)" />
+      <button id="btnSearch">Search</button>
+      <span class="muted" id="count"></span>
+    </div>
+
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>IN</th>
+          <th>OUT</th>
+          <th>Leg1</th>
+          <th>Leg2</th>
+          <th>Status</th>
+          <th>Fee (XMR)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="row">
+      <button id="prev">Prev</button>
+      <button id="next">Next</button>
+      <span class="muted" id="pageInfo"></span>
+    </div>
+  </div>
+
+  <div class="card" id="detail" style="margin-top:16px; display:none;">
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <h3 id="d_title">Swap</h3>
+      <button id="btnRaw">Show raw</button>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <h4>Summary</h4>
+        <div id="d_summary"></div>
+      </div>
+      <div>
+        <h4>Metrics</h4>
+        <div id="d_metrics"></div>
+      </div>
+    </div>
+
+    <h4 style="margin-top:12px;">Providers / IDs</h4>
+    <div id="d_providers"></div>
+
+    <pre id="d_raw" style="display:none; margin-top:12px;"></pre>
+  </div>
+
+  <script src="/ui/admin/admin.js"></script>
+</body>
+</html>
