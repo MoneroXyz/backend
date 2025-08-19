@@ -86,6 +86,7 @@
 
   const kv = (k, v) => `<div class="kv"><div>${k}</div><div>${v}</div></div>`;
 
+  // Try to discover OUT amount from several common fields if backend didn't store req.out_amount
   function getOutAmount(swap) {
     const req = swap.req || {};
     if (req.out_amount != null && req.out_amount !== "") return req.out_amount;
@@ -104,8 +105,9 @@
     return null;
   }
 
-  // ⭐ Cleaned up fee line
-  function feeLine(label, feeXMR, feePct, feeUSD, gross) {
+  // Cleaned up fee line:
+  // - If feeUSD missing, but we have feeXMR and XMR/USD, compute a fallback USD.
+  function feeLine(label, feeXMR, feePct, feeUSD, gross, xmrUsd) {
     let pctText = "—";
     if (gross > 0) {
       let pct = (feePct != null ? Number(feePct) : null);
@@ -115,7 +117,12 @@
       }
       pctText = (pct == null || !Number.isFinite(pct)) ? "—" : `${to2(pct)}%`;
     }
-    const usdText = (feeUSD == null || Number.isNaN(Number(feeUSD))) ? "pending" : `$${to2(feeUSD)}`;
+    let usdOut = feeUSD;
+    if ((usdOut == null || Number.isNaN(Number(usdOut))) && feeXMR != null && xmrUsd != null) {
+      const f = Number(feeXMR), p = Number(xmrUsd);
+      if (Number.isFinite(f) && Number.isFinite(p)) usdOut = f * p;
+    }
+    const usdText = (usdOut == null || Number.isNaN(Number(usdOut))) ? "pending" : `$${to2(usdOut)}`;
     return kv(label, `${to6(feeXMR)} XMR (${pctText}) — ${usdText}`);
   }
 
@@ -138,12 +145,21 @@
       kv("Leg1:", safe(s.leg1?.provider)),
       kv("Leg2:", safe(s.leg2?.provider)),
       kv("IN:", `${safe(req.in_asset)} / ${safe(req.in_network)} — ${safe(req.amount)}`),
-      // ⭐ now OUT shows amount if available
       kv("OUT:", `${safe(req.out_asset)} / ${safe(req.out_network)}${outAmt != null ? " — " + to6(outAmt) : ""}`),
       kv("Subaddress:", safe(s.subaddr)),
       kv("Last send txid:", safe(s.last_sent_txid)),
     ].join("");
     $("#d_summary").innerHTML = summaryHtml;
+
+    // Provider fee fallback (if backend didn't include it in metrics)
+    const providerFeeXmr =
+      (m.provider_fee_xmr != null ? m.provider_fee_xmr : null) ??
+      (s.fee && s.fee.provider_spread_xmr != null ? s.fee.provider_spread_xmr : null) ??
+      (s.provider_spread_xmr != null ? s.provider_spread_xmr : null);
+
+    const providerFeeUsd =
+      (m.provider_fee_usd != null ? m.provider_fee_usd : null) ??
+      (providerFeeXmr != null && m.xmr_usd != null ? Number(providerFeeXmr) * Number(m.xmr_usd) : null);
 
     const gross = Number(m.gross_xmr_seen || 0);
     const metricsHtml = [
@@ -151,8 +167,8 @@
       kv("Gross XMR seen:", to6(m.gross_xmr_seen)),
       kv("Net XMR estimated:", to6(m.net_xmr_estimated)),
       `<hr style="border:none;border-top:1px solid #1f1f1f;margin:8px 0;" />`,
-      feeLine("Our fee:", m.our_fee_xmr, m.our_fee_pct, m.our_fee_usd, gross),
-      feeLine("Provider fee:", m.provider_fee_xmr, m.provider_fee_pct, m.provider_fee_usd, gross),
+      feeLine("Our fee:", m.our_fee_xmr, m.our_fee_pct, m.our_fee_usd, gross, m.xmr_usd),
+      feeLine("Provider fee:", providerFeeXmr, m.provider_fee_pct, providerFeeUsd, gross, m.xmr_usd),
     ].join("");
     $("#d_metrics").innerHTML = metricsHtml;
 

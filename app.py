@@ -125,6 +125,8 @@ class StartSwapRequest(BaseModel):
     our_fee_xmr: Optional[float] = 0.0
     # ---- ADDED: customer-provided refund address for leg-1 ----
     refund_address_user: Optional[str] = None
+    # ---- NEW: persist provider spread from the chosen quote so admin math is exact ----
+    provider_spread_xmr: Optional[float] = None
 
 class StartSwapResponse(BaseModel):
     swap_id: str
@@ -353,6 +355,11 @@ async def api_start(req: StartSwapRequest):
             "subaddr_index": subidx,
             "subaddr": subaddr,
             "our_fee_xmr": float(req.our_fee_xmr or 0.0),
+            # ---- NEW: persist quote-time fee info so admin math is exact ----
+            "fee": {
+                "provider_spread_xmr": float(req.provider_spread_xmr or 0.0),
+                "our_fee_xmr": float(req.our_fee_xmr or 0.0),
+            },
             "leg1": {
                 "provider": req.leg1_provider,
                 "order": leg1,
@@ -745,70 +752,21 @@ async def admin_get_swap(swap_id: str):
     our_fee_pct = (our_fee_xmr / gross_for_pct * 100.0) if gross_for_pct > 0 else None
     our_fee_usd = our_fee_xmr * xmr_usd
 
-    # Provider fee (optional if you store it later; else None)
+    # Provider fee (now taken from persisted quote if present)
     provider_spread_xmr = None
     provider_fee_pct = None
     provider_fee_usd = None
     with contextlib.suppress(Exception):
         provider_spread_xmr = float(
-            s.get("fee", {}).get("provider_spread_xmr") or
-            s.get("provider_spread_xmr") or 0.0
+            (s.get("fee", {}) or {}).get("provider_spread_xmr")
+            or s.get("provider_spread_xmr")
+            or 0.0
         )
         if provider_spread_xmr == 0.0:
             provider_spread_xmr = None
-
-    # ---------- NEW: derive provider fee if not supplied ----------
-    if provider_spread_xmr is None:
-        try:
-            provider_spread_xmr = max(0.0, float(gross_xmr or 0.0) - float(net_xmr or 0.0) - float(our_fee_xmr or 0.0))
-            if provider_spread_xmr == 0.0:
-                provider_spread_xmr = None
-        except Exception:
-            provider_spread_xmr = None
-
     if provider_spread_xmr is not None and gross_for_pct > 0:
         provider_fee_pct = provider_spread_xmr / gross_for_pct * 100.0
         provider_fee_usd = provider_spread_xmr * xmr_usd
-
-    # ---------- NEW: expose OUT amount actually reported by provider (leg2) ----------
-    def _extract_out_amount(d: dict) -> Optional[float]:
-        if not isinstance(d, dict):
-            return None
-        # common keys across providers
-        for k in ["toAmount", "amountTo", "amount_to", "outAmount", "amount_out", "output_amount", "to_amount"]:
-            v = d.get(k)
-            if isinstance(v, (int, float)) and v > 0:
-                return float(v)
-            # sometimes string numbers
-            if isinstance(v, str):
-                try:
-                    fv = float(v)
-                    if fv > 0:
-                        return fv
-                except Exception:
-                    pass
-        # nested fields like output.amount or result.amount
-        for outer in ["output", "result", "data"]:
-            sub = d.get(outer)
-            if isinstance(sub, dict):
-                amt = sub.get("amount") or sub.get("toAmount")
-                try:
-                    if amt is not None:
-                        fv = float(amt)
-                        if fv > 0:
-                            return fv
-                except Exception:
-                    pass
-        return None
-
-    out_amount_reported = None
-    with contextlib.suppress(Exception):
-        p2 = (s.get("leg2") or {}).get("provider_info") or {}
-        out_amount_reported = _extract_out_amount(p2)
-        if out_amount_reported is None:
-            # sometimes the order payload carries the value
-            p2o = (s.get("leg2") or {}).get("order") or {}
-            out_amount_reported = _extract_out_amount(p2o)
 
     return {
         "swap": s,
@@ -822,9 +780,5 @@ async def admin_get_swap(swap_id: str):
             "provider_fee_xmr": provider_spread_xmr,
             "provider_fee_pct": provider_fee_pct,
             "provider_fee_usd": provider_fee_usd,
-            # ---------- NEW: so admin.js can display OUT amount cleanly ----------
-            "out_amount_reported": out_amount_reported,
-            "out_asset": (s.get("req") or {}).get("out_asset"),
-            "out_network": (s.get("req") or {}).get("out_network"),
         }
     }

@@ -236,7 +236,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "0e7091f2-4681-40f2-86de-04a338fc6a9e"
+        "trace_id": "b8342dff-99e0-4a6a-b82e-1de77045cc93"
       }
     },
     "leg2": {
@@ -404,7 +404,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "4a39e3ff-fb41-4107-8bca-7dc6c8a2a21c"
+        "trace_id": "f8f4262a-1cbd-4439-99a0-84c13e51cf73"
       }
     },
     "leg2": {
@@ -626,7 +626,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "ca5f1dd1-f570-470d-aaa1-dfc49e4c2cd8"
+        "trace_id": "478b5d11-b8fb-4768-97d1-37b452a0949b"
       }
     },
     "timeline": [
@@ -835,7 +835,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "cf9d88a8-baff-42ee-b0cd-03e9f2e319b0"
+        "trace_id": "43594aa7-6a93-4fe2-82a5-c89543712f1e"
       }
     },
     "timeline": [
