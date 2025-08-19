@@ -1,15 +1,17 @@
-(function(){
-  const $ = s => document.querySelector(s);
-  const tbody = $("#tbl tbody");
-  const statusSel = $("#status");
-  const q = $("#q");
-  const count = $("#count");
+(function () {
+  const $ = (s) => document.querySelector(s);
+
+  const tbody    = $("#tbl tbody");
+  const statusSel= $("#status");
+  const q        = $("#q");
+  const count    = $("#count");
   const pageInfo = $("#pageInfo");
+
   let page = 1, pageSize = 25;
 
-  const to6 = v => (v == null || Number.isNaN(Number(v)) ? "—" : Number(v).toFixed(6));
-  const to2 = v => (v == null || Number.isNaN(Number(v)) ? "—" : Number(v).toFixed(2));
-  const safe = x => (x == null ? "" : String(x));
+  const to6 = (v) => (v == null || Number.isNaN(Number(v)) ? "—" : Number(v).toFixed(6));
+  const to2 = (v) => (v == null || Number.isNaN(Number(v)) ? "—" : Number(v).toFixed(2));
+  const safe = (x) => (x == null ? "" : String(x));
 
   async function fetchList() {
     const params = new URLSearchParams();
@@ -23,34 +25,36 @@
     renderTable(j);
   }
 
-  // Map backend bucket -> label shown in UI
+  // Map backend bucket -> user-facing badge label
   function prettyStatusLabel(bucket) {
     const b = (bucket || "").toLowerCase();
-    if (b === "finished") return "Completed";
-    if (b === "failed") return "Failed";
-    if (b === "expired") return "Expired";
+    if (b === "finished")  return "Completed";
+    if (b === "failed")    return "Failed";
+    if (b === "expired")   return "Expired";
+    if (b === "refunded")  return "Refunded"; // NEW
     return "Active";
   }
 
   function pill(bucket) {
-    const cls = (bucket || "active").toLowerCase(); // keep original class names
+    const cls = (bucket || "active").toLowerCase();
     const label = prettyStatusLabel(bucket);
-    return `<span class="pill ${cls}">${label}</span>`;
+    return `<span class="badge status-${cls}">${label}</span>`;
   }
 
   function renderTable(j) {
     tbody.innerHTML = "";
-    count.textContent = `${j.total} result(s)`;
-    pageInfo.textContent = `Page ${j.page} of ${Math.max(1, Math.ceil(j.total / j.page_size))}`;
+    count.textContent = `${j.total ?? 0} result(s)`;
+    pageInfo.textContent = `Page ${j.page ?? 1} of ${Math.max(1, Math.ceil((j.total ?? 0) / (j.page_size ?? pageSize)))}`;
 
-    for (const row of j.items) {
+    for (const row of (j.items || [])) {
       const tr = document.createElement("tr");
       const id = row.id || "";
-      const inStr = `${row.in_asset || ""} / ${row.in_network || ""}`;
+      const inStr  = `${row.in_asset || ""} / ${row.in_network || ""}`;
       const outStr = `${row.out_asset || ""} / ${row.out_network || ""}`;
       const st = row.status_bucket || "active";
+
       tr.innerHTML = `
-        <td><a href="#" data-id="${id}" class="lnk">${id.slice(0,8)}…</a></td>
+        <td><a href="#" class="lnk" data-id="${id}">${id.slice(0, 8)}…</a></td>
         <td>${inStr}</td>
         <td>${outStr}</td>
         <td>${row.leg1_provider || ""}</td>
@@ -58,10 +62,12 @@
         <td>${pill(st)}</td>
         <td>${to6(row.our_fee_xmr ?? 0)}</td>
       `;
+
       tbody.appendChild(tr);
     }
 
-    [...document.querySelectorAll("a.lnk")].forEach(a => {
+    // link handlers
+    [...document.querySelectorAll("a.lnk")].forEach((a) => {
       a.addEventListener("click", async (e) => {
         e.preventDefault();
         const id = a.getAttribute("data-id");
@@ -80,53 +86,78 @@
     return { local, tz, utc };
   }
 
-  const kv = (k, v) => `<div class="kv"><div class="k"><b>${k}</b></div><div class="v">${v}</div></div>`;
+  const kv = (k, v) => `<div class="kv"><div>${k}</div><div>${v}</div></div>`;
 
-  // Fee line: show "pending" % until gross > 0; once >0 compute if backend didn't provide.
-  function feeLine(label, feeXMR, feePct, feeUSD, gross) {
-    let pctText = "pending";
-    if (gross > 0) {
-      let pct = (feePct != null ? Number(feePct) : null);
-      if ((pct == null || Number.isNaN(pct)) && feeXMR != null) {
-        const f = Number(feeXMR);
-        pct = (Number.isFinite(f) ? (f / gross) * 100 : null);
-      }
-      pctText = (pct == null || !Number.isFinite(pct)) ? "—" : `${to2(pct)}%`;
+  // Try to discover an actual OUT amount from various common places
+  function getOutAmount(swap) {
+    const cands = [
+      swap?.amount_out,
+      swap?.leg2?.amount_out,
+      swap?.leg2?.order?.withdrawal?.amount,
+      swap?.leg2?.provider_info?.withdrawal?.amount,
+      swap?.leg2?.provider_info?.payout?.amount,
+      swap?.leg2?.order?.toAmount,
+      swap?.leg2?.provider_info?.toAmount,
+    ];
+    for (const v of cands) {
+      const n = Number(v);
+      if (Number.isFinite(n) && n > 0) return n;
     }
-    return kv(label, `${to6(feeXMR)} XMR (${pctText}) — $${to2(feeUSD)}`);
+    return null;
+  }
+
+  // Fee line with robust fallbacks:
+  // - if feeXMR is missing, compute from (gross - net)
+  // - if % missing, compute from feeXMR / gross
+  function feeLine(label, feeXMR, feePct, feeUSD, gross, net) {
+    let xmr = (feeXMR != null && Number.isFinite(Number(feeXMR))) ? Number(feeXMR) : null;
+    if ((xmr == null || Number.isNaN(xmr)) && Number.isFinite(gross) && gross > 0 && Number.isFinite(Number(net))) {
+      xmr = Math.max(0, gross - Number(net));
+    }
+
+    let pct = (feePct != null && Number.isFinite(Number(feePct))) ? Number(feePct) : null;
+    if ((pct == null || Number.isNaN(pct)) && Number.isFinite(gross) && gross > 0 && xmr != null) {
+      pct = (xmr / gross) * 100;
+    }
+
+    const pctText = (pct == null || !Number.isFinite(pct)) ? "—" : `${to2(pct)}%`;
+    return kv(label, `${to6(xmr)} XMR (${pctText}) — $${to2(feeUSD)}`);
   }
 
   function renderDetail(j) {
     $("#detail").style.display = "block";
+
     const s = j.swap || {};
     const m = j.metrics || {};
+
     $("#d_title").textContent = `Swap ${s.id || ""}`;
 
     const req = s.req || {};
     const t = fmtLocalWithTZ(s.created || 0);
 
+    const outAmt = getOutAmount(s);
     const summaryHtml = [
       kv("ID:", safe(s.id)),
-      kv("Created:", `${t.local} <span class="muted">(${t.tz})</span>`),
+      kv("Created:", `${t.local} (${t.tz})`),
       kv("Created (UTC):", t.utc),
       kv("Leg1:", safe(s.leg1?.provider)),
       kv("Leg2:", safe(s.leg2?.provider)),
       kv("IN:", `${safe(req.in_asset)} / ${safe(req.in_network)} — ${safe(req.amount)}`),
-      kv("OUT:", `${safe(req.out_asset)} / ${safe(req.out_network)}`),
+      kv("OUT:", `${safe(req.out_asset)} / ${safe(req.out_network)}${outAmt != null ? " — " + to6(outAmt) : ""}`),
       kv("Subaddress:", safe(s.subaddr)),
       kv("Last send txid:", safe(s.last_sent_txid)),
     ].join("");
     $("#d_summary").innerHTML = summaryHtml;
 
     const gross = Number(m.gross_xmr_seen || 0);
-
+    const net   = Number(m.net_xmr_estimated || 0);
     const metricsHtml = [
       kv("XMR/USD:", `$${to2(m.xmr_usd)}`),
       kv("Gross XMR seen:", to6(m.gross_xmr_seen)),
       kv("Net XMR estimated:", to6(m.net_xmr_estimated)),
-      "<hr />",
-      feeLine("Our fee:", m.our_fee_xmr, m.our_fee_pct, m.our_fee_usd, gross),
-      feeLine("Provider fee:", m.provider_fee_xmr, m.provider_fee_pct, m.provider_fee_usd, gross),
+      `<hr style="border:none;border-top:1px solid #1f1f1f;margin:8px 0;" />`,
+      feeLine("Our fee:", m.our_fee_xmr, m.our_fee_pct, m.our_fee_usd, gross, net),
+      feeLine("Provider fee:", m.provider_fee_xmr, m.provider_fee_pct, m.provider_fee_usd, gross, net),
     ].join("");
     $("#d_metrics").innerHTML = metricsHtml;
 
@@ -138,10 +169,11 @@
     ].join("");
     $("#d_providers").innerHTML = providersHtml;
 
-    // Raw toggle (hidden by default)
+    // Raw toggle
     const raw = $("#d_raw");
     raw.style.display = "none";
     raw.textContent = JSON.stringify(s, null, 2);
+
     const btn = $("#btnRaw");
     btn.textContent = "Show raw";
     btn.onclick = () => {
@@ -151,10 +183,11 @@
     };
   }
 
+  // events
   $("#btnSearch").addEventListener("click", () => { page = 1; fetchList(); });
-  $("#prev").addEventListener("click", () => { page = Math.max(1, page-1); fetchList(); });
-  $("#next").addEventListener("click", () => { page = page+1; fetchList(); });
+  $("#prev").addEventListener("click", () => { page = Math.max(1, page - 1); fetchList(); });
+  $("#next").addEventListener("click", () => { page = page + 1; fetchList(); });
 
-  // Initial load
+  // initial load
   fetchList();
 })();

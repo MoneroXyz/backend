@@ -1,11 +1,12 @@
 /* Monerizer UI (v7.1) – best route first + toggle others + proper status lights */
+
 const ASSETS = [
   { symbol: "USDT", name: "Tether USD", networks: ["ETH","TRX","BSC"] },
   { symbol: "USDC", name: "USD Coin", networks: ["ETH"] },
-  { symbol: "BTC",  name: "Bitcoin",   networks: ["BTC"] },
-  { symbol: "ETH",  name: "Ethereum",  networks: ["ETH"] },
-  { symbol: "LTC",  name: "Litecoin",  networks: ["LTC"] },
-  { symbol: "XMR",  name: "Monero",    networks: ["XMR"] },
+  { symbol: "BTC", name: "Bitcoin", networks: ["BTC"] },
+  { symbol: "ETH", name: "Ethereum", networks: ["ETH"] },
+  { symbol: "LTC", name: "Litecoin", networks: ["LTC"] },
+  { symbol: "XMR", name: "Monero", networks: ["XMR"] },
 ];
 
 let chosen = null;
@@ -23,8 +24,7 @@ function fillAssets() {
     ta.add(new Option(`${a.symbol}`, a.symbol));
   }
   fa.value = "USDT"; ta.value = "BTC";
-  fillNetworks("from");
-  fillNetworks("to");
+  fillNetworks("from"); fillNetworks("to");
 }
 function fillNetworks(side) {
   const assetSel = $(side === "from" ? "fromAsset" : "toAsset");
@@ -68,6 +68,7 @@ $("btnQuote").addEventListener("click", async () => {
       amount: Number($("amount").value),
       rate_type: $("rateType").value
     };
+
     const r = await fetch("/api/quote", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
@@ -106,11 +107,27 @@ function renderRoutesBestFirst(q) {
       <div><strong>${best.leg1.provider}</strong> → <strong>${best.leg2.provider}</strong> <span class="best-tag">BEST</span></div>
       <div class="badge">rank #1</div>
     </div>
-    <div class="row"><div class="kv"><div>Leg 1</div><div>${fmt(best.leg1.amount_from,6)} ${q.request.in_asset} → ${fmt(best.leg1.amount_to,6)} XMR</div></div></div>
-    <div class="row"><div class="kv"><div>Our fee</div><div>${fmt(best.fee.our_fee_xmr,6)} XMR</div></div></div>
-    <div class="row"><div class="kv"><div>Leg 2 (est)</div><div>${fmt(best.leg2.amount_to,6)} ${q.request.out_asset}</div></div></div>
-    <div class="row"><div class="kv"><div><strong>Receive (est.)</strong></div><div><strong>${fmt(best.receive_out,8)} ${q.request.out_asset}</strong></div></div></div>
-    <div class="row"><button class="btn-choose" data-i="0">Choose best</button></div>
+
+    <div class="row">
+      <div class="badge">Leg 1</div>
+      <div>${fmt(best.leg1.amount_from,6)} ${q.request.in_asset} → ${fmt(best.leg1.amount_to,6)} XMR</div>
+    </div>
+    <div class="row">
+      <div class="badge">Our fee</div>
+      <div>${fmt(best.fee.our_fee_xmr,6)} XMR</div>
+    </div>
+    <div class="row">
+      <div class="badge">Leg 2 (est)</div>
+      <div>${fmt(best.leg2.amount_to,6)} ${q.request.out_asset}</div>
+    </div>
+    <div class="row">
+      <div class="badge">Receive (est.)</div>
+      <div><strong>${fmt(best.receive_out,8)} ${q.request.out_asset}</strong></div>
+    </div>
+
+    <div class="row">
+      <button class="btn-choose" data-i="0">Choose best</button>
+    </div>
   `;
   box.appendChild(bestEl);
 
@@ -125,7 +142,8 @@ function renderRoutesBestFirst(q) {
 
   const othersWrap = document.createElement("div");
   othersWrap.id = "othersWrap";
-  othersWrap.className = rest.length ? "": "hidden";
+  othersWrap.className = rest.length ? "" : "hidden";
+
   rest.forEach((opt, i) => {
     const el = document.createElement("div");
     el.className = "route";
@@ -134,11 +152,27 @@ function renderRoutesBestFirst(q) {
         <div><strong>${opt.leg1.provider}</strong> → <strong>${opt.leg2.provider}</strong></div>
         <div class="badge">rank #${i+2}</div>
       </div>
-      <div class="row"><div class="kv"><div>Leg 1</div><div>${fmt(opt.leg1.amount_from,6)} ${q.request.in_asset} → ${fmt(opt.leg1.amount_to,6)} XMR</div></div></div>
-      <div class="row"><div class="kv"><div>Our fee</div><div>${fmt(opt.fee.our_fee_xmr,6)} XMR</div></div></div>
-      <div class="row"><div class="kv"><div>Leg 2 (est)</div><div>${fmt(opt.leg2.amount_to,6)} ${q.request.out_asset}</div></div></div>
-      <div class="row"><div class="kv"><div><strong>Receive (est.)</strong></div><div><strong>${fmt(opt.receive_out,8)} ${q.request.out_asset}</strong></div></div></div>
-      <div class="row"><button class="btn-choose" data-i="${i+1}">Choose</button></div>
+
+      <div class="row">
+        <div class="badge">Leg 1</div>
+        <div>${fmt(opt.leg1.amount_from,6)} ${q.request.in_asset} → ${fmt(opt.leg1.amount_to,6)} XMR</div>
+      </div>
+      <div class="row">
+        <div class="badge">Our fee</div>
+        <div>${fmt(opt.fee.our_fee_xmr,6)} XMR</div>
+      </div>
+      <div class="row">
+        <div class="badge">Leg 2 (est)</div>
+        <div>${fmt(opt.leg2.amount_to,6)} ${q.request.out_asset}</div>
+      </div>
+      <div class="row">
+        <div class="badge">Receive (est.)</div>
+        <div><strong>${fmt(opt.receive_out,8)} ${q.request.out_asset}</strong></div>
+      </div>
+
+      <div class="row">
+        <button class="btn-choose" data-i="${i+1}">Choose</button>
+      </div>
     `;
     othersWrap.appendChild(el);
   });
@@ -175,8 +209,11 @@ function renderRoutesBestFirst(q) {
 $("btnStart").addEventListener("click", async () => {
   try {
     if (!chosen) return alert("Choose a route first.");
+
     const payout = $("payout").value.trim();
     if (!payout) return alert("Enter payout address.");
+
+    const refund = ($("refund")?.value || "").trim();
 
     const reqCtx = JSON.parse($("btnStart").dataset.ctx || "{}");
     const body = {
@@ -189,7 +226,9 @@ $("btnStart").addEventListener("click", async () => {
       amount: Number(reqCtx.amount),
       payout_address: payout,
       rate_type: reqCtx.rate_type,
-      our_fee_xmr: Number(chosen?.fee?.our_fee_xmr || 0)
+      our_fee_xmr: Number(chosen?.fee?.our_fee_xmr || 0),
+      // NEW: pass optional refund address to backend
+      refund_address_user: refund || null
     };
 
     $("btnStart").disabled = true;
@@ -221,7 +260,10 @@ $("btnWatch").addEventListener("click", () => {
   pollTimer = setInterval(fetchStatus, 3000);
 });
 $("btnStop").addEventListener("click", () => {
-  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
 });
 
 async function fetchStatus() {
@@ -242,8 +284,10 @@ function drawSteps(s) {
 
   // This must match backend "timeline" semantics
   const tl = Array.isArray(s?.timeline) ? s.timeline : [];
-  const names = ["created","waiting_deposit","leg1_processing","leg1_complete","awaiting_wallet_unlocked","routing_xmr_to_leg2","leg2_processing","complete"];
-
+  const names = [
+    "created","waiting_deposit","leg1_processing","leg1_complete",
+    "awaiting_wallet_unlocked","routing_xmr_to_leg2","leg2_processing","complete"
+  ];
   names.forEach(name => {
     const d = document.createElement("div");
     const isOn = tl.includes(name) || s?.status === name;
