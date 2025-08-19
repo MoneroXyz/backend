@@ -1,51 +1,55 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>Monerizer — Admin</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="/ui/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="../style.css" rel="stylesheet" />
   <style>
-    body { max-width: 1100px; margin: 24px auto; }
-    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .card { background: #111; border: 1px solid #222; border-radius: 14px; padding: 16px; }
-    input, select, button { background: #0b0b0b; color: #eee; border: 1px solid #222; border-radius: 10px; padding: 8px 10px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #222; vertical-align: top; }
-    a { color: #7ccfff; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .pill { padding: 3px 8px; border-radius: 999px; font-size: 12px; border: 1px solid #333; }
-    .pill.active { color: #ddd; border-color: #444; }
-    .pill.finished { color: #9dd49d; border-color: #2f4; }   /* used for “Completed” */
-    .pill.failed { color: #f88; border-color: #f44; }
-    .pill.expired { color: #f0c674; border-color: #c9a54a; }
-    .muted { color: #aaa; font-size: 12px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    pre { white-space: pre-wrap; word-break: break-word; background: #0b0b0b; border: 1px solid #222; border-radius: 10px; padding: 10px; }
-
-    /* Key–value rows: tidy alignment */
-    .kv { display: grid; grid-template-columns: 180px 1fr; gap: 8px; align-items: start; }
-    .kv .k { color: #aaa; }
-    .kv .v { word-break: break-all; }
-
-    hr { border: none; border-top: 1px solid #222; margin: 10px 0; }
+    /* keep existing badges; add one for refunded that matches your palette */
+    .badge { padding: 2px 8px; border-radius: 999px; font-size: 12px; }
+    .status-active    { background: #1f2937; color: #c7d2fe; }
+    .status-completed { background: #052e16; color: #86efac; }
+    .status-failed    { background: #3f1d1d; color: #fecaca; }
+    .status-expired   { background: #3b2f1a; color: #fde68a; }
+    .status-refunded  { background: #0b2531; color: #a5f3fc; } /* NEW */
+    .admin-wrap { max-width: 1200px; margin: 24px auto; padding: 0 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { text-align: left; font-weight: 600; padding: 10px 8px; border-bottom: 1px solid #2a2a2a; }
+    tbody td { padding: 10px 8px; border-bottom: 1px solid #1d1d1d; }
+    a.lnk { color: #93c5fd; text-decoration: none; }
+    a.lnk:hover { text-decoration: underline; }
+    .controls { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+    .controls .spacer { flex: 1 1 auto; }
+    .pillselect, .searchbox, .btn { height: 36px; border-radius: 8px; border: 1px solid #2b2b2b; background:#0b0b0b; color:#e5e7eb; padding: 0 10px; }
+    .btn { background:#1f45ff; border-color:#1f45ff; cursor: pointer; }
+    .btn:hover { filter: brightness(1.1); }
+    .pager { display:flex; gap:10px; align-items:center; margin-top:12px; }
+    .detail { margin-top: 24px; padding: 16px; border: 1px solid #1f1f1f; border-radius: 12px; background: #0b0b0b; }
+    .kv { display:grid; grid-template-columns: 220px 1fr; gap: 6px 14px; margin-bottom: 6px; }
+    .section-title { font-weight: 700; margin: 14px 0 8px; }
+    pre { background:#0a0a0a; border:1px solid #1f1f1f; padding:10px; border-radius:8px; overflow:auto; }
   </style>
 </head>
 <body>
-  <h2>Monerizer — Admin</h2>
+  <div class="admin-wrap">
+    <h1>Monerizer — Admin</h1>
 
-  <div class="card">
-    <div class="row">
-      <select id="status">
+    <div class="controls">
+      <select id="status" class="pillselect">
         <option value="">All statuses</option>
         <option value="active">Active</option>
-        <option value="finished">Completed</option> <!-- value stays 'finished' -->
+        <option value="finished">Completed</option>
         <option value="failed">Failed</option>
         <option value="expired">Expired</option>
+        <option value="refunded">Refunded</option> <!-- NEW -->
       </select>
-      <input id="q" placeholder="Search swaps (id, assets, providers…)" />
-      <button id="btnSearch">Search</button>
-      <span class="muted" id="count"></span>
+
+      <input id="q" class="searchbox" type="text" placeholder="Search swaps (id, assets, providers, subaddress)"/>
+      <button id="btnSearch" class="btn">Search</button>
+
+      <div class="spacer"></div>
+      <span id="count">0 result(s)</span>
     </div>
 
     <table id="tbl">
@@ -63,36 +67,31 @@
       <tbody></tbody>
     </table>
 
-    <div class="row">
-      <button id="prev">Prev</button>
-      <button id="next">Next</button>
-      <span class="muted" id="pageInfo"></span>
+    <div class="pager">
+      <button id="prev" class="btn" type="button">Prev</button>
+      <button id="next" class="btn" type="button">Next</button>
+      <span id="pageInfo"></span>
+    </div>
+
+    <div id="detail" class="detail" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 id="d_title">Swap</h3>
+        <button id="btnRaw" class="btn" type="button">Show raw</button>
+      </div>
+
+      <h4 class="section-title">Summary</h4>
+      <div id="d_summary"></div>
+
+      <h4 class="section-title">Metrics</h4>
+      <div id="d_metrics"></div>
+
+      <h4 class="section-title">Providers / IDs</h4>
+      <div id="d_providers"></div>
+
+      <pre id="d_raw" style="display:none;"></pre>
     </div>
   </div>
 
-  <div class="card" id="detail" style="margin-top:16px; display:none;">
-    <div style="display:flex; align-items:center; justify-content:space-between;">
-      <h3 id="d_title">Swap</h3>
-      <button id="btnRaw">Show raw</button>
-    </div>
-
-    <div class="grid-2">
-      <div>
-        <h4>Summary</h4>
-        <div id="d_summary"></div>
-      </div>
-      <div>
-        <h4>Metrics</h4>
-        <div id="d_metrics"></div>
-      </div>
-    </div>
-
-    <h4 style="margin-top:12px;">Providers / IDs</h4>
-    <div id="d_providers"></div>
-
-    <pre id="d_raw" style="display:none; margin-top:12px;"></pre>
-  </div>
-
-  <script src="/ui/admin/admin.js"></script>
+  <script src="admin.js"></script>
 </body>
 </html>

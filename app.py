@@ -123,6 +123,10 @@ class StartSwapRequest(BaseModel):
     payout_address: str
     rate_type: Literal["float","fixed"] = "float"
     our_fee_xmr: Optional[float] = 0.0
+    # ---- ADDED: customer-provided refund address for leg-1 ----
+    refund_address_user: Optional[str] = None
+    # ---- NEW: persist provider spread from the chosen quote so admin math is exact ----
+    provider_spread_xmr: Optional[float] = None
 
 class StartSwapResponse(BaseModel):
     swap_id: str
@@ -212,6 +216,8 @@ async def api_quote(req: QuoteRequest):
         provider_spread_xmr = max(0.0, mid_xmr_expected - leg1_xmr)
         our_fee = _mirror_fee(provider_spread_xmr, leg1_xmr)
         for leg2_provider in providers:
+            if leg2_provider == leg1_provider:  # << enforce different providers in quotes
+                continue
             try:
                 leg2_out_amt = await _estimate_leg2_from_xmr(
                     leg2_provider, req.out_asset, req.out_network,
@@ -285,28 +291,39 @@ async def _create_leg1_order(provider: str, req: StartSwapRequest, xmr_subaddr: 
         return await sx_create(req.in_asset, "XMR", req.amount, xmr_subaddr, req.in_network, None, req.rate_type, refund_address)
     raise HTTPException(400, f"Unsupported leg1 provider: {provider}")
 
-async def _create_leg2_order(provider: str, out_asset: str, out_network: str, amount_xmr: float, payout_address: str, rate_type: str) -> Dict:
+# ---- CHANGED: allow passing a refund address to leg-2 providers ----
+async def _create_leg2_order(provider: str, out_asset: str, out_network: str, amount_xmr: float, payout_address: str, rate_type: str, refund_address: Optional[str]) -> Dict:
     if provider == "ChangeNOW":
-        return await cn_create("XMR", out_asset, amount_xmr, payout_address, None, out_network, "fixed" if rate_type=="fixed" else "standard", None)
+        return await cn_create("XMR", out_asset, amount_xmr, payout_address, None, out_network, "fixed" if rate_type=="fixed" else "standard", refund_address)
     if provider == "Exolix":
         return await ex_create("XMR", "XMR", out_asset, out_network, amount_xmr, payout_address, rate_type)
     if provider == "SimpleSwap":
-        return await ss_create("XMR", out_asset, amount_xmr, payout_address, None, out_network, rate_type, None)
+        return await ss_create("XMR", out_asset, amount_xmr, payout_address, None, out_network, rate_type, refund_address)
     if provider == "StealthEX":  # [StealthEX]
-        return await sx_create("XMR", out_asset, amount_xmr, payout_address, None, out_network, rate_type, None)
+        return await sx_create("XMR", out_asset, amount_xmr, payout_address, None, out_network, rate_type, refund_address)
     raise HTTPException(400, f"Unsupported leg2 provider: {provider}")
 
 @app.post("/api/start", response_model=StartSwapResponse)
 async def api_start(req: StartSwapRequest):
+    # If leg2 is not specified, pick a different provider than leg1
     if not req.leg2_provider:
-        req.leg2_provider = "Exolix"  # default
+        for p in ["ChangeNOW", "Exolix", "SimpleSwap", "StealthEX"]:
+            if p != req.leg1_provider:
+                req.leg2_provider = p
+                break
+
+    # Hard rule: leg1 and leg2 must be different
+    if req.leg1_provider == req.leg2_provider:
+        raise HTTPException(400, "leg2_provider must differ from leg1_provider")
+
     swap_id = str(uuid.uuid4())
 
     sub = await create_subaddress(f"swap:{swap_id}")
     subaddr = sub["address"]
     subidx = sub["address_index"]
 
-    refund_addr = None
+    # ---- pass customer refund (if any) to leg-1 provider ----
+    refund_addr = req.refund_address_user or None
     leg1 = await _create_leg1_order(req.leg1_provider, req, subaddr, refund_addr)
 
     deposit_address = ""
@@ -334,9 +351,15 @@ async def api_start(req: StartSwapRequest):
             "id": swap_id,
             "created": time.time(),
             "req": req.model_dump(),
+            "user_refund_address": req.refund_address_user or None,  # store for admin view
             "subaddr_index": subidx,
             "subaddr": subaddr,
             "our_fee_xmr": float(req.our_fee_xmr or 0.0),
+            # ---- NEW: persist quote-time fee info so admin math is exact ----
+            "fee": {
+                "provider_spread_xmr": float(req.provider_spread_xmr or 0.0),
+                "our_fee_xmr": float(req.our_fee_xmr or 0.0),
+            },
             "leg1": {
                 "provider": req.leg1_provider,
                 "order": leg1,
@@ -367,6 +390,17 @@ async def api_start(req: StartSwapRequest):
     )
 
 # ================== STATUS / SWEEPER ==================
+
+# ---- helpers to detect "refunded" in provider info ----
+def _status_text(pinfo: Dict) -> str:
+    if not isinstance(pinfo, dict):
+        return ""
+    return str(pinfo.get("status") or pinfo.get("state") or pinfo.get("stage") or "").lower()
+
+def _looks_refunded(pinfo: Dict) -> bool:
+    st = _status_text(pinfo)
+    return any(k in st for k in ["refunded", "refund", "returned", "sent back", "reimbursed"])
+
 async def _provider_info(provider: str, tx_id: str) -> Dict:
     if provider == "ChangeNOW": return await cn_info(tx_id)
     if provider == "Exolix": return await ex_info(tx_id)
@@ -413,7 +447,8 @@ async def _maybe_create_leg2_and_send(swap: Dict):
             out_network=req["out_network"],
             amount_xmr=need,
             payout_address=req["payout_address"],
-            rate_type=req["rate_type"]
+            rate_type=req["rate_type"],
+            refund_address=swap.get("subaddr")  # always our subaddress for leg-2 refunds
         )
         deposit_addr = ""
         if swap["leg2"]["provider"] == "ChangeNOW":
@@ -457,21 +492,50 @@ async def api_status(swap_id: str):
             if swap["leg1"].get("tx_id"):
                 swap["leg1"]["provider_info"] = await _provider_info(swap["leg1"]["provider"], swap["leg1"]["tx_id"])
 
-        # ---- Expire if user never paid the provider's pay-in address within 2 hours ----
+        # Mark refunded if provider shows refund (leg1)
+        with contextlib.suppress(Exception):
+            p1 = swap["leg1"].get("provider_info") or {}
+            if _looks_refunded(p1):
+                swap["leg1"]["status"] = "refunded"
+                swap["refunded"] = True
+                tl = swap.setdefault("timeline", [])
+                if not tl or tl[-1] != "refunded":
+                    tl.append("refunded")
+
+        # ---- Expire if user never paid within 2 hours (more robust) ----
         try:
             now = time.time()
-            age = now - float(swap.get("created", now))
+            created = float(swap.get("created", now))
+            age = now - created
+
             pinfo = swap["leg1"].get("provider_info") or {}
             st = str(pinfo.get("status") or pinfo.get("state") or pinfo.get("stage") or "").lower()
 
-            # If provider explicitly says expired/canceled/timeout => expire immediately
+            # Explicit provider expiry states
             explicit_expired = any(x in st for x in ["expired", "canceled", "cancelled", "timeout", "timed out", "unpaid"])
+            # If provider indicates refund, don't expire
+            explicitly_refunded = any(x in st for x in ["refunded", "refund", "returned", "sent back", "reimbursed"])
 
-            # Still waiting/unpaid (provider hasn't seen the user's payment)
             waiting_terms = ["waiting", "unpaid", "no payment", "await", "new", "pending"]
             still_waiting = any(w in st for w in waiting_terms) or (st.strip() == "")
 
-            should_expire = explicit_expired or (age > 2*60*60 and still_waiting and not swap["leg2"].get("created"))
+            # Did any XMR ever arrive to our subaddress?
+            rx_any = False
+            with contextlib.suppress(Exception):
+                subidx = swap.get("subaddr_index")
+                if isinstance(subidx, int):
+                    rx_any = (await sum_received_for_subaddr(subidx)) > 0
+
+            leg2_not_started = not bool(swap["leg2"].get("created"))
+
+            should_expire = False
+            if explicit_expired and not explicitly_refunded:
+                should_expire = True
+            elif (age > 2 * 60 * 60) and leg2_not_started and not rx_any and not explicitly_refunded:
+                should_expire = True
+            elif (age > 2 * 60 * 60) and leg2_not_started and still_waiting and not explicitly_refunded:
+                should_expire = True
+
             if should_expire and not swap.get("expired"):
                 swap["expired"] = True
                 swap["leg1"]["status"] = "expired"
@@ -485,6 +549,16 @@ async def api_status(swap_id: str):
         with contextlib.suppress(Exception):
             if swap["leg2"].get("tx_id"):
                 swap["leg2"]["provider_info"] = await _provider_info(swap["leg2"]["provider"], swap["leg2"]["tx_id"])
+
+        # Mark refunded if provider shows refund (leg2)
+        with contextlib.suppress(Exception):
+            p2 = swap["leg2"].get("provider_info") or {}
+            if _looks_refunded(p2):
+                swap["leg2"]["status"] = "refunded"
+                swap["refunded"] = True
+                tl = swap.setdefault("timeline", [])
+                if not tl or tl[-1] != "refunded":
+                    tl.append("refunded")
 
         # Maybe create/send leg2
         with contextlib.suppress(Exception):
@@ -600,6 +674,10 @@ def _compute_status_bucket(swap: Dict) -> str:
     if swap.get("expired"):
         return "expired"
 
+    # ---- ADDED: refunded bucket ----
+    if swap.get("refunded"):
+        return "refunded"
+
     leg2_status = (swap.get("leg2", {}) or {}).get("status", "") or ""
     if "error" in leg2_status.lower():
         return "failed"
@@ -693,14 +771,15 @@ async def admin_get_swap(swap_id: str):
     our_fee_pct = (our_fee_xmr / gross_for_pct * 100.0) if gross_for_pct > 0 else None
     our_fee_usd = our_fee_xmr * xmr_usd
 
-    # Provider fee (optional if you store it later; else None)
+    # Provider fee (now taken from persisted quote if present)
     provider_spread_xmr = None
     provider_fee_pct = None
     provider_fee_usd = None
     with contextlib.suppress(Exception):
         provider_spread_xmr = float(
-            s.get("fee", {}).get("provider_spread_xmr") or
-            s.get("provider_spread_xmr") or 0.0
+            (s.get("fee", {}) or {}).get("provider_spread_xmr")
+            or s.get("provider_spread_xmr")
+            or 0.0
         )
         if provider_spread_xmr == 0.0:
             provider_spread_xmr = None
