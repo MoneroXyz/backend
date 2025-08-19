@@ -25,7 +25,6 @@
     renderTable(j);
   }
 
-  // Map backend bucket -> user-facing badge label
   function prettyStatusLabel(bucket) {
     const b = (bucket || "").toLowerCase();
     if (b === "finished")  return "Completed";
@@ -66,7 +65,6 @@
       tbody.appendChild(tr);
     }
 
-    // link handlers
     [...document.querySelectorAll("a.lnk")].forEach((a) => {
       a.addEventListener("click", async (e) => {
         e.preventDefault();
@@ -88,7 +86,6 @@
 
   const kv = (k, v) => `<div class="kv"><div>${k}</div><div>${v}</div></div>`;
 
-  // Try to discover OUT amount from several common fields if backend didn't store req.out_amount
   function getOutAmount(swap) {
     const req = swap.req || {};
     if (req.out_amount != null && req.out_amount !== "") return req.out_amount;
@@ -107,19 +104,19 @@
     return null;
   }
 
-  // Fee line with % that falls back to pending if gross is 0
+  // ⭐ Cleaned up fee line
   function feeLine(label, feeXMR, feePct, feeUSD, gross) {
-    let pctText = "pending";
+    let pctText = "—";
     if (gross > 0) {
       let pct = (feePct != null ? Number(feePct) : null);
       if ((pct == null || Number.isNaN(pct)) && feeXMR != null) {
         const f = Number(feeXMR);
-        pct = (Number.isFinite(f) ? (f / gross) * 100 : null);
+        pct = (Number.isFinite(f) && gross > 0) ? (f / gross) * 100 : null;
       }
       pctText = (pct == null || !Number.isFinite(pct)) ? "—" : `${to2(pct)}%`;
     }
-    const usdText = (feeUSD == null || Number.isNaN(Number(feeUSD))) ? "—" : to2(feeUSD);
-    return kv(label, `${to6(feeXMR)} XMR (${pctText}) — $${usdText}`);
+    const usdText = (feeUSD == null || Number.isNaN(Number(feeUSD))) ? "pending" : `$${to2(feeUSD)}`;
+    return kv(label, `${to6(feeXMR)} XMR (${pctText}) — ${usdText}`);
   }
 
   function renderDetail(j) {
@@ -141,7 +138,8 @@
       kv("Leg1:", safe(s.leg1?.provider)),
       kv("Leg2:", safe(s.leg2?.provider)),
       kv("IN:", `${safe(req.in_asset)} / ${safe(req.in_network)} — ${safe(req.amount)}`),
-      kv("OUT:", `${safe(req.out_asset)} / ${safe(req.out_network)}${outAmt != null ? " — " + safe(outAmt) : ""}`),
+      // ⭐ now OUT shows amount if available
+      kv("OUT:", `${safe(req.out_asset)} / ${safe(req.out_network)}${outAmt != null ? " — " + to6(outAmt) : ""}`),
       kv("Subaddress:", safe(s.subaddr)),
       kv("Last send txid:", safe(s.last_sent_txid)),
     ].join("");
@@ -166,7 +164,6 @@
     ].join("");
     $("#d_providers").innerHTML = providersHtml;
 
-    // Raw toggle
     const raw = $("#d_raw");
     raw.style.display = "none";
     raw.textContent = JSON.stringify(s, null, 2);
@@ -180,11 +177,9 @@
     };
   }
 
-  // events
   $("#btnSearch").addEventListener("click", () => { page = 1; fetchList(); });
   $("#prev").addEventListener("click", () => { page = Math.max(1, page - 1); fetchList(); });
   $("#next").addEventListener("click", () => { page = page + 1; fetchList(); });
 
-  // initial load
   fetchList();
 })();
