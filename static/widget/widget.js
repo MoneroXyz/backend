@@ -2,8 +2,7 @@
   const $ = (id) => document.getElementById(id);
   const fmt = (n, d=8) => Number(n ?? 0).toFixed(d).replace(/\.0+$|(?<=\.[0-9]*?)0+$/g, "");
 
-  // Debounce delay (ms) before fetching after user stops typing
-  const DEBOUNCE_MS = 600;
+  const DEBOUNCE_MS = 600; // delay before quoting after typing
 
   // Hint-only mins: for message choice on 5xx; never blocks
   const HINT_MIN = { USDT: 12, USDC: 12, BTC: 0.0003, ETH: 0.01, LTC: 0.1 };
@@ -33,7 +32,7 @@
       this.btn.setAttribute("aria-haspopup","listbox");
       this.btn.addEventListener("click",(e)=>{e.stopPropagation();this.toggle();});
       this.icon = document.createElementNS("http://www.w3.org/2000/svg","svg"); this.icon.classList.add("mx-select__icon");
-      const use = document.createElementNS("http://www.w3.org/2000/svg","use"); this._useEl = use;
+      const use = document.createElementNS("http://www.w3.org/2000/svg","use"); this._useBtnUse = use;
       this.icon.setAttribute("viewBox","0 0 18 18"); this.icon.appendChild(use);
       this.label = document.createElement("span"); this.label.className="mx-select__label";
       this.btn.appendChild(this.icon); this.btn.appendChild(this.label);
@@ -49,17 +48,31 @@
       for(const it of this.items){
         const val = it.value ?? it.symbol;
         const opt = document.createElement("div"); opt.className="mx-option"; opt.setAttribute("role","option"); opt.setAttribute("data-value",val);
-        if(it.icon){ const svg=document.createElementNS("http://www.w3.org/2000/svg","svg"); svg.classList.add("mx-option__icon");
-          const use=document.createElementNS("http://www.w3.org/2000/svg","use"); use.setAttributeNS("http://www.w3.org/1999/xlink","href",`#${it.icon}`);
-          svg.appendChild(use); opt.appendChild(svg); }
+        if(it.icon){
+          const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+          svg.classList.add("mx-option__icon");
+          const use=document.createElementNS("http://www.w3.org/2000/svg","use");
+          // set both href and xlink:href for compatibility
+          use.setAttribute("href", `#${it.icon}`);
+          use.setAttributeNS("http://www.w3.org/1999/xlink","href", `#${it.icon}`);
+          svg.appendChild(use);
+          opt.appendChild(svg);
+        }
         const lb=document.createElement("span"); lb.className="mx-option__label"; lb.textContent=it.label ?? val;
-        opt.appendChild(lb); opt.addEventListener("click",()=>this.set(val)); this.list.appendChild(opt);
+        opt.appendChild(lb);
+        opt.addEventListener("click",()=>this.set(val));
+        this.list.appendChild(opt);
       }
     }
     renderButton(){
       const it=this.items.find(a=>(a.value??a.symbol)===this.value) || this.items[0];
-      if(it?.icon){ this._useEl.setAttributeNS("http://www.w3.org/1999/xlink","href",`#${it.icon}`); this.icon.style.display=""; }
-      else this.icon.style.display="none";
+      if(it?.icon){
+        this._useBtnUse.setAttribute("href", `#${it.icon}`);
+        this._useBtnUse.setAttributeNS("http://www.w3.org/1999/xlink","href", `#${it.icon}`);
+        this.icon.style.display="";
+      } else {
+        this.icon.style.display="none";
+      }
       this.label.textContent = it.label ?? it.value ?? it.symbol;
       [...this.list.children].forEach(ch=>ch.setAttribute("aria-selected",ch.getAttribute("data-value")===this.value?"true":"false"));
     }
@@ -96,11 +109,27 @@
     line.textContent=`Estimated rate: 1 ${req.in_asset} ~ ${fmt(rate,6)} ${req.out_asset}`;
   }
 
-  // Shows red/bold error when isBad=true
+  // Update state text + the animated indicator
   function setQuoteState(text, loading=false, isBad=false){
     const el = $("quoteState");
+    const ind = $("quoteIndicator");
+
     el.textContent = text;
     el.classList.toggle("mx-loading", !!loading);
+
+    // indicator control
+    ind.className = "mx-indicator"; // reset
+    if (loading) {
+      ind.classList.add("spin"); // grey spinner
+      ind.style.display = "";
+    } else if (!isBad && /Route found/.test(text)) {
+      ind.classList.add("ok");    // green check
+      ind.style.display = "";
+    } else {
+      ind.style.display = "none"; // hidden
+    }
+
+    // color for “bad” states
     if (isBad) {
       el.style.color = "#ff6a6a";
       el.style.fontWeight = "800";
@@ -110,22 +139,27 @@
     }
   }
 
-  function clearDisplayForRequote(){ $("outAmount").value=""; $("outAmount").placeholder="—"; $("btnExchange").disabled=true; setQuoteState("Waiting…",true,false); }
+  function clearDisplayForRequote(){
+    $("outAmount").value="";
+    $("outAmount").placeholder="—";
+    $("btnExchange").disabled=true;
+    setQuoteState("Finding best route", true, false); // spinner shows state
+  }
   function clearDisplayAll(){ $("outAmount").value="—"; $("btnExchange").disabled=true; }
 
-  // Address validation
+  // Address validation (generic "Wrong address" messages)
   const re = {
     ethLike:/^0x[a-fA-F0-9]{40}$/, tron:/^T[1-9A-HJ-NP-Za-km-z]{33}$/,
     btc:/^(bc1[0-9a-z]{25,39}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$/, ltc:/^(ltc1[0-9a-z]{25,39}|[LM3][a-km-zA-HJ-NP-Z1-9]{25,34})$/
   };
   function validateAddress(asset, net, addr){
-    if(!addr || addr.length<10) return {ok:false,msg:"Enter destination address."};
+    if(!addr || addr.length<10) return {ok:false,msg:"Wrong address"};
     const up=asset.toUpperCase(), n=(net||"").toUpperCase();
-    if(up==="ETH" || (up==="USDT"&&n==="ETH") || up==="USDC") return re.ethLike.test(addr)?{ok:true}:{ok:false,msg:"Address must start with 0x… (Ethereum-style)"};
-    if(up==="USDT" && n==="BSC") return re.ethLike.test(addr)?{ok:true}:{ok:false,msg:"BEP20 address must start with 0x…"};
-    if(up==="USDT" && n==="TRX") return re.tron.test(addr)?{ok:true}:{ok:false,msg:"TRC20 address must start with T…"};
-    if(up==="BTC") return re.btc.test(addr)?{ok:true}:{ok:false,msg:"Invalid BTC address."};
-    if(up==="LTC") return re.ltc.test(addr)?{ok:true}:{ok:false,msg:"Invalid LTC address."};
+    if(up==="ETH" || (up==="USDT"&&n==="ETH") || up==="USDC") return re.ethLike.test(addr)?{ok:true}:{ok:false,msg:"Wrong address"};
+    if(up==="USDT" && n==="BSC") return re.ethLike.test(addr)?{ok:true}:{ok:false,msg:"Wrong address"};
+    if(up==="USDT" && n==="TRX") return re.tron.test(addr)?{ok:true}:{ok:false,msg:"Wrong address"};
+    if(up==="BTC") return re.btc.test(addr)?{ok:true}:{ok:false,msg:"Wrong address"};
+    if(up==="LTC") return re.ltc.test(addr)?{ok:true}:{ok:false,msg:"Wrong address"};
     return {ok:true};
   }
   function updatePayoutValidity(){
@@ -192,7 +226,10 @@
     if (inflight?.abort) inflight.abort();
     inflight = new AbortController();
 
-    $("mxErr").hidden=true; setQuoteState("Finding best route…", true, false); $("btnExchange").disabled=true; lastQuote=null;
+    $("mxErr").hidden=true;
+    setQuoteState("Finding best route", true, false);
+    $("btnExchange").disabled=true;
+    lastQuote=null;
 
     const isStale = () => (mySeq !== quoteSeq) || (mySig !== signature());
 
@@ -234,9 +271,8 @@
       lastQuote = { best, request: data.request };
       $("outAmount").value = fmt(best.receive_out);
       updateRateLine(best, data.request);
-      setQuoteState("Route found ✓", false, false);
+      setQuoteState("Route found ✓", false, false); // spinner -> green check
     }catch(e){
-      // If aborted due to new typing, ignore silently
       if (e.name === "AbortError") return;
       if (isStale()) return;
       lastQuote=null; clearDisplayAll();
@@ -291,8 +327,8 @@
 
   // Boot
   (function init(){
-    inAssetSel  = new IconSelect($("inAsset"),  assetItems, "USDT");
-    outAssetSel = new IconSelect($("outAsset"), assetItems, "ETH");
+    inAssetSel  = new IconSelect($("inAsset"),  ASSETS.map(a=>({symbol:a.symbol,label:a.label,icon:a.icon})), "USDT");
+    outAssetSel = new IconSelect($("outAsset"), ASSETS.map(a=>({symbol:a.symbol,label:a.label,icon:a.icon})), "ETH");
     inNetSel  = new IconSelect($("inNet"),  USDT_NETS, "TRX", true);
     outNetSel = new IconSelect($("outNet"), USDT_NETS, "ETH", true);
 

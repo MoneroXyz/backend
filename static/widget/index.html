@@ -43,7 +43,11 @@
         <button class="mx-swap" id="swapBtn" title="Swap IN/OUT">⇅</button>
       </div>
 
-      <div class="mx-statusline"><span id="quoteState" class="mx-state">Enter amount to get a quote.</span></div>
+      <!-- Status line with animated indicator -->
+      <div class="mx-statusline">
+        <span id="quoteIndicator" class="mx-indicator" aria-hidden="true"></span>
+        <span id="quoteState" class="mx-state">Enter amount to get a quote.</span>
+      </div>
 
       <div class="mx-block">
         <div class="mx-label">You Get</div>

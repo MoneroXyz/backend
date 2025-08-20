@@ -19,7 +19,7 @@ body{
   background:var(--card); border:1px solid var(--border); border-radius:16px;
   box-shadow:0 8px 28px rgba(0,0,0,.25); padding:16px 16px 14px;
 }
-.mx-header{ font-weight:800; margin-bottom:6px; font-size:16px; }
+.mx-header{ font-weight:800; margin-bottom:6px; font-size:16px; text-align:center; } /* centered */
 
 .mx-block{ margin:10px 0 8px; }
 .mx-label{ color:var(--muted); margin-bottom:6px; font-weight:600; }
@@ -47,7 +47,7 @@ body{
   margin:6px 0 4px;
 }
 .mx-link{ color:var(--accent2); text-decoration:none; cursor:default; }
-.mx-statusline{ display:flex; justify-content:flex-start; min-height:18px; margin:0 0 6px 0; }
+.mx-statusline{ display:flex; align-items:center; gap:8px; min-height:18px; margin:0 0 6px 0; }
 .mx-state{ color:var(--muted); font-size:12px; }
 .mx-state.mx-loading{ color:var(--accent2); }
 .mx-swap{
@@ -105,3 +105,24 @@ body{
   font-weight:700; padding:4px 0; cursor:pointer; border-radius:8px;
 }
 .mx-minibtn:hover{ color:var(--fg); text-decoration:underline; }
+
+/* ===== Animated quote indicator ===== */
+.mx-indicator{
+  display:none; /* hidden by default */
+  width:12px; height:12px; border-radius:50%;
+}
+.mx-indicator.spin{
+  display:inline-block;
+  border:2px solid var(--muted);
+  border-top-color: transparent;
+  animation: mx-rot .9s linear infinite;
+}
+.mx-indicator.ok{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:14px; height:14px;
+  background: var(--accent);
+  color:#111; font-weight:900; font-size:10px;
+}
+.mx-indicator.ok::after{ content:"✓"; line-height:1; }
+
+@keyframes mx-rot { to { transform: rotate(360deg); } }

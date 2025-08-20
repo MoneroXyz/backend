@@ -236,7 +236,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "d7b77d99-5783-40fc-b3d9-0eca3b042d02"
+        "trace_id": "936dc6fd-45c4-4464-933b-18339f589f3d"
       }
     },
     "leg2": {
@@ -404,7 +404,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "14d8f31b-b07a-46bf-93bc-c07de0bb3b3d"
+        "trace_id": "187ff418-04d2-4c6c-96a2-4feae9f39ed0"
       }
     },
     "leg2": {
@@ -626,7 +626,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "ce45d5e3-c8dd-464f-aa63-14bd12fe6c54"
+        "trace_id": "87b9852f-e4ee-4689-90fa-b4a8db20ba03"
       }
     },
     "timeline": [
@@ -835,7 +835,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "e296c41b-9626-4c41-80ad-75c1d61957e1"
+        "trace_id": "63f6f2a5-8397-4631-b89e-0a0946a83982"
       }
     },
     "timeline": [
@@ -1874,7 +1874,7 @@
       "tx_id": "24f06e1053567e",
       "deposit_address": "0x0fD329eDA9eE580EbBffFFC6B96330a1c4Ccb38A",
       "deposit_extra": null,
-      "status": "waiting_deposit",
+      "status": "expired",
       "provider_info": {
         "id": "24f06e1053567e",
         "status": "waiting",
@@ -1919,9 +1919,11 @@
     },
     "timeline": [
       "created",
-      "waiting_deposit"
+      "waiting_deposit",
+      "expired"
     ],
-    "last_sent_txid": null
+    "last_sent_txid": null,
+    "expired": true
   },
   "acc147ea-871c-4ee4-801c-659c5455bf17": {
     "id": "acc147ea-871c-4ee4-801c-659c5455bf17",
@@ -2003,7 +2005,7 @@
       "tx_id": "302a987db146f6",
       "deposit_address": "0xd6EcC738b5790e2D6e19f9c284123D3AC4c179B0",
       "deposit_extra": null,
-      "status": "waiting_deposit",
+      "status": "expired",
       "provider_info": {
         "id": "302a987db146f6",
         "amount": 0.2,
@@ -2065,9 +2067,11 @@
     },
     "timeline": [
       "created",
-      "waiting_deposit"
+      "waiting_deposit",
+      "expired"
     ],
-    "last_sent_txid": null
+    "last_sent_txid": null,
+    "expired": true
   },
   "07a71dd9-8893-4488-be12-5f85bf812aca": {
     "id": "07a71dd9-8893-4488-be12-5f85bf812aca",
