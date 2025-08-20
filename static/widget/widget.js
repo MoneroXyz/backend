@@ -2,7 +2,10 @@
   const $ = (id) => document.getElementById(id);
   const fmt = (n, d=8) => Number(n ?? 0).toFixed(d).replace(/\.0+$|(?<=\.[0-9]*?)0+$/g, "");
 
-  // Conservative hint-only mins for nicer messaging on 5xx (no blocking)
+  // Debounce delay (ms) before fetching after user stops typing
+  const DEBOUNCE_MS = 600;
+
+  // Hint-only mins: for message choice on 5xx; never blocks
   const HINT_MIN = { USDT: 12, USDC: 12, BTC: 0.0003, ETH: 0.01, LTC: 0.1 };
 
   const ASSETS = [
@@ -18,7 +21,7 @@
     { value: "BSC", label: "BEP20", icon: "icon-bnb" }
   ];
 
-  let lastQuote = null, debounceId = null, quoteSeq = 0;
+  let lastQuote = null, debounceId = null, quoteSeq = 0, inflight = null;
 
   /* ---------- Custom dropdown with icons ---------- */
   class IconSelect {
@@ -107,7 +110,7 @@
     }
   }
 
-  function clearDisplayForRequote(){ $("outAmount").value=""; $("outAmount").placeholder="—"; $("btnExchange").disabled=true; setQuoteState("Recalculating…",true,false); }
+  function clearDisplayForRequote(){ $("outAmount").value=""; $("outAmount").placeholder="—"; $("btnExchange").disabled=true; setQuoteState("Waiting…",true,false); }
   function clearDisplayAll(){ $("outAmount").value="—"; $("btnExchange").disabled=true; }
 
   // Address validation
@@ -161,6 +164,18 @@
     return {found:false};
   }
 
+  // Current UI signature (prevents stale updates)
+  function signature(){
+    const nets = currentNetworks();
+    return [
+      inAssetSel.getValue(),
+      nets.in,
+      outAssetSel.getValue(),
+      nets.out,
+      $("inAmount").value.trim()
+    ].join("|");
+  }
+
   async function autoQuote(){
     const amountStr = $("inAmount").value;
     const amount = Number(amountStr);
@@ -171,23 +186,32 @@
     const req = { in_asset:inSym, in_network:nets.in, out_asset:outSym, out_network:nets.out, amount, rate_type:"float" };
 
     const mySeq=++quoteSeq;
+    const mySig=signature();
+
+    // Cancel any in-flight fetch before starting a new one
+    if (inflight?.abort) inflight.abort();
+    inflight = new AbortController();
+
     $("mxErr").hidden=true; setQuoteState("Finding best route…", true, false); $("btnExchange").disabled=true; lastQuote=null;
 
+    const isStale = () => (mySeq !== quoteSeq) || (mySig !== signature());
+
     try{
-      const r = await fetch("/api/quote", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(req) });
+      const r = await fetch("/api/quote", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(req),
+        signal: inflight.signal
+      });
 
       if(!r.ok){
         let payloadText=null, payloadJson=null;
         try { payloadJson = await r.json(); } catch { try { payloadText = await r.text(); } catch {} }
-        const parsed = parseMinFromErrorPayload(payloadJson ?? payloadText ?? "");
 
-        if (parsed.found) {
-          lastQuote=null; clearDisplayAll(); updateRateLine(null,null);
-          setQuoteState("Below minimum", false, true);
-          updateExchangeEnabled();
-          return;
-        }
-        if (r.status >= 500 && amount < (HINT_MIN[inSym] ?? 0)) {
+        if (isStale()) return;
+
+        const parsed = parseMinFromErrorPayload(payloadJson ?? payloadText ?? "");
+        if (parsed.found || (r.status >= 500 && amount < (HINT_MIN[inSym] ?? 0))) {
           lastQuote=null; clearDisplayAll(); updateRateLine(null,null);
           setQuoteState("Below minimum", false, true);
           updateExchangeEnabled();
@@ -199,7 +223,8 @@
       }
 
       const data = await r.json();
-      if(mySeq!==quoteSeq) return;
+      if (isStale()) return;
+
       const best = (data?.options || [])[0];
       if(!best){
         const minCand = data?.limits?.min_in || data?.constraints?.min_in;
@@ -211,14 +236,22 @@
       updateRateLine(best, data.request);
       setQuoteState("Route found ✓", false, false);
     }catch(e){
-      if(mySeq!==quoteSeq) return;
+      // If aborted due to new typing, ignore silently
+      if (e.name === "AbortError") return;
+      if (isStale()) return;
       lastQuote=null; clearDisplayAll();
       $("mxErr").textContent=String(e.message||e); $("mxErr").hidden=false;
       updateRateLine(null,null); setQuoteState("Unable to quote. Adjust amount, asset, or network.", false, true);
-    }finally{ updatePayoutValidity(); }
+    }finally{
+      if (!isStale()) updatePayoutValidity();
+    }
   }
 
-  function onChangeDebounced(){ if(debounceId) clearTimeout(debounceId); clearDisplayForRequote(); debounceId=setTimeout(autoQuote,220); }
+  function onChangeDebounced(){
+    if(debounceId) clearTimeout(debounceId);
+    clearDisplayForRequote();
+    debounceId=setTimeout(autoQuote, DEBOUNCE_MS);
+  }
   function swapInOut(){ const a=inAssetSel.getValue(); inAssetSel.set(outAssetSel.getValue()); outAssetSel.set(a); applyNetworkVisibility(); onChangeDebounced(); }
 
   async function startExchange(){
@@ -241,7 +274,7 @@
     const btn = $("toggleRefund");
     const block = $("refundBlock");
     btn.addEventListener("click", ()=>{
-      const willShow = block.hidden; // currently hidden → show
+      const willShow = block.hidden;
       block.hidden = !willShow;
       btn.textContent = willShow ? "− Remove refund address" : "+ Add refund address";
       if (willShow) {
@@ -255,10 +288,6 @@
       }
     });
   }
-
-  document.addEventListener("DOMContentLoaded", ()=>{
-    // (no-op; required for some bundlers)
-  });
 
   // Boot
   (function init(){
@@ -278,7 +307,6 @@
 
     applyNetworkVisibility(); clearDisplayAll(); setQuoteState("Enter amount to get a quote.", false, false);
 
-    // Refund UX
     setupRefundToggle();
   })();
 })();
