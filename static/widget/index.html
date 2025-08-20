@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monerizer Widget</title>
+  <link rel="stylesheet" href="./widget.css" />
+</head>
+<body>
+  <!-- Inline SVG coin & network logos -->
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
+    <defs>
+      <!-- Coins -->
+      <symbol id="icon-btc" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#f7931a"/><path fill="#fff" d="M20.7 14.3c.3-2-1.2-3-3.2-3.4l.7-2.7-1.6-.4-.7 2.6-1.3-.3.7-2.6-1.6-.4-.7 2.7-1.9-.5-.4 1.6 1 .3c.6.2.8.5.7 1.1l-1 3.7c-.1.7-.5.9-1.2.8l-1-.3-.4 1.6 1.8.5-.7 2.7 1.6.4.7-2.6 1.3.3-.7 2.6 1.6.4.7-2.7c2.6.6 4.6.3 5.1-2.1.3-1.4-.3-2.2-1.4-2.7.8-.2 1.5-.8 1.7-1.8Zm-6.3 3.9 1-3.9c1.3.3 2.1.9 1.8 2.1-.3 1.3-1.4 1.7-2.8 1.8Zm.6-4.9.9-3.4c1.1.3 1.8.8 1.6 1.8-.2 1-1.2 1.5-2.5 1.6Z"/></symbol>
+      <symbol id="icon-eth" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#627eea"/><path fill="#fff" d="M16 5l6 10-6 3-6-3 6-10Zm0 22-6-9 6 3 6-3-6 9Z"/></symbol>
+      <symbol id="icon-usdt" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#26a17b"/><path fill="#fff" d="M8 9h16v3H18v3.2c2.9.2 5 .8 5 1.6s-2.1 1.4-5 1.6V23h-4v-4.6c-2.9-.2-5-.8-5-1.6s2.1-1.4 5-1.6V12H8V9Z"/></symbol>
+      <symbol id="icon-usdc" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#2775ca"/><path fill="#fff" d="M16 8.5a7.5 7.5 0 1 1 0 15 7.5 7.5 0 0 1 0-15Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Zm-.2 2.2c1 0 1.9.5 2.5 1.2l-1 .9c-.3-.4-.8-.7-1.4-.7-.8 0-1.3.5-1.3 1.1 0 .7.5 1 1.4 1.2 1.8.4 2.7 1.1 2.7 2.5 0 1.2-.8 2.1-2 2.4v1h-1.2v-1c-1.1-.1-2-.6-2.6-1.4l1-.9c.4.6 1 .9 1.7.9.8 0 1.4-.4 1.4-1.1 0-.7-.5-1-1.5-1.2-1.7-.4-2.6-1.1-2.6-2.5 0-1.2.8-2.1 2-2.4v-1h1.2v1Z"/></symbol>
+      <symbol id="icon-ltc" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#345d9d"/><path fill="#fff" d="M18.8 9h-3.3l-2.4 8.8-2 .7-.4 1.5 1.8-.6-.7 2.6h10l.6-2.2H14.7l1.9-6.9 1.8-.6.4-1.5-1.6.6L18.8 9Z"/></symbol>
+      <!-- Networks -->
+      <symbol id="icon-trx" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#eb0029"/><path fill="#fff" d="M8.8 9.7 24 12.7 17 23.1 8.8 9.7Zm1.6 1.4 6.3 10 5.1-7.6-11.4-2.4Z"/></symbol>
+      <symbol id="icon-bnb" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#f3ba2f"/><path fill="#111" d="m16 7 3.3 3.3-1.3 1.3L16 9.6l-2 2-1.3-1.3L16 7Zm6 6-1.3 1.3-1.4-1.4L22.6 12Zm-12 0 2.6-.1-1.4 1.4L10 13Zm6 2.3 3.3 3.3L16 23.9l-3.3-3.3L16 15.3Zm0-2.7 1.3 1.3L16 15.3l-1.3-1.4L16 12.6Z"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="mx-wrap">
+    <div class="mx-card">
+      <div class="mx-header">Monerize Crypto</div>
+
+      <div class="mx-block">
+        <div class="mx-label">You Send</div>
+        <div class="mx-inputrow">
+          <input id="inAmount" class="mx-amount" type="number" min="0" step="any" placeholder="0.00" />
+          <div class="mx-assetpick">
+            <div id="inAsset" class="mx-select"></div>
+            <div id="inNet" class="mx-select mx-select--chip" hidden></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mx-info">
+        <span class="mx-link">No hidden fees</span>
+        <span class="mx-link" id="rateLine">Estimated rate: —</span>
+        <button class="mx-swap" id="swapBtn" title="Swap IN/OUT">⇅</button>
+      </div>
+
+      <div class="mx-statusline"><span id="quoteState" class="mx-state">Enter amount to get a quote.</span></div>
+
+      <div class="mx-block">
+        <div class="mx-label">You Get</div>
+        <div class="mx-inputrow">
+          <input class="mx-amount mx-amount--readonly" id="outAmount" type="text" placeholder="—" readonly />
+          <div class="mx-assetpick">
+            <div id="outAsset" class="mx-select"></div>
+            <div id="outNet" class="mx-select mx-select--chip" hidden></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mx-block">
+        <div class="mx-label">Payout address</div>
+        <input id="payout" class="mx-address" type="text" placeholder="Paste destination wallet (OUT asset)" autocomplete="off" />
+        <div id="payoutHint" class="mx-hint" hidden></div>
+      </div>
+
+      <div class="mx-block">
+        <div class="mx-label">Refund address (optional)</div>
+        <input id="refund" class="mx-address" type="text" placeholder="If swap fails, where to refund IN asset" autocomplete="off" />
+        <div id="refundHint" class="mx-hint" hidden></div>
+      </div>
+
+      <div class="mx-error" id="mxErr" hidden></div>
+
+      <button id="btnExchange" class="mx-primary" disabled>Exchange</button>
+    </div>
+  </div>
+
+  <script src="./widget.js"></script>
+</body>
+</html>

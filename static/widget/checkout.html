@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monerizer — Deposit</title>
+  <link rel="stylesheet" href="./widget.css" />
+</head>
+<body>
+  <div class="mx-wrap">
+    <div class="mx-card">
+      <div class="mx-tabs">
+        <div class="mx-tab mx-tab--active">Deposit</div>
+      </div>
+
+      <div class="mx-block">
+        <div class="mx-label">Deposit address</div>
+        <div class="mx-inputrow">
+          <div class="mx-addrval" id="depositAddr">—</div>
+          <button id="copyBtn" class="mx-swap" title="Copy">Copy</button>
+        </div>
+        <div id="memoWrap" class="mx-label" style="margin-top:6px;" hidden></div>
+      </div>
+
+      <div class="mx-block" style="display:grid; place-items:center;">
+        <div id="qr" style="padding:10px;"></div>
+      </div>
+
+      <div class="mx-steps" id="steps">
+        <div class="mx-step" data-k="receiving">1 Receiving</div>
+        <div class="mx-step" data-k="routing">2 Routing</div>
+        <div class="mx-step" data-k="sending">3 Sending</div>
+        <div class="mx-step" data-k="complete">4 Complete</div>
+      </div>
+
+      <div class="mx-info" style="grid-template-columns:1fr;">
+        <a class="mx-link">Time left: <span id="countdown">2:00:00</span></a>
+      </div>
+    </div>
+  </div>
+
+  <script src="./checkout.js"></script>
+</body>
+</html>
