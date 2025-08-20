@@ -2,7 +2,7 @@
   const $ = (id) => document.getElementById(id);
   const fmt = (n, d=8) => Number(n ?? 0).toFixed(d).replace(/\.0+$|(?<=\.[0-9]*?)0+$/g, "");
 
-  const DEBOUNCE_MS = 600; // delay before quoting after typing
+  const DEBOUNCE_MS = 600;
 
   // Hint-only mins: for message choice on 5xx; never blocks
   const HINT_MIN = { USDT: 12, USDC: 12, BTC: 0.0003, ETH: 0.01, LTC: 0.1 };
@@ -52,9 +52,8 @@
           const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
           svg.classList.add("mx-option__icon");
           const use=document.createElementNS("http://www.w3.org/2000/svg","use");
-          // set both href and xlink:href for compatibility
-          use.setAttribute("href", `#${it.icon}`);
-          use.setAttributeNS("http://www.w3.org/1999/xlink","href", `#${it.icon}`);
+          use.setAttribute("href", `#${it.icon}`); // modern
+          use.setAttributeNS("http://www.w3.org/1999/xlink","href", `#${it.icon}`); // legacy
           svg.appendChild(use);
           opt.appendChild(svg);
         }
@@ -109,7 +108,7 @@
     line.textContent=`Estimated rate: 1 ${req.in_asset} ~ ${fmt(rate,6)} ${req.out_asset}`;
   }
 
-  // Update state text + the animated indicator
+  // status line + indicator
   function setQuoteState(text, loading=false, isBad=false){
     const el = $("quoteState");
     const ind = $("quoteIndicator");
@@ -117,37 +116,23 @@
     el.textContent = text;
     el.classList.toggle("mx-loading", !!loading);
 
-    // indicator control
-    ind.className = "mx-indicator"; // reset
-    if (loading) {
-      ind.classList.add("spin"); // grey spinner
-      ind.style.display = "";
-    } else if (!isBad && /Route found/.test(text)) {
-      ind.classList.add("ok");    // green check
-      ind.style.display = "";
-    } else {
-      ind.style.display = "none"; // hidden
-    }
+    ind.className = "mx-indicator";
+    if (loading) { ind.classList.add("spin"); ind.style.display = ""; }
+    else if (!isBad && /Route found/.test(text)) { ind.classList.add("ok"); ind.style.display = ""; }
+    else { ind.style.display = "none"; }
 
-    // color for “bad” states
-    if (isBad) {
-      el.style.color = "#ff6a6a";
-      el.style.fontWeight = "800";
-    } else {
-      el.style.color = "";
-      el.style.fontWeight = "";
-    }
+    if (isBad) { el.style.color = "#ff6a6a"; el.style.fontWeight = "800"; }
+    else { el.style.color = ""; el.style.fontWeight = ""; }
   }
 
   function clearDisplayForRequote(){
-    $("outAmount").value="";
-    $("outAmount").placeholder="—";
+    $("outAmount").value=""; $("outAmount").placeholder="—";
     $("btnExchange").disabled=true;
-    setQuoteState("Finding best route", true, false); // spinner shows state
+    setQuoteState("Finding best route", true, false);
   }
   function clearDisplayAll(){ $("outAmount").value="—"; $("btnExchange").disabled=true; }
 
-  // Address validation (generic "Wrong address" messages)
+  // address validation (generic message)
   const re = {
     ethLike:/^0x[a-fA-F0-9]{40}$/, tron:/^T[1-9A-HJ-NP-Za-km-z]{33}$/,
     btc:/^(bc1[0-9a-z]{25,39}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$/, ltc:/^(ltc1[0-9a-z]{25,39}|[LM3][a-km-zA-HJ-NP-Z1-9]{25,34})$/
@@ -175,7 +160,7 @@
     $("btnExchange").disabled = !(lastQuote && payoutOk);
   }
 
-  // Parse provider minimums from backend payloads (JSON or text)
+  // parsing mins from provider payloads
   function parseMinFromErrorPayload(payload){
     try{
       if(typeof payload==="string"){
@@ -198,7 +183,6 @@
     return {found:false};
   }
 
-  // Current UI signature (prevents stale updates)
   function signature(){
     const nets = currentNetworks();
     return [
@@ -222,7 +206,6 @@
     const mySeq=++quoteSeq;
     const mySig=signature();
 
-    // Cancel any in-flight fetch before starting a new one
     if (inflight?.abort) inflight.abort();
     inflight = new AbortController();
 
@@ -271,7 +254,7 @@
       lastQuote = { best, request: data.request };
       $("outAmount").value = fmt(best.receive_out);
       updateRateLine(best, data.request);
-      setQuoteState("Route found ✓", false, false); // spinner -> green check
+      setQuoteState("Route found ✓", false, false);
     }catch(e){
       if (e.name === "AbortError") return;
       if (isStale()) return;
@@ -290,19 +273,81 @@
   }
   function swapInOut(){ const a=inAssetSel.getValue(); inAssetSel.set(outAssetSel.getValue()); outAssetSel.set(a); applyNetworkVisibility(); onChangeDebounced(); }
 
+  function showDisabledReason(){
+    const err = $("mxErr");
+    if (!lastQuote) { err.textContent = "No quote yet."; err.hidden = false; return; }
+    const payoutVal = $("payout").value.trim();
+    if (!payoutVal) { err.textContent = "Enter payout address."; err.hidden = false; return; }
+    if (!$("payoutHint").hidden) { err.textContent = "Wrong address."; err.hidden = false; return; }
+    err.textContent = "Cannot start order yet."; err.hidden = false;
+  }
+
   async function startExchange(){
-    if(!lastQuote) return alert("No quote yet.");
-    const payout=$("payout").value.trim(); updatePayoutValidity(); if($("btnExchange").disabled) return;
-    const {best,request}=lastQuote;
-    const body={ leg1_provider:best.leg1.provider, leg2_provider:best.leg2.provider, in_asset:request.in_asset, in_network:request.in_network,
-      out_asset:request.out_asset, out_network:request.out_network, amount:request.amount, payout_address:payout, rate_type:request.rate_type,
-      our_fee_xmr:Number(best?.fee?.our_fee_xmr||0), refund_address_user: ( ($("#refundBlock").hidden ? "" : $("refund").value.trim()) || null) };
-    const btn=$("btnExchange"); btn.disabled=true;
-    try{
-      const r=await fetch("/api/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-      const j=await r.json(); if(!r.ok) throw new Error(j?.detail||JSON.stringify(j));
-      const url=new URL("./checkout.html",window.location.href); url.searchParams.set("sid", j.swap_id); window.location.href=url.toString();
-    }catch(e){ alert("Start failed: " + (e.message||e)); } finally{ btn.disabled=false; }
+    // If disabled, explain why (instead of “nothing happens”)
+    if ($("btnExchange").disabled) { showDisabledReason(); return; }
+    if(!lastQuote) { showDisabledReason(); return; }
+
+    const payout = $("payout").value.trim();
+    updatePayoutValidity();
+    if ($("btnExchange").disabled) { showDisabledReason(); return; }
+
+    const {best, request} = lastQuote;
+
+    const body = {
+      leg1_provider: best.leg1.provider,
+      leg2_provider: best.leg2.provider,
+      in_asset:  request.in_asset,
+      in_network: request.in_network,
+      out_asset: request.out_asset,
+      out_network: request.out_network,
+      amount: request.amount,
+      payout_address: payout,
+      rate_type: request.rate_type,
+      our_fee_xmr: Number(best?.fee?.our_fee_xmr || 0),
+      refund_address_user: ( ($("#refundBlock").hidden ? "" : $("refund").value.trim()) || null )
+    };
+
+    const btn = $("btnExchange");
+    const err = $("mxErr");
+    const oldLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Creating order…";
+    err.hidden = true;
+
+    try {
+      const r = await fetch("/api/start", {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify(body)
+      });
+
+      const j = await r.json().catch(() => ({}));
+
+      if (!r.ok) {
+        const msg = j?.detail || j?.error || j?.message || `HTTP ${r.status}`;
+        throw new Error(msg);
+      }
+
+      const sid = j.swap_id || j.swapId || j.id || j.session_id || j.sessionId || null;
+
+      // If backend gives a full URL, use it
+      if (j.url && typeof j.url === "string") {
+        window.location.href = j.url;
+        return;
+      }
+      if (!sid) throw new Error("No swap id in response.");
+
+      // Use a RELATIVE URL so it works under any base
+      const target = new URL("./checkout.html", window.location.href);
+      target.searchParams.set("sid", sid);
+      window.location.href = target.toString();
+
+    } catch (e) {
+      err.textContent = `Failed to start: ${e.message || e}`;
+      err.hidden = false;
+      btn.disabled = false;
+      btn.textContent = oldLabel;
+    }
   }
 
   // Refund button toggling
@@ -327,8 +372,9 @@
 
   // Boot
   (function init(){
-    inAssetSel  = new IconSelect($("inAsset"),  ASSETS.map(a=>({symbol:a.symbol,label:a.label,icon:a.icon})), "USDT");
-    outAssetSel = new IconSelect($("outAsset"), ASSETS.map(a=>({symbol:a.symbol,label:a.label,icon:a.icon})), "ETH");
+    const assetItemsLocal = ASSETS.map(a=>({symbol:a.symbol,label:a.label,icon:a.icon}));
+    inAssetSel  = new IconSelect($("inAsset"),  assetItemsLocal, "USDT");
+    outAssetSel = new IconSelect($("outAsset"), assetItemsLocal, "ETH");
     inNetSel  = new IconSelect($("inNet"),  USDT_NETS, "TRX", true);
     outNetSel = new IconSelect($("outNet"), USDT_NETS, "ETH", true);
 
