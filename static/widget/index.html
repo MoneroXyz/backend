@@ -80,7 +80,12 @@
 
       <div class="mx-error" id="mxErr" hidden></div>
 
-      <button id="btnExchange" class="mx-primary" disabled>Exchange</button>
+      <!-- ONLY CHANGE HERE: added type="button" and safe inline fallback -->
+      <button id="btnExchange"
+              class="mx-primary"
+              type="button"
+              onclick="window.startExchange && window.startExchange()"
+              disabled>Exchange</button>
     </div>
   </div>
 
