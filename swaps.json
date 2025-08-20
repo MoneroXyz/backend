@@ -236,7 +236,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "e4760aea-0a3f-46c0-86e3-6d7c012afed8"
+        "trace_id": "f3c3058c-53aa-47e2-a6c1-ac0e458f78ae"
       }
     },
     "leg2": {
@@ -404,7 +404,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "9193fe93-62eb-419d-8992-d9a462b51e80"
+        "trace_id": "91e09fd9-5222-433a-bb26-305f4d4cd5ea"
       }
     },
     "leg2": {
@@ -626,7 +626,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "379b052e-5d9e-4287-b1d5-1fe6fd35313b"
+        "trace_id": "900c8ce8-018d-4e99-9ace-d2d320e817d8"
       }
     },
     "timeline": [
@@ -835,7 +835,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "2b285bc5-edd8-4d42-b8d7-44cf1b6bbfac"
+        "trace_id": "27faa0ef-ce6e-4e99-8e22-cc0879d9fec4"
       }
     },
     "timeline": [
@@ -2153,7 +2153,7 @@
       "tx_id": "db2b4f69ba7154",
       "deposit_address": "bc1qdqxlskkgr2te0554m2tw6cgv00xv673yfqupza",
       "deposit_extra": null,
-      "status": "waiting_deposit",
+      "status": "expired",
       "provider_info": {
         "id": "db2b4f69ba7154",
         "amount": 0.1,
@@ -2207,6 +2207,290 @@
     },
     "leg2": {
       "provider": "ChangeNOW",
+      "created": false,
+      "creating": false,
+      "order": null,
+      "tx_id": "",
+      "status": "pending"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "expired"
+    ],
+    "last_sent_txid": null,
+    "expired": true
+  },
+  "2200b35d-b5bb-4443-b6c0-88b2122fd2e5": {
+    "id": "2200b35d-b5bb-4443-b6c0-88b2122fd2e5",
+    "created": 1755722020.1672218,
+    "req": {
+      "leg1_provider": "StealthEX",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "ETH",
+      "in_network": "ETH",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 0.01,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.011761988649673177,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 115,
+    "subaddr": "86Ls8DEeNEFTK9EgzThHgW1H8oEhgRbp8PyqdkTfBeXsT6wPxtFGjguDW7uieE1RQF5bg6hpnk4pz6ZwKckWFRyVBkPtqG8",
+    "our_fee_xmr": 0.011761988649673177,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.011761988649673177
+    },
+    "leg1": {
+      "provider": "StealthEX",
+      "order": {
+        "id": "TWxv6HNhA",
+        "depositAddress": "0x8D312dB3c7719bCA172B02edB428745aEACdcBd6",
+        "depositExtraId": null,
+        "_raw": {
+          "id": "TWxv6HNhA",
+          "status": "waiting",
+          "rate": "floating",
+          "deposit": {
+            "symbol": "eth",
+            "network": "mainnet",
+            "amount": 0.01,
+            "expected_amount": 0.01,
+            "address": "0x8D312dB3c7719bCA172B02edB428745aEACdcBd6",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": "https://blockchair.com/ethereum/address/0x8D312dB3c7719bCA172B02edB428745aEACdcBd6",
+            "tx_explorer_url": null
+          },
+          "withdrawal": {
+            "symbol": "xmr",
+            "network": "mainnet",
+            "amount": 0.1552998,
+            "expected_amount": 0.1552998,
+            "address": "86Ls8DEeNEFTK9EgzThHgW1H8oEhgRbp8PyqdkTfBeXsT6wPxtFGjguDW7uieE1RQF5bg6hpnk4pz6ZwKckWFRyVBkPtqG8",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": null,
+            "tx_explorer_url": null
+          },
+          "refund_address": null,
+          "refund_extra_id": null,
+          "created_at": "2025-08-20T20:33:22.370Z",
+          "expires_at": null
+        }
+      },
+      "tx_id": "TWxv6HNhA",
+      "deposit_address": "0x8D312dB3c7719bCA172B02edB428745aEACdcBd6",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "TWxv6HNhA",
+        "status": "waiting",
+        "rate": "floating",
+        "deposit": {
+          "symbol": "eth",
+          "network": "mainnet",
+          "amount": 0.01,
+          "expected_amount": 0.01,
+          "address": "0x8D312dB3c7719bCA172B02edB428745aEACdcBd6",
+          "extra_id": null,
+          "tx_hash": null,
+          "address_explorer_url": "https://blockchair.com/ethereum/address/0x8D312dB3c7719bCA172B02edB428745aEACdcBd6",
+          "tx_explorer_url": null
+        },
+        "withdrawal": {
+          "symbol": "xmr",
+          "network": "mainnet",
+          "amount": 0.1552998,
+          "expected_amount": 0.1552998,
+          "address": "86Ls8DEeNEFTK9EgzThHgW1H8oEhgRbp8PyqdkTfBeXsT6wPxtFGjguDW7uieE1RQF5bg6hpnk4pz6ZwKckWFRyVBkPtqG8",
+          "extra_id": null,
+          "tx_hash": null,
+          "address_explorer_url": null,
+          "tx_explorer_url": null
+        },
+        "refund_address": null,
+        "refund_extra_id": null,
+        "created_at": "2025-08-20T20:33:22.000Z",
+        "expires_at": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": false,
+      "creating": false,
+      "order": null,
+      "tx_id": "",
+      "status": "pending"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit"
+    ],
+    "last_sent_txid": null
+  },
+  "f672aee4-b131-466b-be89-a963285157b9": {
+    "id": "f672aee4-b131-466b-be89-a963285157b9",
+    "created": 1755722277.690606,
+    "req": {
+      "leg1_provider": "SimpleSwap",
+      "leg2_provider": "Exolix",
+      "in_asset": "BTC",
+      "in_network": "BTC",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 0.003,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.013772068455209396,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 116,
+    "subaddr": "83s2C53C8rUW6e6Jg5T8jvUnijTZ1AS5k9tNnA5jesnF3WqapsAdmQ8N6DaTGy4RtwMx1KrenTZUo2iRR7ct64kpN5pZc1T",
+    "our_fee_xmr": 0.013772068455209396,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.013772068455209396
+    },
+    "leg1": {
+      "provider": "SimpleSwap",
+      "order": {
+        "address_from": "bc1qtc5jh4utt647w0k5dtjjl05ydwt3dtgfz657tg",
+        "address_to": "83s2C53C8rUW6e6Jg5T8jvUnijTZ1AS5k9tNnA5jesnF3WqapsAdmQ8N6DaTGy4RtwMx1KrenTZUo2iRR7ct64kpN5pZc1T",
+        "amount_from": "0.003",
+        "amount_to": "1.3092897",
+        "currencies": {
+          "btc": {
+            "address_explorer": "https://mempool.space/address/{}",
+            "confirmations_from": "",
+            "contract_address": null,
+            "extra_id": "",
+            "has_extra_id": false,
+            "image": "https://static.simpleswap.io/images/currencies-logo/btc.svg",
+            "isFiat": false,
+            "name": "Bitcoin",
+            "network": "btc",
+            "precision": null,
+            "symbol": "btc",
+            "tx_explorer": "https://mempool.space/tx/{}",
+            "validation_address": "^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^[(bc1q)|(bc1p)][0-9A-Za-z]{37,62}$",
+            "validation_extra": null,
+            "warnings_from": [],
+            "warnings_to": []
+          },
+          "xmr": {
+            "address_explorer": null,
+            "confirmations_from": "",
+            "contract_address": null,
+            "extra_id": "",
+            "has_extra_id": false,
+            "image": "https://static.simpleswap.io/images/currencies-logo/xmr.svg",
+            "isFiat": false,
+            "name": "Monero",
+            "network": "xmr",
+            "precision": null,
+            "symbol": "xmr",
+            "tx_explorer": "https://xmrchain.net/search?value={}",
+            "validation_address": "^[48][a-zA-Z|\\d]{94}([a-zA-Z|\\d]{11})?$",
+            "validation_extra": null,
+            "warnings_from": [],
+            "warnings_to": []
+          }
+        },
+        "currency_from": "btc",
+        "currency_to": "xmr",
+        "expected_amount": "0.003",
+        "extra_id_from": null,
+        "extra_id_to": null,
+        "id": "8pvraja3dh1swo8i",
+        "redirect_url": null,
+        "status": "waiting",
+        "timestamp": "2025-08-20T20:37:40.413Z",
+        "tx_from": null,
+        "tx_to": null,
+        "type": "floating",
+        "updated_at": "2025-08-20T20:37:40.413Z",
+        "user_refund_address": null,
+        "user_refund_extra_id": null,
+        "valid_until": null,
+        "trace_id": "6cc6e0b7-9937-4f58-8f50-b3653ed2ba87",
+        "deposit": "bc1qtc5jh4utt647w0k5dtjjl05ydwt3dtgfz657tg"
+      },
+      "tx_id": "8pvraja3dh1swo8i",
+      "deposit_address": "bc1qtc5jh4utt647w0k5dtjjl05ydwt3dtgfz657tg",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "address_from": "bc1qtc5jh4utt647w0k5dtjjl05ydwt3dtgfz657tg",
+        "address_to": "83s2C53C8rUW6e6Jg5T8jvUnijTZ1AS5k9tNnA5jesnF3WqapsAdmQ8N6DaTGy4RtwMx1KrenTZUo2iRR7ct64kpN5pZc1T",
+        "amount_from": "0.003",
+        "amount_to": "1.3092897",
+        "currencies": {
+          "btc": {
+            "address_explorer": "https://mempool.space/address/{}",
+            "confirmations_from": "",
+            "contract_address": null,
+            "extra_id": "",
+            "has_extra_id": false,
+            "image": "https://static.simpleswap.io/images/currencies-logo/btc.svg",
+            "isFiat": false,
+            "name": "Bitcoin",
+            "network": "btc",
+            "precision": null,
+            "symbol": "btc",
+            "tx_explorer": "https://mempool.space/tx/{}",
+            "validation_address": "^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^[(bc1q)|(bc1p)][0-9A-Za-z]{37,62}$",
+            "validation_extra": null,
+            "warnings_from": [],
+            "warnings_to": []
+          },
+          "xmr": {
+            "address_explorer": null,
+            "confirmations_from": "",
+            "contract_address": null,
+            "extra_id": "",
+            "has_extra_id": false,
+            "image": "https://static.simpleswap.io/images/currencies-logo/xmr.svg",
+            "isFiat": false,
+            "name": "Monero",
+            "network": "xmr",
+            "precision": null,
+            "symbol": "xmr",
+            "tx_explorer": "https://xmrchain.net/search?value={}",
+            "validation_address": "^[48][a-zA-Z|\\d]{94}([a-zA-Z|\\d]{11})?$",
+            "validation_extra": null,
+            "warnings_from": [],
+            "warnings_to": []
+          }
+        },
+        "currency_from": "btc",
+        "currency_to": "xmr",
+        "expected_amount": "0.003",
+        "extra_id_from": null,
+        "extra_id_to": null,
+        "id": "8pvraja3dh1swo8i",
+        "redirect_url": null,
+        "status": "waiting",
+        "timestamp": "2025-08-20T20:37:40.413Z",
+        "tx_from": null,
+        "tx_to": null,
+        "type": "floating",
+        "updated_at": "2025-08-20T20:38:00.715Z",
+        "user_refund_address": null,
+        "user_refund_extra_id": null,
+        "valid_until": null,
+        "trace_id": "c2f3100d-6bb7-4d51-849b-c0387173b1ec"
+      }
+    },
+    "leg2": {
+      "provider": "Exolix",
       "created": false,
       "creating": false,
       "order": null,

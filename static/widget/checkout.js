@@ -1,6 +1,5 @@
 (() => {
   const $ = (id) => document.getElementById(id);
-
   const params = new URLSearchParams(window.location.search);
   const swapId = params.get("sid") || params.get("swapId") || "";
 
@@ -9,17 +8,14 @@
 
   let pollTimer = null;
   let lastStatus = null;
+  let statusEndpoint = null; // will be detected
 
-  function setAddress(addr) {
-    $("addr").textContent = addr || "—";
-  }
-
+  function setAddress(addr) { $("addr").textContent = addr || "—"; }
   function setQR(src) {
     const img = $("qr");
     if (src) img.src = src;
     img.alt = "Deposit QR";
   }
-
   function showDepositReceivedBadge() {
     const box = $("qrBox");
     box.innerHTML = ""; // clear QR
@@ -28,7 +24,6 @@
     badge.textContent = "✓";
     box.appendChild(badge);
   }
-
   function humanTimeLeft(ms) {
     if (ms <= 0) return "00:00:00";
     const s = Math.floor(ms / 1000);
@@ -37,7 +32,6 @@
     const ss = String(s % 60).padStart(2,"0");
     return `${h}:${m}:${ss}`;
   }
-
   function updateTimer(deadlineIso) {
     if (!deadlineIso) { $("timeLeft").textContent = "—"; return; }
     const deadline = new Date(deadlineIso).getTime();
@@ -45,8 +39,6 @@
     tick();
     setInterval(tick, 1000);
   }
-
-  // Stepper UI update
   function updateSteps(status) {
     const idx = STEP_INDEX[(status || "").toLowerCase()] ?? 0;
     const steps = Array.from(document.querySelectorAll("#steps .mx-step"));
@@ -58,63 +50,106 @@
     });
   }
 
-  async function poll() {
+  // Try multiple endpoints until one works:
+  //  - /api/checkout?sid=...
+  //  - /api/status?sid=...
+  //  - /api/order?sid=...
+  //  - /api/swap?sid=...
+  //  - /api/checkout/<sid>
+  async function detectStatusEndpoint(id) {
+    const candidates = [
+      `/api/checkout?sid=${encodeURIComponent(id)}`,
+      `/api/status?sid=${encodeURIComponent(id)}`,
+      `/api/order?sid=${encodeURIComponent(id)}`,
+      `/api/swap?sid=${encodeURIComponent(id)}`,
+      `/api/checkout/${encodeURIComponent(id)}`
+    ];
+    for (const url of candidates) {
+      try {
+        const r = await fetch(url, { cache: "no-store" });
+        if (r.ok) {
+          // cache the exact url we will poll next time
+          return { url, first: await r.json() };
+        }
+      } catch(_) {}
+    }
+    return null;
+  }
+
+  function normalizeData(raw) {
+    // Accept many backends: deposit_address | address,
+    // qr_png | qr | deposit_qr, status | state,
+    // expires_at | time_left_iso | deadline
+    return {
+      address: raw.deposit_address || raw.address || "",
+      qr: raw.qr_png || raw.qr || raw.deposit_qr || "",
+      status: (raw.status || raw.state || "receiving").toLowerCase(),
+      deadline: raw.expires_at || raw.time_left_iso || raw.deadline || null
+    };
+  }
+
+  async function pollOnce() {
+    if (!statusEndpoint) return;
     try {
-      const r = await fetch(`/api/checkout?sid=${encodeURIComponent(swapId)}`, { cache: "no-store" });
+      const r = await fetch(statusEndpoint, { cache: "no-store" });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data = await r.json();
+      const data = normalizeData(await r.json());
 
-      // expected: { deposit_address, qr_png, status, expires_at | time_left_iso }
-      setAddress(data.deposit_address || data.address || "");
-      if (lastStatus == null) {
-        // first render QR
-        setQR(data.qr_png || data.qr || "");
-      }
+      setAddress(data.address);
+      if (lastStatus == null) { setQR(data.qr); }
 
-      const status = (data.status || data.state || "receiving").toLowerCase();
-      updateSteps(status);
+      updateSteps(data.status);
 
-      // When we leave "receiving", switch QR to green check
-      if (lastStatus !== status) {
-        if (lastStatus === null && status !== "receiving") {
-          // if first status already past receiving, show badge directly
+      if (lastStatus !== data.status) {
+        if (lastStatus === null && data.status !== "receiving") {
           showDepositReceivedBadge();
-        } else if (lastStatus === "receiving" && status !== "receiving") {
+        } else if (lastStatus === "receiving" && data.status !== "receiving") {
           showDepositReceivedBadge();
         }
-        lastStatus = status;
+        lastStatus = data.status;
       }
 
-      if (data.expires_at || data.time_left_iso) {
-        updateTimer(data.expires_at || data.time_left_iso);
-      }
+      if (data.deadline) updateTimer(data.deadline);
 
-      // stop polling on completion
-      if (status === "complete" && pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      if (data.status === "complete" && pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
     } catch (e) {
-      // soft fail; try again
       console.warn("poll error", e);
+      // keep polling; backend may be briefly unavailable
     }
   }
 
-  function setupCopy() {
-    $("copyBtn").addEventListener("click", async () => {
-      const text = $("addr").textContent.trim();
-      try { await navigator.clipboard.writeText(text); } catch(_) {}
-      const btn = $("copyBtn"); const old = btn.textContent;
-      btn.textContent = "Copied!"; setTimeout(()=>btn.textContent = old, 1000);
-    });
-  }
-
   // boot
-  (function init(){
+  (async function init(){
     $("swapIdLine").textContent = swapId || "—";
-    setupCopy();
     if (!swapId) return;
 
-    // first load
-    poll();
-    // then poll every 5s while not complete
-    pollTimer = setInterval(poll, 5000);
+    // Detect endpoint & render first response immediately
+    const found = await detectStatusEndpoint(swapId);
+    if (!found) {
+      // show soft message instead of whole‑page "Not found"
+      const msg = document.createElement("div");
+      msg.className = "mx-softerr";
+      msg.textContent = "Waiting for provider… (order created, status endpoint not ready yet)";
+      document.querySelector(".mx-card").appendChild(msg);
+      // try again in a moment
+      setTimeout(init, 2000);
+      return;
+    }
+
+    statusEndpoint = found.url;
+
+    // Render the first payload
+    const first = normalizeData(found.first);
+    setAddress(first.address);
+    setQR(first.qr);
+    updateSteps(first.status);
+    if (first.deadline) updateTimer(first.deadline);
+    lastStatus = first.status;
+
+    // Start polling
+    pollTimer = setInterval(pollOnce, 5000);
   })();
 })();
