@@ -62,7 +62,13 @@
         <div id="payoutHint" class="mx-hint" hidden></div>
       </div>
 
+      <!-- Minimal “Add refund address” button -->
       <div class="mx-block">
+        <button id="toggleRefund" class="mx-minibtn" type="button">+ Add refund address</button>
+      </div>
+
+      <!-- Hidden refund block (shown after clicking the button) -->
+      <div class="mx-block" id="refundBlock" hidden>
         <div class="mx-label">Refund address (optional)</div>
         <input id="refund" class="mx-address" type="text" placeholder="If swap fails, where to refund IN asset" autocomplete="off" />
         <div id="refundHint" class="mx-hint" hidden></div>

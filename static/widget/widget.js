@@ -2,7 +2,7 @@
   const $ = (id) => document.getElementById(id);
   const fmt = (n, d=8) => Number(n ?? 0).toFixed(d).replace(/\.0+$|(?<=\.[0-9]*?)0+$/g, "");
 
-  // Conservative "hint floors" ONLY to choose the message on 5xx.
+  // Conservative hint-only mins for nicer messaging on 5xx (no blocking)
   const HINT_MIN = { USDT: 12, USDC: 12, BTC: 0.0003, ETH: 0.01, LTC: 0.1 };
 
   const ASSETS = [
@@ -20,7 +20,7 @@
 
   let lastQuote = null, debounceId = null, quoteSeq = 0;
 
-  /* ---------- IconSelect (custom dropdown) ---------- */
+  /* ---------- Custom dropdown with icons ---------- */
   class IconSelect {
     constructor(root, items, def, isChip=false){
       this.root=root; this.items=items;
@@ -93,7 +93,7 @@
     line.textContent=`Estimated rate: 1 ${req.in_asset} ~ ${fmt(rate,6)} ${req.out_asset}`;
   }
 
-  // Enhanced: can mark “bad” (red + bold) or “loading”
+  // Shows red/bold error when isBad=true
   function setQuoteState(text, loading=false, isBad=false){
     const el = $("quoteState");
     el.textContent = text;
@@ -102,8 +102,8 @@
       el.style.color = "#ff6a6a";
       el.style.fontWeight = "800";
     } else {
-      el.style.color = "";         // reset to CSS default
-      el.style.fontWeight = "";    // reset
+      el.style.color = "";
+      el.style.fontWeight = "";
     }
   }
 
@@ -187,8 +187,6 @@
           updateExchangeEnabled();
           return;
         }
-
-        // 5xx and typed amount is clearly tiny -> it's likely a min case: show "Below minimum".
         if (r.status >= 500 && amount < (HINT_MIN[inSym] ?? 0)) {
           lastQuote=null; clearDisplayAll(); updateRateLine(null,null);
           setQuoteState("Below minimum", false, true);
@@ -229,7 +227,7 @@
     const {best,request}=lastQuote;
     const body={ leg1_provider:best.leg1.provider, leg2_provider:best.leg2.provider, in_asset:request.in_asset, in_network:request.in_network,
       out_asset:request.out_asset, out_network:request.out_network, amount:request.amount, payout_address:payout, rate_type:request.rate_type,
-      our_fee_xmr:Number(best?.fee?.our_fee_xmr||0), refund_address_user: ($("refund").value.trim()||null) };
+      our_fee_xmr:Number(best?.fee?.our_fee_xmr||0), refund_address_user: ( ($("#refundBlock").hidden ? "" : $("refund").value.trim()) || null) };
     const btn=$("btnExchange"); btn.disabled=true;
     try{
       const r=await fetch("/api/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -238,7 +236,32 @@
     }catch(e){ alert("Start failed: " + (e.message||e)); } finally{ btn.disabled=false; }
   }
 
+  // Refund button toggling
+  function setupRefundToggle(){
+    const btn = $("toggleRefund");
+    const block = $("refundBlock");
+    btn.addEventListener("click", ()=>{
+      const willShow = block.hidden; // currently hidden → show
+      block.hidden = !willShow;
+      btn.textContent = willShow ? "− Remove refund address" : "+ Add refund address";
+      if (willShow) {
+        $("refund").focus();
+      } else {
+        $("refund").value = "";
+        const hint = $("refundHint");
+        hint.textContent = "";
+        hint.classList.remove("mx-bad");
+        hint.hidden = true;
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", ()=>{
+    // (no-op; required for some bundlers)
+  });
+
+  // Boot
+  (function init(){
     inAssetSel  = new IconSelect($("inAsset"),  assetItems, "USDT");
     outAssetSel = new IconSelect($("outAsset"), assetItems, "ETH");
     inNetSel  = new IconSelect($("inNet"),  USDT_NETS, "TRX", true);
@@ -254,5 +277,8 @@
     $("btnExchange").addEventListener("click", startExchange);
 
     applyNetworkVisibility(); clearDisplayAll(); setQuoteState("Enter amount to get a quote.", false, false);
-  });
+
+    // Refund UX
+    setupRefundToggle();
+  })();
 })();

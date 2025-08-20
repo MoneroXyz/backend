@@ -236,7 +236,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "e46481ce-f985-4903-bb50-bf88df54e3a6"
+        "trace_id": "dac25dd3-00ba-4664-b3a9-3e55189cfb1f"
       }
     },
     "leg2": {
@@ -404,7 +404,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "c009e01e-5dbe-42e2-aa75-e43f2fe5a9e5"
+        "trace_id": "fcad4a1c-42ec-4750-83c6-011cfd267d82"
       }
     },
     "leg2": {
@@ -626,7 +626,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "e010380f-6e3d-4613-b7a6-621b71eea37d"
+        "trace_id": "cdd5543b-a472-4c9d-bb98-fed68650d30e"
       }
     },
     "timeline": [
@@ -835,7 +835,7 @@
         "user_refund_address": null,
         "user_refund_extra_id": null,
         "valid_until": null,
-        "trace_id": "52148f30-4438-4416-967a-6e901d609d3d"
+        "trace_id": "cc7b694d-ae6c-4d9f-8805-ffdea24a1701"
       }
     },
     "timeline": [
@@ -2153,7 +2153,7 @@
       "provider_info": {
         "id": "db2b4f69ba7154",
         "amount": 0.1,
-        "amountTo": 44.256088,
+        "amountTo": 44.176093,
         "coinFrom": {
           "coinCode": "BTC",
           "coinName": "Bitcoin",
@@ -2192,10 +2192,10 @@
           "hash": null,
           "link": null
         },
-        "rate": 442.56088,
+        "rate": 441.76093,
         "rateType": "float",
         "affiliateToken": null,
-        "status": "wait",
+        "status": "overdue",
         "source": "api",
         "email": null,
         "clickId": null

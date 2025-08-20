@@ -14,10 +14,10 @@ body{
   display:grid; place-items:center;
   color-scheme: dark;
 }
-.mx-wrap{ width:min(620px,95vw); } /* ~14% smaller than 720px */
+.mx-wrap{ width:min(620px,95vw); }
 .mx-card{
   background:var(--card); border:1px solid var(--border); border-radius:16px;
-  box-shadow:0 8px 28px rgba(0,0,0,.25); padding:16px 16px 14px; /* tighter padding */
+  box-shadow:0 8px 28px rgba(0,0,0,.25); padding:16px 16px 14px;
 }
 .mx-header{ font-weight:800; margin-bottom:6px; font-size:16px; }
 
@@ -61,7 +61,6 @@ body{
 .mx-primary:disabled{ opacity:.6; cursor:not-allowed; }
 
 .mx-error{ margin:8px 0; color:#ff6a6a; background:rgba(255,0,0,.08); padding:10px; border-radius:10px; }
-.mx-foot{ display:flex; justify-content:space-between; color:var(--muted); margin-top:8px; font-size:12px; }
 
 /* ===== Custom Select (icons + chevron) ===== */
 .mx-select{ position:relative; user-select:none; }
@@ -82,7 +81,7 @@ body{
 }
 .mx-select.open .mx-select__btn::after{ transform:rotate(180deg); }
 
-/* chip-style for networks (still shows icons) */
+/* chip-style for networks */
 .mx-select--chip .mx-select__btn{ justify-content:center; font-weight:800; }
 .mx-select--chip .mx-select__btn::after{ margin-left:8px; }
 
@@ -99,3 +98,10 @@ body{
 .mx-option:hover, .mx-option[aria-selected="true"]{ background:var(--hover); }
 .mx-option__icon{ width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
 .mx-option__label{ font-weight:700; letter-spacing:.3px; }
+
+/* ===== Minimal option button (Add refund address) ===== */
+.mx-minibtn{
+  appearance:none; border:none; background:transparent; color:var(--accent2);
+  font-weight:700; padding:4px 0; cursor:pointer; border-radius:8px;
+}
+.mx-minibtn:hover{ color:var(--fg); text-decoration:underline; }
