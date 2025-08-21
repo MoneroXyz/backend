@@ -3,38 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Monerizer — Deposit</title>
+  <title>Deposit • Monerizer</title>
   <link rel="stylesheet" href="./widget.css" />
+  <style>
+    .mx-checkout { width:min(680px,95vw); margin:24px auto; }
+    .mx-headline { font-weight:800; font-size:18px; text-align:left; margin-bottom:2px; }
+    .mx-subtle { color:var(--muted); font-size:12px; margin-bottom:10px; }
+
+    .mx-row {
+      display:flex; gap:10px; align-items:center;
+      background:rgba(255,255,255,.03); border:1px solid var(--border);
+      padding:10px; border-radius:12px;
+    }
+    .mx-address-text {
+      flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      color:var(--fg);
+    }
+    .mx-copy {
+      border:1px solid var(--border);
+      background:transparent; color:var(--fg);
+      border-radius:10px; padding:8px 12px; cursor:pointer;
+    }
+    .mx-grid { display:grid; grid-template-columns: 1fr; gap:16px; margin-top:14px; }
+    .mx-center { display:grid; place-items:center; }
+
+    .mx-qrbox {
+      width:260px; height:260px; border-radius:12px; background:#fff; padding:12px;
+      box-shadow:0 6px 20px rgba(0,0,0,.25); display:grid; place-items:center;
+    }
+    .mx-qrbox img { width:100%; height:100%; object-fit:contain; }
+
+    .mx-qr-ok {
+      width:220px; height:220px; border-radius:50%;
+      background: var(--accent);
+      color:#111; font-weight:900; font-size:80px; line-height:220px; text-align:center;
+      box-shadow:0 14px 40px rgba(0,0,0,.25);
+    }
+
+    .mx-steps {
+      display:flex; align-items:flex-start; justify-content:space-between;
+      list-style:none; margin:10px 0 6px; padding:0; position:relative;
+    }
+    .mx-steps::before {
+      content:""; position:absolute; top:10px; left:28px; right:28px; height:2px; background:var(--border);
+    }
+    .mx-step { position:relative; display:flex; flex-direction:column; align-items:center; gap:8px; width:25%; text-align:center; }
+    .mx-dot { z-index:1; width:20px; height:20px; border-radius:50%; background:var(--border);
+      display:grid; place-items:center; color:#111; font-size:12px; font-weight:900; box-shadow:0 0 0 3px var(--card); }
+    .mx-step .mx-label { font-size:12px; color:var(--muted); font-weight:700; margin-top:4px; }
+    .mx-step.active .mx-dot { background:transparent; border:2px solid #9aa8b5; border-top-color: transparent; animation: mxspin .9s linear infinite; }
+    .mx-step.done .mx-dot { background:var(--accent); color:#111; animation:none; border:none; }
+    .mx-step.done .mx-dot::after{ content:"✓"; }
+    .mx-step.upcoming .mx-dot { background:var(--border); }
+    .mx-step.upcoming .mx-label { color:#6f7e8f; }
+    @keyframes mxspin { to { transform: rotate(360deg); } }
+
+    .mx-timer { margin-top:6px; font-size:13px; }
+    .mx-timer a { color:#10b3ff; text-decoration:none; }
+
+    .mx-amountline { margin:10px 0 4px; font-size:14px; color:var(--muted); }
+    .mx-amountline b { color:var(--fg); }
+  </style>
 </head>
 <body>
-  <div class="mx-wrap">
+  <div class="mx-wrap mx-checkout">
     <div class="mx-card">
-      <div class="mx-tabs">
-        <div class="mx-tab mx-tab--active">Deposit</div>
+      <div class="mx-headline">Deposit</div>
+      <div class="mx-subtle">Swap ID: <span id="swapIdLine">—</span></div>
+
+      <!-- Amount reminder -->
+      <div id="amountLine" class="mx-amountline" hidden>
+        Send exactly <b id="needAmount">—</b> <b id="needAsset">—</b> <span id="needNet"></span> to the address below.
       </div>
 
-      <div class="mx-block">
-        <div class="mx-label">Deposit address</div>
-        <div class="mx-inputrow">
-          <div class="mx-addrval" id="depositAddr">—</div>
-          <button id="copyBtn" class="mx-swap" title="Copy">Copy</button>
+      <!-- Deposit address row -->
+      <div class="mx-label">Deposit address</div>
+      <div class="mx-row">
+        <div id="addr" class="mx-address-text">—</div>
+        <button id="copyBtn" class="mx-copy" type="button">Copy</button>
+      </div>
+
+      <!-- QR + Steps -->
+      <div class="mx-grid">
+        <div class="mx-center">
+          <div id="qrBox" class="mx-qrbox">
+            <img id="qr" alt="Deposit QR" />
+          </div>
         </div>
-        <div id="memoWrap" class="mx-label" style="margin-top:6px;" hidden></div>
-      </div>
 
-      <div class="mx-block" style="display:grid; place-items:center;">
-        <div id="qr" style="padding:10px;"></div>
-      </div>
+        <!-- Horizontal stepper -->
+        <ul class="mx-steps" id="steps">
+          <li class="mx-step upcoming" data-step="receiving"><div class="mx-dot"></div><div class="mx-label">Receiving</div></li>
+          <li class="mx-step upcoming" data-step="routing"><div class="mx-dot"></div><div class="mx-label">Routing</div></li>
+          <li class="mx-step upcoming" data-step="sending"><div class="mx-dot"></div><div class="mx-label">Sending</div></li>
+          <li class="mx-step upcoming" data-step="complete"><div class="mx-dot"></div><div class="mx-label">Complete</div></li>
+        </ul>
 
-      <div class="mx-steps" id="steps">
-        <div class="mx-step" data-k="receiving">1 Receiving</div>
-        <div class="mx-step" data-k="routing">2 Routing</div>
-        <div class="mx-step" data-k="sending">3 Sending</div>
-        <div class="mx-step" data-k="complete">4 Complete</div>
-      </div>
-
-      <div class="mx-info" style="grid-template-columns:1fr;">
-        <a class="mx-link">Time left: <span id="countdown">2:00:00</span></a>
+        <!-- Timer -->
+        <div class="mx-timer"><span>Time left:</span> <a id="timeLeft">02:00:00</a></div>
       </div>
     </div>
   </div>

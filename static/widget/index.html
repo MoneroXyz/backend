@@ -43,7 +43,11 @@
         <button class="mx-swap" id="swapBtn" title="Swap IN/OUT">⇅</button>
       </div>
 
-      <div class="mx-statusline"><span id="quoteState" class="mx-state">Enter amount to get a quote.</span></div>
+      <!-- Status line with animated indicator -->
+      <div class="mx-statusline">
+        <span id="quoteIndicator" class="mx-indicator" aria-hidden="true"></span>
+        <span id="quoteState" class="mx-state">Enter amount to get a quote.</span>
+      </div>
 
       <div class="mx-block">
         <div class="mx-label">You Get</div>
@@ -62,7 +66,13 @@
         <div id="payoutHint" class="mx-hint" hidden></div>
       </div>
 
+      <!-- Minimal “Add refund address” button -->
       <div class="mx-block">
+        <button id="toggleRefund" class="mx-minibtn" type="button">+ Add refund address</button>
+      </div>
+
+      <!-- Hidden refund block (shown after clicking the button) -->
+      <div class="mx-block" id="refundBlock" hidden>
         <div class="mx-label">Refund address (optional)</div>
         <input id="refund" class="mx-address" type="text" placeholder="If swap fails, where to refund IN asset" autocomplete="off" />
         <div id="refundHint" class="mx-hint" hidden></div>
@@ -70,7 +80,12 @@
 
       <div class="mx-error" id="mxErr" hidden></div>
 
-      <button id="btnExchange" class="mx-primary" disabled>Exchange</button>
+      <!-- ONLY CHANGE HERE: added type="button" and safe inline fallback -->
+      <button id="btnExchange"
+              class="mx-primary"
+              type="button"
+              onclick="window.startExchange && window.startExchange()"
+              disabled>Exchange</button>
     </div>
   </div>
 
