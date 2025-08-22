@@ -10,18 +10,50 @@
   let statusEndpoint = null;   // { url, from, firstJson }
   let timerHandle = null;
   let hadProviderQR = false;
+  let hardExpiryTs = null;     // visual 25-minute expiry
 
-  /* ---------- UI helpers ---------- */
+  /* ---------- Asset icon (inline SVG) ---------- */
+  function coinIconSVG(sym){
+    const s = (sym||'').toUpperCase();
+    const C = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>';
+    const MAP = {
+      BTC: '<svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10"/><text x="12" y="16" font-size="10" text-anchor="middle" fill="var(--bg)"><tspan>฿</tspan></text></svg>',
+      ETH: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2l6 9-6 4-6-4 6-9zm0 20l6-10-6 4-6-4 6 10z"/></svg>',
+      XMR: '<svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10"/><path d="M5 13l3-3 4 4 4-4 3 3v5H5z" fill="var(--bg)"/></svg>',
+      USDT: '<svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10"/><rect x="6" y="7" width="12" height="4" rx="2" fill="var(--bg)"/></svg>',
+      TRX: '<svg viewBox="0 0 24 24" width="18" height="18"><polygon points="3,5 21,7 12,21" /></svg>'
+    };
+    return MAP[s] || C;
+  }
+
+  /* ---------- Admin fallback fetch ---------- */
+  async function fetchAdminMeta(id){
+    try{
+      const r = await fetch(`/api/admin/swaps/${encodeURIComponent(id)}`, {cache:'no-store'});
+      if(!r.ok) return null;
+      const obj = await r.json();
+      const swap = obj?.swap || obj || {};
+      const request = swap.request || {};
+      const leg1 = (swap.legs && swap.legs[0]) || {};
+      return {
+        amount: request.amount || leg1.amount_in || swap.amount_in || null,
+        asset: request.in_asset || leg1.asset_in || swap.in_asset || null,
+        network: request.in_network || leg1.network_in || swap.in_network || null
+      };
+    }catch(e){ return null; }
+  }
+
+  /* ---------- Basics ---------- */
   function setAddress(addr) { $("addr").textContent = addr || "—"; }
 
   function toDataUrlIfNeeded(qr) {
     if (!qr) return "";
-    if (/^(data:|https?:)/i.test(qr)) return qr;            // already OK
+    if (/^(data:|https?:)/i.test(qr)) return qr;
     if (typeof qr === "string" && qr.trim().startsWith("<svg"))
       return "data:image/svg+xml;utf8," + encodeURIComponent(qr);
-    if (/^[A-Za-z0-9+/=]+$/.test(qr) && qr.length > 100)    // bare base64 → assume png
+    if (/^[A-Za-z0-9+/=]+$/.test(qr) && qr.length > 100)
       return `data:image/png;base64,${qr}`;
-    return qr;                                              // let browser try
+    return qr;
   }
 
   function setQR(src) {
@@ -49,31 +81,42 @@
     box.appendChild(badge);
   }
 
+  /* ---------- Timer (visual 25 minutes) ---------- */
   function humanTimeLeft(ms) {
-    if (ms <= 0) return "00:00:00";
+    if (ms <= 0) return "00:00";
     const s = Math.floor(ms / 1000);
-    const h = String(Math.floor(s / 3600)).padStart(2,"0");
-    const m = String(Math.floor((s % 3600) / 60)).padStart(2,"0");
+    const m = String(Math.floor(s / 60)).padStart(2,"0");
     const ss = String(s % 60).padStart(2,"0");
-    return `${h}:${m}:${ss}`;
+    return `${m}:${ss}`;
   }
 
-  function ensureTimer(deadlineIso) {
+  function startHardTimer(minutes=25){
+    hardExpiryTs = Date.now() + minutes*60*1000;
     const tl = $("timeLeft");
-    if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
-    if (!deadlineIso) { if (tl) tl.textContent = "—"; return; }
-    const deadline = new Date(deadlineIso).getTime();
-    const tick = () => { if (tl) tl.textContent = humanTimeLeft(deadline - Date.now()); };
+    if (timerHandle) clearInterval(timerHandle);
+    const tick = () => {
+      const left = hardExpiryTs - Date.now();
+      if (tl) tl.textContent = humanTimeLeft(left);
+      if (left <= 0){
+        clearInterval(timerHandle);
+        expireUI();
+      }
+    };
     tick();
     timerHandle = setInterval(tick, 1000);
   }
 
-  function showTimer(show) {
-    const tl = $("timeLeft");
-    if (!tl) return;
-    tl.parentElement.style.visibility = show ? "visible" : "hidden";
+  function expireUI(){
+    // Hide address + QR, show expired banner
+    const addrRow = $("addrRow");
+    const qrBox = $("qrBox");
+    const exp = $("expiredBox");
+    if (addrRow) addrRow.classList.add("mx-hide");
+    if (qrBox) qrBox.classList.add("mx-hide");
+    if (exp) exp.classList.remove("mx-hide");
   }
 
+  /* ---------- Steps ---------- */
   function updateSteps(status) {
     const norm = (status || "").toLowerCase();
     const idx = STEP_INDEX[norm] ?? STEP_INDEX.receiving;
@@ -84,11 +127,10 @@
       else if (i === idx) li.classList.add("active");
       else li.classList.add("upcoming");
     });
-    // Hide countdown once we leave Receiving; otherwise keep visible
-    showTimer(norm === "receiving");
+    // Timer always visible in widget (visual expiry only)
   }
 
-  /* ---------- data helpers ---------- */
+  /* ---------- Normalizers ---------- */
   const firstTruthy = (...vals) => {
     for (const v of vals) {
       if (v === null || v === undefined) continue;
@@ -187,6 +229,8 @@
       $("needAmount").textContent = String(amount);
       $("needAsset").textContent = String(asset);
       $("needNet").textContent = network ? `(${network})` : "";
+      const sym = (asset||"").toUpperCase();
+      const iconHost = $("needIcon"); if (iconHost){ iconHost.innerHTML = coinIconSVG(sym); iconHost.style.display="inline-flex"; }
       box.hidden = false;
     } else {
       box.hidden = true;
@@ -212,6 +256,13 @@
       }
 
       renderAmountReminder(data.amount, data.asset, data.network);
+      if(!data.amount || !data.asset){
+        fetchAdminMeta(swapId).then(meta=>{
+          if(meta && (meta.amount || meta.asset)){
+            renderAmountReminder(meta.amount || data.amount, meta.asset || data.asset, meta.network || data.network);
+          }
+        });
+      }
 
       updateSteps(data.status);
 
@@ -221,8 +272,7 @@
         lastStatus = data.status;
       }
 
-      if (data.deadline) ensureTimer(data.deadline);
-
+      // We no longer use provider deadline in UI; visual timer is fixed 25 minutes
       if (["complete","finished","done"].includes((data.status||"").toLowerCase())) {
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
       }
@@ -244,10 +294,8 @@
 
     if (!swapId) return;
 
-    // Start a 2h timer immediately — will be replaced if provider gives a deadline
-    const fallbackDeadline = new Date(Date.now() + 2*60*60*1000).toISOString();
-    ensureTimer(fallbackDeadline);
-    showTimer(true);
+    // Start a hard visual timer of 25 minutes (independent from provider/admin)
+    startHardTimer(25);
 
     // Detect endpoint
     const found = await detectStatusEndpoint(swapId);
@@ -274,8 +322,14 @@
     }
 
     renderAmountReminder(first.amount, first.asset, first.network);
-
-    if (first.deadline) ensureTimer(first.deadline);
+    (async()=>{
+      if(!first.amount || !first.asset){
+        const meta = await fetchAdminMeta(swapId);
+        if(meta && (meta.amount || meta.asset)){
+          renderAmountReminder(meta.amount || first.amount, meta.asset || first.asset, meta.network || first.network);
+        }
+      }
+    })();
 
     updateSteps(first.status);
     lastStatus = first.status;

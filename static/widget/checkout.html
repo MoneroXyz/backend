@@ -63,22 +63,30 @@
 
     .mx-amountline { margin:10px 0 4px; font-size:14px; color:var(--muted); }
     .mx-amountline b { color:var(--fg); }
+
+    .mx-code-bg{ background: rgba(255,255,255,.04); border:1px solid var(--border); padding:4px 8px; border-radius:8px; }
+    .mx-pill{ display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:999px; background: var(--bg2); border:1px solid var(--border); }
+    .mx-coin{ display:inline-flex; width:18px; height:18px; margin-right:2px; vertical-align:-3px; }
+    .mx-pill b{ font-weight:800; letter-spacing:.2px; }
+
+    .mx-expired { margin-top:12px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background: rgba(255,99,71,.08); color:#ff9b8c; font-weight:700; }
+    .mx-hide { display:none !important; }
   </style>
 </head>
 <body>
   <div class="mx-wrap mx-checkout">
     <div class="mx-card">
       <div class="mx-headline">Deposit</div>
-      <div class="mx-subtle">Swap ID: <span id="swapIdLine">—</span></div>
+      <div class="mx-subtle">Swap ID: <span id="swapIdLine" class="mx-code-bg">—</span></div>
 
       <!-- Amount reminder -->
       <div id="amountLine" class="mx-amountline" hidden>
-        Send exactly <b id="needAmount">—</b> <b id="needAsset">—</b> <span id="needNet"></span> to the address below.
+        Send exactly <span class="mx-pill"><span id="needIcon" class="mx-coin"></span><b id="needAmount">—</b> <b id="needAsset">—</b> <span id="needNet"></span></span> to the address below.
       </div>
 
       <!-- Deposit address row -->
       <div class="mx-label">Deposit address</div>
-      <div class="mx-row">
+      <div class="mx-row" id="addrRow">
         <div id="addr" class="mx-address-text">—</div>
         <button id="copyBtn" class="mx-copy" type="button">Copy</button>
       </div>
@@ -100,7 +108,10 @@
         </ul>
 
         <!-- Timer -->
-        <div class="mx-timer"><span>Time left:</span> <a id="timeLeft">02:00:00</a></div>
+        <div class="mx-timer"><span>Time left:</span> <a id="timeLeft">25:00</a></div>
+
+        <!-- Expired banner -->
+        <div id="expiredBox" class="mx-expired mx-hide">Expired — open a new swap please.</div>
       </div>
     </div>
   </div>
