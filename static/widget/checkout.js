@@ -3,8 +3,8 @@
   const params = new URLSearchParams(window.location.search);
   const swapId = params.get("sid") || params.get("swapId") || "";
 
-  // Step mapping
-  const STEP_INDEX = { receiving:0, routing:1, sending:2, complete:3, finished:3, done:3 };
+  // UI step mapping (order matters)
+  const STEP_INDEX = { receiving:0, routing:1, sending:2, complete:3, finished:3, done:3, success:3 };
 
   let pollTimer = null;
   let lastStatus = null;           // "receiving" | "routing" | "sending" | "complete"
@@ -12,7 +12,7 @@
   let timerHandle = null;
   let hadProviderQR = false;
 
-  /* ---------- Icons (inline SVG) ---------- */
+  /* ---------- Icons (inline SVG; crisp/bright) ---------- */
   function coinIconSVG(sym){
     const s = (sym||"").toUpperCase();
     const M = {
@@ -44,7 +44,7 @@
     }
     return undefined;
   };
-  function deepFind(obj, testFn, maxNodes=12000){
+  function deepFind(obj, testFn, maxNodes=8000){
     try{
       const seen = new Set(); const queue = [obj]; let n=0;
       while(queue.length && n<maxNodes){
@@ -62,7 +62,7 @@
   }
   const numify = (x) => x == null ? null : (typeof x === "number" ? x : (typeof x === "string" && x.trim()!=="" ? Number(x) : null));
 
-  /* ---------- Timer (Receiving only) ---------- */
+  /* ---------- Timer (Receiving only, 25m persisted) ---------- */
   function deadlineKey(id){ return `monerizer_timer_deadline_${id}`; }
   function getOrCreateDeadline(id, minutes=25){
     const k = deadlineKey(id);
@@ -109,49 +109,43 @@
     tl.parentElement.style.visibility = show ? "visible" : "hidden";
   }
 
-  /* ---------- Helpers to read “status-like” text anywhere ---------- */
-  function collectStatusTextAnywhere(raw){
-    const keys = ["status","state","stage","message","details","progress","status_text","state_text","stage_text","note","info"];
-    const out = [];
-    deepFind(raw, (k,v)=> {
-      if (keys.includes(k) && typeof v === "string" && v.trim().length){
-        out.push(v.toLowerCase());
+  /* ---------- Provider text normalization ---------- */
+  // Sources you gave:
+  // StealthEX: waiting, confirming, exchanging, sending, verifying, finished, failed, refunded, expired
+  // ChangeNOW: new, waiting, confirming, exchanging, sending, finished, failed, refunded, verifying
+  // Variant set: wait, confirmation, confirmed, success, overdue, refunded
+
+  const RAW_RECEIVING = new Set(["new","waiting","wait","confirming","confirmation","confirmed"]);
+  const RAW_ROUTING   = new Set(["exchanging"]);              // converting but not yet sending out
+  const RAW_SENDING   = new Set(["sending","verifying"]);     // actually broadcasting / verifying payout
+  const RAW_COMPLETE  = new Set(["finished","success"]);
+  const RAW_ERROR     = new Set(["failed","refunded","expired","overdue"]);
+
+  function normalizeRawStatusWord(w){
+    if (!w) return "";
+    return String(w).toLowerCase().trim();
+  }
+
+  // scan every text-like status we can find anywhere in an object
+  function collectStatusWords(obj){
+    const words = [];
+    (function sweep(o){
+      if (!o || typeof o!=="object") return;
+      for (const k of Object.keys(o)){
+        const v = o[k];
+        if (typeof v==="string" && /status|state|stage|message|details|progress|reason|note|info/i.test(k)) {
+          words.push(...String(v).toLowerCase().split(/[^\w]+/).filter(Boolean));
+        } else if (Array.isArray(v)) {
+          v.forEach(sweep);
+        } else if (v && typeof v==="object") {
+          sweep(v);
+        }
       }
-      return false;
-    });
-    return out.join(" | ");
-  }
-  function getProviderName(raw){
-    return (
-      raw?.provider || raw?.provider_name ||
-      raw?.legs?.[0]?.provider || raw?.leg1?.provider ||
-      raw?.legs?.[0]?.provider_name || raw?.leg1?.provider_name || ""
-    ).toString().toLowerCase();
+    })(obj);
+    return words;
   }
 
-  // Default phrase buckets (broad).
-  const WAIT_PHRASES_DEF = /(waiting|awaiting|no payment|no deposit|pending deposit|address created|created|new|idle|looking for|open order|unpaid|not paid|awaiting payment|awaiting deposit|waiting for payment|waiting for deposit)/i;
-  const SEEN_PHRASES_DEF = /(confirm|detected|received|paid|payment|deposit|processing|exchang|in[\s_-]?progress|verif|seen|found)/i;
-  const L2_SENDING_TEXT_DEF = /(sending|payout|outgoing|broadcast|withdrawing|releasing|transfer(?!\s*to\s*us))/i;
-  const COMPLETE_TEXT_DEF   = /(complete|finished|done|success|completed|succeeded)/i;
-
-  // Optional provider-specific overrides: window.MX_STATUS_LEXICON = { changenow:{seen:[...],waiting:[...],sending:[...],complete:[...]} }
-  function lexiconFor(raw){
-    const p = (window.MX_STATUS_LEXICON || {})[getProviderName(raw)] || {};
-    const toRe = (arr, fallback) => {
-      if (!arr || !arr.length) return fallback;
-      const esc = (s)=> s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-      return new RegExp(arr.map(esc).join("|"), "i");
-    };
-    return {
-      WAIT:  toRe(p.waiting, WAIT_PHRASES_DEF),
-      SEEN:  toRe(p.seen,    SEEN_PHRASES_DEF),
-      SEND:  toRe(p.sending, L2_SENDING_TEXT_DEF),
-      DONE:  toRe(p.complete,COMPLETE_TEXT_DEF)
-    };
-  }
-
-  /* ---------- Phase detector (LEG-SCOPED + ANYWHERE FALLBACK + MONOTONIC) ---------- */
+  /* ---------- Phase detector (LEG‑SCOPED, tolerant, monotonic) ---------- */
   const leg1Of = (data)=> Array.isArray(data?.legs) ? (data.legs[0]||{}) : (data?.leg1 || {});
   const leg2Of = (data)=> Array.isArray(data?.legs) ? (data.legs[1]||{}) : (data?.leg2 || {});
 
@@ -159,52 +153,46 @@
   const numGt0  = (obj, re) => { const v=deepFind(obj,(k,v)=>re.test(k)&&v!=null); const n=numify(v); return n!=null && n>0; };
 
   function phaseFromEvidence(raw){
-    const { WAIT, SEEN, SEND, DONE } = lexiconFor(raw);
-
     const l1 = leg1Of(raw), p1 = l1.provider_info || l1.info || {};
     const l2 = leg2Of(raw), p2 = l2.provider_info || l2.info || {};
 
-    const l1Text = [
-      collectStatusTextAnywhere(l1),
-      collectStatusTextAnywhere(p1)
-    ].join(" | ") || collectStatusTextAnywhere(raw); // fallback to anywhere
-
-    // Leave RECEIVING if:
-    //  - leg1 has structured deposit evidence, OR
-    //  - anywhere text suggests deposit seen/confirming and not waiting.
-    const leg1Structured =
+    // --- 1) RECEIVING -> ROUTING ---
+    // "seen" if hard evidence OR raw words move beyond waiting/new
+    const l1Words = collectStatusWords({ l:l1, p:p1 });
+    const l1Structured =
       hasField(p1, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
       hasField(l1, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
       numGt0(p1, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i) ||
       numGt0(l1, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i);
 
-    const leg1TextSeen = l1Text && !WAIT.test(l1Text) && SEEN.test(l1Text);
+    const l1TextSeen = l1Words.some(w => RAW_ROUTING.has(normalizeRawStatusWord(w)) || RAW_SENDING.has(normalizeRawStatusWord(w)) || RAW_COMPLETE.has(normalizeRawStatusWord(w)));
 
-    // Leg‑2: stay in ROUTING until actual customer payout starts
-    const l2Text = [
-      collectStatusTextAnywhere(l2),
-      collectStatusTextAnywhere(p2)
-    ].join(" | ") || collectStatusTextAnywhere(raw);
+    const leg1Seen = l1Structured || l1TextSeen;
 
-    const leg2RecvStructured =
-      hasField(p2, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
-      hasField(l2, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
-      numGt0(p2, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i) ||
-      numGt0(l2, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i);
-
-    const leg2RecvText = l2Text && !WAIT.test(l2Text) && SEEN.test(l2Text);
-
-    const leg2SendingEvidence =
+    // --- 2) ROUTING -> SENDING ---
+    // start sending only when leg‑2 indicates payout start (sending/verifying) or out tx fields exist
+    const l2Words = collectStatusWords({ l:l2, p:p2 });
+    const leg2PayoutFields =
       hasField(p2, /^(payout_?tx(id)?|txid[_-]?out|out_?tx(id)?|broadcast[_-]?out|tx_hash_out)$/i) ||
-      hasField(l2, /^(payout_?tx(id)?|txid[_-]?out|out_?tx(id)?|broadcast[_-]?out|tx_hash_out)$/i) ||
-      SEND.test(l2Text);
+      hasField(l2, /^(payout_?tx(id)?|txid[_-]?out|out_?tx(id)?|broadcast[_-]?out|tx_hash_out)$/i);
+    const leg2SendingText = l2Words.some(w => RAW_SENDING.has(normalizeRawStatusWord(w)));
+    const leg2Sending = leg2PayoutFields || leg2SendingText;
 
-    const leg2Complete = DONE.test(l2Text);
+    // --- 3) SENDING -> COMPLETE ---
+    const leg2Complete = l2Words.some(w => RAW_COMPLETE.has(normalizeRawStatusWord(w)));
 
-    // Order: complete > sending > routing > receiving
-    if (leg2Complete && leg2SendingEvidence) return "complete";
-    if (leg2SendingEvidence)               return "sending";
-    if (leg2RecvStructured || leg2RecvText || leg1Structured || leg1TextSeen) return "routing";
+    // --- 4) ERROR (optional UI, we still keep stepper monotonic) ---
+    const anyError = l1Words.some(w => RAW_ERROR.has(normalizeRawStatusWord(w))) ||
+                     l2Words.some(w => RAW_ERROR.has(normalizeRawStatusWord(w)));
+
+    // Decide (monotonic outside via clamp)
+    if (anyError && leg2Complete === false) {
+      // keep showing the farthest reached non-error phase; expired box handled elsewhere
+      // (no explicit "error" phase in stepper)
+    }
+    if (leg2Sending && leg2Complete) return "complete";
+    if (leg2Sending)                 return "sending";
+    if (leg1Seen)                    return "routing";
     return "receiving";
   }
 
@@ -306,7 +294,7 @@
     steps.forEach((li, i) => {
       li.classList.remove("done","active","upcoming");
       if (i < idx) li.classList.add("done");
-      else if (i === idx) li.classList.add("active");
+      else if (i === idx) li.classList.add("active");   // spinner lives on the current phase
       else li.classList.add("upcoming");
     });
 
@@ -419,7 +407,7 @@
       // When leaving Receiving, replace QR and hide timer
       if (prev !== data.status) {
         if ((prev===null && data.status!=="receiving") || (prev==="receiving" && data.status!=="receiving")) {
-          showDepositReceivedBadge();
+          showDepositReceivedBadge();   // QR -> green badge once we move beyond Receiving
           showTimer(false);
           clearDeadline(swapId);
         }
@@ -427,7 +415,8 @@
       }
 
       // Stop polling on completion
-      if (String(data.status).toLowerCase() === "complete") {
+      const s = String(data.status || "").toLowerCase();
+      if (s === "complete" || s === "finished" || s === "done" || s === "success") {
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
         showDepositReceivedBadge();
         clearDeadline(swapId);
