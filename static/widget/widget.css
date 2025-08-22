@@ -1,41 +1,48 @@
 :root{
-  --bg:#0e1118; --fg:#e9eef6; --muted:#8aa0b2; --card:#161b26;
-  --border:#212a3a; --accent:#16c784; --accent2:#0ea5e9; --btn:#1fdf64;
-  --hover:rgba(255,255,255,.06);
+  --bg:#0e1118; --fg:#e9eef6; --muted:#8aa0b2; --card:#161b26; --border:#212a3a;
+  --accent:#16c784; --accent2:#0ea5e9; --btn:#1fdf64; --hover:rgba(255,255,255,.06);
 }
 @media (prefers-color-scheme: light){
-  :root{ --bg:#f8fafc; --fg:#0b1620; --muted:#4c6272; --card:#ffffff; --border:#e6ecf2; --accent:#16a34a; --accent2:#0ea5e9; --btn:#10b981; --hover:rgba(0,0,0,.04); }
+  :root{
+    --bg:#f8fafc; --fg:#0b1620; --muted:#4c6272; --card:#ffffff; --border:#e6ecf2;
+    --accent:#16a34a; --accent2:#0ea5e9; --btn:#10b981; --hover:rgba(0,0,0,.04);
+  }
 }
 *{ box-sizing:border-box; }
 html,body{ height:100%; }
 body{
   margin:0; background:var(--bg); color:var(--fg);
   font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial;
-  display:grid; place-items:center;
-  color-scheme: dark;
+  display:grid; place-items:center; color-scheme: dark;
 }
 .mx-wrap{ width:min(620px,95vw); }
 .mx-card{
   background:var(--card); border:1px solid var(--border); border-radius:16px;
   box-shadow:0 8px 28px rgba(0,0,0,.25); padding:16px 16px 14px;
 }
-.mx-header{ font-weight:800; margin-bottom:6px; font-size:16px; text-align:center; } /* centered */
+.mx-header{ font-weight:800; margin-bottom:6px; font-size:16px; text-align:center; }
 
+/* centered */
 .mx-block{ margin:10px 0 8px; }
 .mx-label{ color:var(--muted); margin-bottom:6px; font-weight:600; }
 
 .mx-inputrow{
   display:grid; grid-template-columns: 1fr 240px; gap:8px;
-  background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:12px; padding:10px;
+  background:rgba(255,255,255,.03); border:1px solid var(--border);
+  border-radius:12px; padding:10px;
 }
 .mx-amount{
-  background:transparent; border:none; color:var(--fg); font-size:20px; font-weight:700; width:100%; outline:none;
+  background:transparent; border:none; color:var(--fg); font-size:20px; font-weight:700;
+  width:100%; outline:none;
 }
 .mx-amount::placeholder{ color:rgba(255,255,255,.35); }
 .mx-amount--readonly{ opacity:.85; }
+
 .mx-address{
-  width:100%; padding:11px; border-radius:12px; border:1px solid var(--border); background:transparent; color:var(--fg);
+  width:100%; padding:11px; border-radius:12px; border:1px solid var(--border);
+  background:transparent; color:var(--fg);
 }
+
 .mx-hint{ margin-top:6px; font-size:12px; color:var(--muted); }
 .mx-hint.mx-bad{ color:#ff6a6a; }
 
@@ -47,49 +54,52 @@ body{
   margin:6px 0 4px;
 }
 .mx-link{ color:var(--accent2); text-decoration:none; cursor:default; }
+
 .mx-statusline{ display:flex; align-items:center; gap:8px; min-height:18px; margin:0 0 6px 0; }
 .mx-state{ color:var(--muted); font-size:12px; }
 .mx-state.mx-loading{ color:var(--accent2); }
+
 .mx-swap{
-  border:1px solid var(--border); background:transparent; color:var(--fg); border-radius:10px; padding:8px 10px; cursor:pointer;
+  border:1px solid var(--border); background:transparent; color:var(--fg);
+  border-radius:10px; padding:8px 10px; cursor:pointer;
 }
 
 .mx-primary{
-  width:100%; margin-top:8px; padding:11px 12px; border-radius:12px; border:none; cursor:pointer;
-  background:var(--btn); color:#111; font-weight:800; font-size:15px;
+  width:100%; margin-top:8px; padding:11px 12px; border-radius:12px; border:none;
+  cursor:pointer; background:var(--btn); color:#111; font-weight:800; font-size:15px;
 }
 .mx-primary:disabled{ opacity:.6; cursor:not-allowed; }
 
-.mx-error{ margin:8px 0; color:#ff6a6a; background:rgba(255,0,0,.08); padding:10px; border-radius:10px; }
+.mx-error{
+  margin:8px 0; color:#ff6a6a; background:rgba(255,0,0,.08);
+  padding:10px; border-radius:10px;
+}
 
 /* ===== Custom Select (icons + chevron) ===== */
 .mx-select{ position:relative; user-select:none; }
 .mx-select__btn{
-  width:100%; display:flex; align-items:center; gap:8px;
-  padding:9px 11px; border-radius:10px; border:1px solid var(--border);
-  background:rgba(10,14,20,.6); color:var(--fg); cursor:pointer; text-align:left;
+  width:100%; display:flex; align-items:center; gap:8px; padding:9px 11px;
+  border-radius:10px; border:1px solid var(--border); background:rgba(10,14,20,.6);
+  color:var(--fg); cursor:pointer; text-align:left;
 }
 .mx-select__btn:hover{ background:var(--hover); }
 .mx-select__icon{ width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
 .mx-select__label{ font-weight:700; letter-spacing:.3px; }
-
 /* chevron arrow */
 .mx-select__btn::after{
   content:""; margin-left:auto; width:0; height:0;
-  border-left:6px solid transparent; border-right:6px solid transparent; border-top:7px solid var(--muted);
-  transition:transform .15s ease;
+  border-left:6px solid transparent; border-right:6px solid transparent;
+  border-top:7px solid var(--muted); transition:transform .15s ease;
 }
 .mx-select.open .mx-select__btn::after{ transform:rotate(180deg); }
 
 /* chip-style for networks */
 .mx-select--chip .mx-select__btn{ justify-content:center; font-weight:800; }
 .mx-select--chip .mx-select__btn::after{ margin-left:8px; }
-
 .mx-select__list{
   position:absolute; top:calc(100% + 6px); right:0; left:0; z-index:40;
-  background:var(--card); border:1px solid var(--border); border-radius:12px;
-  padding:6px; display:none; box-shadow:0 10px 28px rgba(0,0,0,.35);
-  max-height:260px; overflow:auto;
+  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:6px;
+  display:none; box-shadow:0 10px 28px rgba(0,0,0,.35); max-height:260px; overflow:auto;
 }
 .mx-select.open .mx-select__list{ display:block; }
 .mx-option{
@@ -101,28 +111,23 @@ body{
 
 /* ===== Minimal option button (Add refund address) ===== */
 .mx-minibtn{
-  appearance:none; border:none; background:transparent; color:var(--accent2);
-  font-weight:700; padding:4px 0; cursor:pointer; border-radius:8px;
+  appearance:none; border:none; background:transparent; color:var(--accent2); font-weight:700;
+  padding:4px 0; cursor:pointer; border-radius:8px;
 }
 .mx-minibtn:hover{ color:var(--fg); text-decoration:underline; }
 
 /* ===== Animated quote indicator ===== */
-.mx-indicator{
-  display:none; /* hidden by default */
-  width:12px; height:12px; border-radius:50%;
-}
+.mx-indicator{ display:none; width:12px; height:12px; border-radius:50%; }
 .mx-indicator.spin{
-  display:inline-block;
-  border:2px solid var(--muted);
-  border-top-color: transparent;
+  display:inline-block; border:2px solid var(--muted); border-top-color: transparent;
   animation: mx-rot .9s linear infinite;
 }
 .mx-indicator.ok{
-  display:inline-flex; align-items:center; justify-content:center;
-  width:14px; height:14px;
-  background: var(--accent);
-  color:#111; font-weight:900; font-size:10px;
+  display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px;
+  background: var(--accent); color:#111; font-weight:900; font-size:10px;
 }
 .mx-indicator.ok::after{ content:"✓"; line-height:1; }
-
 @keyframes mx-rot { to { transform: rotate(360deg); } }
+
+/* 👇 NEW: hide the transient red banner WHILE creating an order */
+.mx-creating #mxErr { display:none !important; }

@@ -1,41 +1,41 @@
 (() => {
   const $ = (id) => document.getElementById(id);
-  const qp = new URLSearchParams(location.search);
-  const swapId = qp.get("sid") || qp.get("swapId") || "";
+  const params = new URLSearchParams(window.location.search);
+  const swapId = params.get("sid") || params.get("swapId") || "";
 
-  // Steps
+  // UI step mapping — unchanged
   const STEP_INDEX = { receiving:0, routing:1, sending:2, complete:3, finished:3, done:3 };
 
-  // state
+  // timers/polling
   let pollTimer = null;
   let lastStatus = null;
-  let statusEndpoint = null;
+  let statusEndpoint = null;   // { url, from, firstJson }
   let timerHandle = null;
   let hadProviderQR = false;
 
-  /* ---------- Bright inline SVG logos (no external requests) ---------- */
+  /* ---------- Icons (inline SVG; unchanged semantics) ---------- */
   function coinIconSVG(sym){
     const s = (sym||"").toUpperCase();
     const M = {
-      BTC:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#F7931A"/><text x="12" y="16" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">฿</text></svg>`,
-      ETH:`<svg viewBox="0 0 24 24"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C3C3D"/><stop offset="1" stop-color="#8C8C8C"/></linearGradient></defs><path d="M12 2l6 9-6 4-6-4 6-9z" fill="url(#g)"/><path d="M12 22l6-10-6 4-6-4 6 10z" fill="#8C8C8C"/></svg>`,
-      XMR:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FF6600"/><path d="M5 13l3-3 4 4 4-4 3 3v5H5z" fill="#fff"/></svg>`,
-      USDT:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#26A17B"/><rect x="6" y="7.5" width="12" height="3" rx="1.5" fill="#fff"/><rect x="10.5" y="10.5" width="3" height="6.5" rx="1.5" fill="#fff"/></svg>`,
-      USDC:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#2775CA"/><circle cx="12" cy="12" r="4" fill="#fff"/></svg>`,
-      BNB:`<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" transform="rotate(45 12 12)" fill="#F3BA2F"/></svg>`,
-      SOL:`<svg viewBox="0 0 24 24"><rect x="5" y="7" width="14" height="3" fill="#14F195"/><rect x="5" y="11" width="14" height="3" fill="#59FFA0"/><rect x="5" y="15" width="14" height="3" fill="#99FFC7"/></svg>`,
-      TRX:`<svg viewBox="0 0 24 24"><polygon points="3,5 21,7 12,21" fill="#E50914"/></svg>`,
-      LTC:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#345D9D"/><path d="M10 5l-2 7h3l-1 4h7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
-      XRP:`<svg viewBox="0 0 24 24"><path d="M7 6c1.6 1.6 3.2 3 5 3s3.4-1.4 5-3M7 18c1.6-1.6 3.2-3 5-3s3.4 1.4 5 3" stroke="#00A3E0" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
-      DOGE:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#C2A633"/><path d="M8 7h6.2a3.8 3.8 0 0 1 0 7.6H8V7zm0 4h7.2" stroke="#fff" stroke-width="2"/></svg>`,
-      MATIC:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#8247E5"/><path d="M7 8l5-3 5 3v8l-5 3-5-3V8z" fill="#fff" opacity=".9"/></svg>`,
-      TON:`<svg viewBox="0 0 24 24"><path d="M12 3l7 8-7 10L5 11 12 3z" fill="#0098EA"/></svg>`,
-      ADA:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#0033AD"/><circle cx="12" cy="12" r="2" fill="#fff"/><circle cx="6" cy="12" r="1.2" fill="#fff"/><circle cx="18" cy="12" r="1.2" fill="#fff"/></svg>`
+      BTC:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#F7931A"/><text x="12" y="16" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">฿</text></svg>`,
+      ETH:`<svg viewBox="0 0 24 24" width="22" height="22"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C3C3D"/><stop offset="1" stop-color="#8C8C8C"/></linearGradient></defs><path d="M12 2l6 9-6 4-6-4 6-9z" fill="url(#g)"/><path d="M12 22l6-10-6 4-6-4 6 10z" fill="#8C8C8C"/></svg>`,
+      XMR:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#FF6600"/><path d="M5 13l3-3 4 4 4-4 3 3v5H5z" fill="#fff"/></svg>`,
+      USDT:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#26A17B"/><rect x="6" y="7.5" width="12" height="3" rx="1.5" fill="#fff"/><rect x="10.5" y="10.5" width="3" height="6.5" rx="1.5" fill="#fff"/></svg>`,
+      USDC:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#2775CA"/><circle cx="12" cy="12" r="4" fill="#fff"/></svg>`,
+      BNB:`<svg viewBox="0 0 24 24" width="22" height="22"><rect x="6" y="6" width="12" height="12" transform="rotate(45 12 12)" fill="#F3BA2F"/></svg>`,
+      SOL:`<svg viewBox="0 0 24 24" width="22" height="22"><rect x="5" y="7" width="14" height="3" fill="#14F195"/><rect x="5" y="11" width="14" height="3" fill="#59FFA0"/><rect x="5" y="15" width="14" height="3" fill="#99FFC7"/></svg>`,
+      TRX:`<svg viewBox="0 0 24 24" width="22" height="22"><polygon points="3,5 21,7 12,21" fill="#E50914"/></svg>`,
+      LTC:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#345D9D"/><path d="M10 5l-2 7h3l-1 4h7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+      XRP:`<svg viewBox="0 0 24 24" width="22" height="22"><path d="M7 6c1.6 1.6 3.2 3 5 3s3.4-1.4 5-3M7 18c1.6-1.6 3.2-3 5-3s3.4 1.4 5 3" stroke="#00A3E0" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+      DOGE:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#C2A633"/><path d="M8 7h6.2a3.8 3.8 0 0 1 0 7.6H8V7zm0 4h7.2" stroke="#fff" stroke-width="2"/></svg>`,
+      MATIC:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#8247E5"/><path d="M7 8l5-3 5 3v8l-5 3-5-3V8z" fill="#fff" opacity=".9"/></svg>`,
+      TON:`<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3l7 8-7 10L5 11 12 3z" fill="#0098EA"/></svg>`,
+      ADA:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#0033AD"/><circle cx="12" cy="12" r="2" fill="#fff"/><circle cx="6" cy="12" r="1.2" fill="#fff"/><circle cx="18" cy="12" r="1.2" fill="#fff"/></svg>`
     };
-    return M[s] || `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#6B7280"/></svg>`;
+    return M[s] || `<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#6B7280"/></svg>`;
   }
 
-  /* ---------- utils ---------- */
+  /* ---------- Utils ---------- */
   const isObj = (v) => v && typeof v === "object";
   const firstTruthy = (...vals) => {
     for (const v of vals) {
@@ -45,7 +45,7 @@
     }
     return undefined;
   };
-  function deepFind(obj, testFn, maxNodes=6000){
+  function deepFind(obj, testFn, maxNodes=8000){
     try{
       const seen = new Set(); const queue = [obj]; let n=0;
       while(queue.length && n<maxNodes){
@@ -61,31 +61,117 @@
     }catch{}
     return null;
   }
-  const numify = (x)=> x==null ? null : (typeof x==="number" ? x : (typeof x==="string" && x.trim()!=="" ? Number(x) : null));
+  const numify = (x) => x == null ? null : (typeof x === "number" ? x : (typeof x === "string" && x.trim()!=="" ? Number(x) : null));
 
-  /* ---------- timer (Receiving only) ---------- */
+  /* ---------- Persisted deadline per swap (Receiving only) ---------- */
   function deadlineKey(id){ return `monerizer_timer_deadline_${id}`; }
   function getOrCreateDeadline(id, minutes=25){
-    const k = deadlineKey(id), saved = Number(localStorage.getItem(k)||""); const now=Date.now();
-    if (Number.isFinite(saved) && saved>now) return saved;
-    const t = now + minutes*60*1000; localStorage.setItem(k, String(t)); return t;
+    const k = deadlineKey(id);
+    const saved = Number(localStorage.getItem(k) || "");
+    const now = Date.now();
+    if (Number.isFinite(saved) && saved > now) return saved;
+    const newDeadline = now + minutes*60*1000;
+    localStorage.setItem(k, String(newDeadline));
+    return newDeadline;
   }
-  function clearDeadline(id){ try{ localStorage.removeItem(deadlineKey(id)); }catch{} }
-  function humanTimeLeft(ms){ if (ms<=0) return "00:00:00"; const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,"0"); const m=String(Math.floor((s%3600)/60)).padStart(2,"0"); const ss=String(s%60).padStart(2,"0"); return `${h}:${m}:${ss}`; }
-  function showTimer(show){ const tl=$("timeLeft"); if (!tl) return; tl.parentElement.style.visibility = show ? "visible" : "hidden"; }
-  function startReceivingTimer(){
-    const tl=$("timeLeft"); if (!tl) return;
-    if (timerHandle) clearInterval(timerHandle);
-    const deadline = getOrCreateDeadline(swapId, 25);
-    const tick = ()=>{ const left=deadline-Date.now(); tl.textContent = humanTimeLeft(left); if (left<=0){ clearInterval(timerHandle); timerHandle=null; expireUI(); clearDeadline(swapId); } };
-    tick(); timerHandle = setInterval(tick, 1000);
+  function clearDeadline(id){ try { localStorage.removeItem(deadlineKey(id)); } catch {} }
+  function humanTimeLeft(ms) {
+    if (ms <= 0) return "00:00:00";
+    const s = Math.floor(ms / 1000);
+    const h = String(Math.floor(s / 3600)).padStart(2,"0");
+    const m = String(Math.floor((s % 3600) / 60)).padStart(2,"0");
+    const ss = String(s % 60).padStart(2,"0");
+    return `${h}:${m}:${ss}`;
   }
-  function stopTimer(){ if (timerHandle) clearInterval(timerHandle); timerHandle=null; clearDeadline(swapId); showTimer(false); }
+
   function expireUI(){
-    if (pollTimer) { clearInterval(pollTimer); pollTimer=null; }
-    const qrb=$("qrBox"); if (qrb) qrb.innerHTML=""; const addr=$("addr"); if (addr) addr.textContent="—";
-    const btn=$("copyBtn"); if (btn){ btn.disabled=true; btn.textContent="Expired"; }
-    const exp=$("expiredBox"); if (exp) exp.classList.remove("mx-hidden");
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    const q = $("qrBox"); if (q) q.innerHTML = "";
+    const addr = $("addr"); if (addr) addr.textContent = "—";
+    const btn = $("copyBtn"); if (btn) { btn.disabled = true; btn.textContent = "Expired"; }
+    const exp = $("expiredBox"); if (exp) exp.classList.remove("mx-hidden");
+  }
+
+  // Receiving-only timer; hidden/cleared as soon as we leave Receiving
+  function ensureReceivingTimerForSwap(id){
+    const tl = $("timeLeft");
+    if (!tl) return;
+    if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
+    const deadline = getOrCreateDeadline(id, 25);
+    const tick = () => {
+      const left = deadline - Date.now();
+      tl.textContent = humanTimeLeft(left);
+      if (left <= 0) { clearInterval(timerHandle); timerHandle = null; expireUI(); clearDeadline(id); }
+    };
+    tick();
+    timerHandle = setInterval(tick, 1000);
+  }
+  function showTimer(show) {
+    const tl = $("timeLeft");
+    if (!tl) return;
+    tl.parentElement.style.visibility = show ? "visible" : "hidden";
+  }
+
+  /* ---------- Provider-agnostic phase detector (rock solid) ---------- */
+  function phaseFromEvidence(raw){
+    // collect status-like strings from several places
+    const statusCandidates = [];
+    const collectStatus = (o) => {
+      if (!o || typeof o!=="object") return;
+      const keys = [
+        "status","state","stage","provider_status","status_text","state_text","stage_text",
+        "progress","details","message"
+      ];
+      for (const k of keys){
+        const v = o[k];
+        if (typeof v === "string") statusCandidates.push(v);
+        else if (v && typeof v === "object"){
+          if (typeof v.status === "string") statusCandidates.push(v.status);
+          if (typeof v.state  === "string") statusCandidates.push(v.state);
+          if (typeof v.stage  === "string") statusCandidates.push(v.stage);
+          if (Array.isArray(v)) v.forEach(x => { if (typeof x === "string") statusCandidates.push(x); });
+        }
+      }
+    };
+    collectStatus(raw);
+    const l1 = Array.isArray(raw?.legs) ? (raw.legs[0]||{}) : (raw?.leg1 || {});
+    collectStatus(l1);
+    collectStatus(l1?.provider_info || l1?.info || {});
+    const st = statusCandidates.map(s => String(s).toLowerCase()).join(" | ");
+
+    // helpers
+    const hasField = (name) => deepFind(raw, (k,v)=> k === name && v != null) != null;
+    const getNum   = (name) => {
+      const v = deepFind(raw, (k,v)=> k === name && v != null);
+      const n = numify(v); return n==null ? 0 : n;
+    };
+    const matchAny = (hay, words) => words.some(w => hay.includes(w));
+
+    const WORDS_COMPLETE = ["complete","finished","done","success","completed","succeeded"];
+    const WORDS_SENDING  = ["sending","payout","broadcast","outgoing","transferring","withdrawing","releasing"];
+    const WORDS_ROUTING  = [
+      "detected","paid","confirm","confirming","awaiting_confirm","awaiting_deposit",
+      "depositing","received","in_progress","processing","payment_received","exchanging","swapping"
+    ];
+
+    // Order matters: complete > sending > routing > receiving
+    if (matchAny(st, WORDS_COMPLETE)) return "complete";
+
+    if (
+      hasField("payout_txid") || hasField("payout_hash") || hasField("payout_tx") ||
+      hasField("broadcast_out") || hasField("txid_out") ||
+      hasField("out_txid") || hasField("out_hash") || // extra aliases
+      matchAny(st, WORDS_SENDING)
+    ) return "sending";
+
+    if (
+      hasField("payin_txid") || hasField("payin_hash") || hasField("payin_tx") ||
+      hasField("input_txid") || hasField("deposit_txid") || // extra aliases
+      getNum("confirmations") > 0 || getNum("payin_confirmations") > 0 || getNum("amount_received") > 0 ||
+      matchAny(st, WORDS_ROUTING)
+    ) return "routing";
+
+    return "receiving";
   }
 
   /* ---------- Address/QR (strictly Leg‑1 deposit) ---------- */
@@ -116,37 +202,109 @@
              || deepFind(data,(k,v)=>/qr|qrcode/i.test(k)&&typeof v==="string"&&v.length>10);
     return deep || "";
   }
-  function toDataUrlIfNeeded(qr){
+
+  function toDataUrlIfNeeded(qr) {
     if (!qr) return "";
     if (/^(data:|https?:)/i.test(qr)) return qr;
-    if (typeof qr==="string" && qr.trim().startsWith("<svg")) return "data:image/svg+xml;utf8,"+encodeURIComponent(qr);
-    if (/^[A-Za-z0-9+/=]+$/i.test(qr) && qr.length>100) return `data:image/png;base64,${qr}`;
+    if (typeof qr === "string" && qr.trim().startsWith("<svg"))
+      return "data:image/svg+xml;utf8," + encodeURIComponent(qr);
+    if (/^[A-Za-z0-9+/=]+$/i.test(qr) && qr.length > 100)
+      return `data:image/png;base64,${qr}`;
     return qr;
   }
-  function setQR(src){ const img=$("qr"); if (!img||!src) return; const s=toDataUrlIfNeeded(src); if (!img.src || img.src!==s) img.src=s; img.alt="Deposit QR"; }
-  function setFallbackQR(addr){ if (!addr) return; setQR(`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(addr)}`); }
-
-  /* ---------- Phase detection (provider‑agnostic) ---------- */
-  function phaseFromEvidence(raw){
-    const has = (k)=> deepFind(raw,(kk,v)=> kk===k && v!=null);
-    const hasNum = (k)=> { const v = deepFind(raw,(kk,vv)=> kk===k && vv!=null); const n=numify(v); return n!=null && n>0; };
-
-    // completion first (some providers jump straight there)
-    const st = String(firstTruthy(raw.status, raw.state, raw.stage, raw.provider_status, "" )).toLowerCase();
-    if (/(complete|finished|done|success|completed)/.test(st)) return "complete";
-
-    // payout/broadcast → sending
-    if ( has('payout_txid') || has('payout_hash') || has('payout_tx') || has('broadcast_out') || has('txid_out') || /(sending|payout|broadcast|outgoing)/.test(st) )
-      return "sending";
-
-    // deposit detected/confirmations → routing
-    if ( has('payin_txid') || has('payin_hash') || has('payin_tx') || hasNum('confirmations') || hasNum('payin_confirmations') || hasNum('amount_received') || /(detected|paid|confirm|pending|in_progress|awaiting_confirm)/.test(st) )
-      return "routing";
-
-    return "receiving";
+  function setQR(src) {
+    const img = $("qr");
+    if (!img || !src) return;
+    const processed = toDataUrlIfNeeded(src);
+    if (!img.src || img.src !== processed) img.src = processed;
+    img.alt = "Deposit QR";
+  }
+  function setFallbackQRFromAddress(addr) {
+    if (!addr) return;
+    const url = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(addr)}`;
+    setQR(url);
   }
 
-  function normalizeFromDirect(raw){
+  function showDepositReceivedBadge() {
+    const box = $("qrBox");
+    if (!box) return;
+    box.innerHTML = "";
+    const badge = document.createElement("div");
+    badge.className = "mx-qr-ok";
+    badge.textContent = "✓";
+    box.appendChild(badge);
+  }
+
+  function renderAmountReminder(amount, asset, network) {
+    const box = $("amountLine");
+    if (!box) return;
+    box.style.marginTop = "10px"; // breathing room under Swap ID
+
+    $("needAmount").textContent = (amount ?? "—").toString();
+    $("needAsset").textContent = asset ? String(asset).toUpperCase() : "—";
+    $("needNet").textContent   = network ? `(${network})` : "";
+
+    const sym = (asset||"").toUpperCase();
+    const iconHost = $("needIcon");
+    if (iconHost){
+      iconHost.innerHTML = coinIconSVG(sym);
+      iconHost.style.display = "inline-flex";
+      iconHost.style.verticalAlign = "-3px";
+      iconHost.style.marginRight = "6px";
+    }
+    box.hidden = false;
+  }
+
+  function updateSteps(status) {
+    const norm = (status || "").toLowerCase();
+    const idx = STEP_INDEX[norm] ?? STEP_INDEX.receiving;
+    const steps = Array.from(document.querySelectorAll("#steps .mx-step"));
+    steps.forEach((li, i) => {
+      li.classList.remove("done","active","upcoming");
+      if (i < idx) li.classList.add("done");
+      else if (i === idx) li.classList.add("active");
+      else li.classList.add("upcoming");
+    });
+
+    if (norm === "receiving") {
+      showTimer(true);
+    } else {
+      showTimer(false);
+      clearDeadline(swapId);
+      if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
+    }
+  }
+
+  /* ---------- Endpoint detection (unchanged behavior) ---------- */
+  async function detectStatusEndpoint(id) {
+    const quick = [
+      `/api/status?sid=${encodeURIComponent(id)}`,
+      `/api/status/${encodeURIComponent(id)}`,
+      `/api/checkout?sid=${encodeURIComponent(id)}`,
+      `/api/swap?sid=${encodeURIComponent(id)}`,
+      `/api/checkout/${encodeURIComponent(id)}`
+    ];
+    for (const url of quick) {
+      try {
+        const r = await fetch(url, { cache: "no-store" });
+        if (r.ok) {
+          const firstJson = await r.json().catch(() => ({}));
+          return { url, firstJson, from: "direct" };
+        }
+      } catch(_) {}
+    }
+    try {
+      const url = `/api/admin/swaps/${encodeURIComponent(id)}`;
+      const r = await fetch(url, { cache: "no-store" });
+      if (r.ok) {
+        const firstJson = await r.json().catch(() => ({}));
+        return { url, firstJson, from: "admin" };
+      }
+    } catch(_) {}
+    return null;
+  }
+
+  function normalizeFromDirect(raw) {
     const address = extractDepositAddress(raw);
     const qr = extractDepositQR(raw);
     const status = phaseFromEvidence(raw);
@@ -155,8 +313,7 @@
     const network = firstTruthy(raw.in_network,raw.network_in,raw.request?.in_network,raw.chain_in,   raw.network);
     return { address, qr, status, amount, asset, network };
   }
-
-  function normalizeFromAdmin(raw){
+  function normalizeFromAdmin(raw) {
     const swap = raw.swap || raw;
     const l1 = leg1Of(swap);
     const pinfo = l1.provider_info || l1.info || {};
@@ -176,121 +333,123 @@
 
     return { address, qr, status, amount, asset, network };
   }
-
-  async function detectStatusEndpoint(id){
-    const urls = [
-      `/api/status?sid=${encodeURIComponent(id)}`,
-      `/api/status/${encodeURIComponent(id)}`,
-      `/api/checkout?sid=${encodeURIComponent(id)}`,
-      `/api/swap?sid=${encodeURIComponent(id)}`,
-      `/api/checkout/${encodeURIComponent(id)}`
-    ];
-    for (const url of urls){
-      try{ const r=await fetch(url,{cache:"no-store"}); if(r.ok){ const j=await r.json().catch(()=>({})); return {url, firstJson:j, from:"direct"}; } }catch{}
-    }
-    try{
-      const url=`/api/admin/swaps/${encodeURIComponent(id)}`;
-      const r=await fetch(url,{cache:"no-store"}); if(r.ok){ const j=await r.json().catch(()=>({})); return {url, firstJson:j, from:"admin"};}
-    }catch{}
-    return null;
+  function normalizeData(raw, from) {
+    try { return from === "admin" ? normalizeFromAdmin(raw) : normalizeFromDirect(raw); }
+    catch { return { address:"", qr:"", status:"receiving" }; }
   }
 
-  function normalizeData(raw, from){ try{ return from==="admin" ? normalizeFromAdmin(raw) : normalizeFromDirect(raw); }catch{ return {address:"",qr:"",status:"receiving"}; } }
-
-  /* ---------- render ---------- */
-  function setAddress(addr){ $("addr").textContent = addr || "—"; }
-
-  function renderAmount(amount, asset, network){
-    const box=$("amountLine"); if (!box) return;
-    box.style.marginTop="10px";
-
-    const sym = (asset||"").toUpperCase();
-    const showNet = network && String(network).toUpperCase() !== sym ? `(${network})` : "";
-
-    $("needAmount").textContent = (amount ?? "—").toString();
-    $("needAsset").textContent  = sym || "—";
-    $("needNet").textContent    = showNet;
-
-    const iconHost=$("needIcon");
-    if (iconHost){
-      iconHost.innerHTML = coinIconSVG(sym);
-    }
-    box.hidden = false;
-  }
-
-  function showCheck(){ const box=$("qrBox"); if(!box) return; box.innerHTML=""; const d=document.createElement("div"); d.className="mx-qr-ok"; d.textContent="✓"; box.appendChild(d); }
-
-  function updateSteps(status){
-    const norm=(status||"").toLowerCase();
-    const idx = STEP_INDEX[norm] ?? STEP_INDEX.receiving;
-    const steps = Array.from(document.querySelectorAll("#steps .mx-step"));
-    steps.forEach((li,i)=>{ li.classList.remove("done","active","upcoming"); if(i<idx) li.classList.add("done"); else if(i===idx) li.classList.add("active"); else li.classList.add("upcoming"); });
-
-    if (norm==="receiving") showTimer(true); else stopTimer();
-  }
-
-  /* ---------- polling ---------- */
-  async function pollOnce(){
+  /* ---------- Polling (with cache-busting + fast-burst) ---------- */
+  async function pollOnce() {
     if (!statusEndpoint) return;
-    try{
-      const r=await fetch(statusEndpoint.url,{cache:"no-store"});
-      if(!r.ok) throw new Error(r.status);
+    try {
+      const bustUrl = statusEndpoint.url + (statusEndpoint.url.includes("?") ? "&" : "?") + `_t=${Date.now()}`;
+      const r = await fetch(bustUrl, {
+        cache: "no-store",
+        headers: {
+          "cache-control": "no-cache, no-store, must-revalidate",
+          "pragma": "no-cache",
+          "expires": "0"
+        }
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const raw = await r.json();
       const data = normalizeData(raw, statusEndpoint.from);
 
-      setAddress(data.address);
-      if (data.qr){ hadProviderQR=true; setQR(data.qr); }
-      else if (!hadProviderQR && data.address){ setFallbackQR(data.address); }
+      // Address & QR (DEPOSIT ONLY)
+      $("addr").textContent = data.address || "—";
+      if (data.qr) { hadProviderQR = true; setQR(data.qr); }
+      else if (!hadProviderQR && data.address) { setFallbackQRFromAddress(data.address); }
 
-      if (data.amount && data.asset) renderAmount(data.amount, data.asset, data.network);
-      else {
-        fetch(`/api/admin/swaps/${encodeURIComponent(swapId)}`,{cache:"no-store"})
+      // Amount/asset/network — direct or admin fallback
+      if (data.amount && data.asset) {
+        renderAmountReminder(data.amount, data.asset, data.network);
+      } else {
+        fetch(`/api/admin/swaps/${encodeURIComponent(swapId)}`, { cache: "no-store" })
           .then(x=>x.ok?x.json():null)
-          .then(obj=>{ if(!obj) return; const ad = normalizeFromAdmin(obj); renderAmount(ad.amount ?? data.amount, ad.asset ?? data.asset, ad.network ?? data.network); })
+          .then(obj=>{ if(!obj) return; const ad = normalizeFromAdmin(obj); renderAmountReminder(ad.amount ?? data.amount, ad.asset ?? data.asset, ad.network ?? data.network); })
           .catch(()=>{});
       }
 
       const prev = lastStatus;
+      // Steps + timer
       updateSteps(data.status);
-      if (prev !== data.status){
-        if ((prev===null && data.status!=="receiving") || (prev==="receiving" && data.status!=="receiving")) showCheck();
+
+      // Receiving -> (Routing/Sending/Complete): overlay ✓ when leaving Receiving
+      if (prev !== data.status) {
+        if ((prev===null && data.status!=="receiving") || (prev==="receiving" && data.status!=="receiving")) showDepositReceivedBadge();
         lastStatus = data.status;
+
+        // fast burst polling for 20s after a phase change (snappier)
+        if (pollTimer) clearInterval(pollTimer);
+        let bursts = 10; // 10 * 2s = 20s
+        pollTimer = setInterval(() => {
+          if (--bursts <= 0) {
+            clearInterval(pollTimer);
+            pollTimer = setInterval(pollOnce, 5000); // back to normal
+          }
+          pollOnce();
+        }, 2000);
       }
 
-      if (["complete","finished","done","success"].includes((data.status||"").toLowerCase())){
-        clearInterval(pollTimer); pollTimer=null; showCheck(); stopTimer();
+      // Stop polling on completion
+      if (["complete","finished","done","success"].includes((data.status||"").toLowerCase())) {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        showDepositReceivedBadge();
+        clearDeadline(swapId);
+        showTimer(false);
       }
-    }catch{/* keep polling */}
+    } catch { /* ignore and keep polling next tick */ }
   }
 
   /* ---------- boot ---------- */
   (async function init(){
     $("swapIdLine").textContent = swapId || "—";
-    $("copyBtn")?.addEventListener("click", async ()=>{
-      const txt=$("addr")?.textContent||""; if(!txt || txt==="—") return;
-      try{ await navigator.clipboard.writeText(txt); $("copyBtn").textContent="Copied!"; setTimeout(()=>$("copyBtn").textContent="Copy",1200); }catch{}
+    $("copyBtn")?.addEventListener("click", async () => {
+      const txt = $("addr")?.textContent || "";
+      if (!txt || txt === "—") return;
+      try { await navigator.clipboard.writeText(txt); $("copyBtn").textContent = "Copied!"; setTimeout(() => $("copyBtn").textContent = "Copy", 1200); } catch {}
     });
 
     if (!swapId) return;
 
-    startReceivingTimer(); showTimer(true);
+    // Receiving-only 25‑min timer (persisted per swap) — we’ll hide/clear it once status > receiving
+    ensureReceivingTimerForSwap(swapId);
+    showTimer(true);
 
+    // Detect best status endpoint
     const found = await detectStatusEndpoint(swapId);
-    if (!found){
-      const msg=document.createElement("div"); msg.className="mx-softerr"; msg.textContent="Waiting for provider… (order created, status endpoint not ready yet)";
+    if (!found) {
+      const msg = document.createElement("div");
+      msg.className = "mx-softerr";
+      msg.textContent = "Waiting for provider… (order created, status endpoint not ready yet)";
       document.querySelector(".mx-card")?.appendChild(msg);
       setTimeout(init, 2000);
       return;
     }
     statusEndpoint = found;
 
+    // First paint
     const first = normalizeData(found.firstJson || {}, found.from);
-    setAddress(first.address);
-    if (first.qr) { hadProviderQR=true; setQR(first.qr); } else if (first.address) { setFallbackQR(first.address); }
-    if (first.amount && first.asset) renderAmount(first.amount, first.asset, first.network);
+    $("addr").textContent = first.address || "—";
+    if (first.qr) { hadProviderQR = true; setQR(first.qr); }
+    else if (first.address) { setFallbackQRFromAddress(first.address); }
 
-    updateSteps(first.status); lastStatus = first.status;
+    if (first.amount && first.asset) renderAmountReminder(first.amount, first.asset, first.network);
+    else {
+      try {
+        const r = await fetch(`/api/admin/swaps/${encodeURIComponent(swapId)}`, { cache: "no-store" });
+        if (r.ok) {
+          const obj = await r.json();
+          const ad = normalizeFromAdmin(obj);
+          renderAmountReminder(ad.amount ?? first.amount, ad.asset ?? first.asset, ad.network ?? first.network);
+        }
+      } catch {}
+    }
 
+    updateSteps(first.status);
+    lastStatus = first.status;
+
+    // Start live polling
     pollTimer = setInterval(pollOnce, 5000);
   })();
 })();
