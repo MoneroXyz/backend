@@ -3,34 +3,36 @@
   const qp = new URLSearchParams(location.search);
   const swapId = qp.get("sid") || qp.get("swapId") || "";
 
+  // Steps
   const STEP_INDEX = { receiving:0, routing:1, sending:2, complete:3, finished:3, done:3 };
 
+  // state
   let pollTimer = null;
   let lastStatus = null;
   let statusEndpoint = null;
   let timerHandle = null;
   let hadProviderQR = false;
 
-  /* ---------- Inline bright SVG logos (always render, no CDN) ---------- */
+  /* ---------- Bright inline SVG logos (no external requests) ---------- */
   function coinIconSVG(sym){
     const s = (sym||"").toUpperCase();
     const M = {
-      BTC:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#F7931A"/><text x="12" y="16" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">฿</text></svg>`,
-      ETH:`<svg viewBox="0 0 24 24" width="22" height="22"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C3C3D"/><stop offset="1" stop-color="#8C8C8C"/></linearGradient></defs><path d="M12 2l6 9-6 4-6-4 6-9z" fill="url(#g)"/><path d="M12 22l6-10-6 4-6-4 6 10z" fill="#8C8C8C"/></svg>`,
-      XMR:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#FF6600"/><path d="M5 13l3-3 4 4 4-4 3 3v5H5z" fill="#fff"/></svg>`,
-      USDT:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#26A17B"/><rect x="6" y="7.5" width="12" height="3" rx="1.5" fill="#fff"/><rect x="10.5" y="10.5" width="3" height="6.5" rx="1.5" fill="#fff"/></svg>`,
-      USDC:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#2775CA"/><circle cx="12" cy="12" r="4" fill="#fff"/></svg>`,
-      BNB:`<svg viewBox="0 0 24 24" width="22" height="22"><rect x="6" y="6" width="12" height="12" transform="rotate(45 12 12)" fill="#F3BA2F"/></svg>`,
-      SOL:`<svg viewBox="0 0 24 24" width="22" height="22"><rect x="5" y="7" width="14" height="3" fill="#14F195"/><rect x="5" y="11" width="14" height="3" fill="#59FFA0"/><rect x="5" y="15" width="14" height="3" fill="#99FFC7"/></svg>`,
-      TRX:`<svg viewBox="0 0 24 24" width="22" height="22"><polygon points="3,5 21,7 12,21" fill="#E50914"/></svg>`,
-      LTC:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#345D9D"/><path d="M10 5l-2 7h3l-1 4h7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
-      XRP:`<svg viewBox="0 0 24 24" width="22" height="22"><path d="M7 6c1.6 1.6 3.2 3 5 3s3.4-1.4 5-3M7 18c1.6-1.6 3.2-3 5-3s3.4 1.4 5 3" stroke="#00A3E0" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
-      DOGE:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#C2A633"/><path d="M8 7h6.2a3.8 3.8 0 0 1 0 7.6H8V7zm0 4h7.2" stroke="#fff" stroke-width="2"/></svg>`,
-      MATIC:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#8247E5"/><path d="M7 8l5-3 5 3v8l-5 3-5-3V8z" fill="#fff" opacity=".9"/></svg>`,
-      TON:`<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 3l7 8-7 10L5 11 12 3z" fill="#0098EA"/></svg>`,
-      ADA:`<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#0033AD"/><circle cx="12" cy="12" r="2" fill="#fff"/><circle cx="6" cy="12" r="1.2" fill="#fff"/><circle cx="18" cy="12" r="1.2" fill="#fff"/></svg>`
+      BTC:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#F7931A"/><text x="12" y="16" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">฿</text></svg>`,
+      ETH:`<svg viewBox="0 0 24 24"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3C3C3D"/><stop offset="1" stop-color="#8C8C8C"/></linearGradient></defs><path d="M12 2l6 9-6 4-6-4 6-9z" fill="url(#g)"/><path d="M12 22l6-10-6 4-6-4 6 10z" fill="#8C8C8C"/></svg>`,
+      XMR:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#FF6600"/><path d="M5 13l3-3 4 4 4-4 3 3v5H5z" fill="#fff"/></svg>`,
+      USDT:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#26A17B"/><rect x="6" y="7.5" width="12" height="3" rx="1.5" fill="#fff"/><rect x="10.5" y="10.5" width="3" height="6.5" rx="1.5" fill="#fff"/></svg>`,
+      USDC:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#2775CA"/><circle cx="12" cy="12" r="4" fill="#fff"/></svg>`,
+      BNB:`<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" transform="rotate(45 12 12)" fill="#F3BA2F"/></svg>`,
+      SOL:`<svg viewBox="0 0 24 24"><rect x="5" y="7" width="14" height="3" fill="#14F195"/><rect x="5" y="11" width="14" height="3" fill="#59FFA0"/><rect x="5" y="15" width="14" height="3" fill="#99FFC7"/></svg>`,
+      TRX:`<svg viewBox="0 0 24 24"><polygon points="3,5 21,7 12,21" fill="#E50914"/></svg>`,
+      LTC:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#345D9D"/><path d="M10 5l-2 7h3l-1 4h7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+      XRP:`<svg viewBox="0 0 24 24"><path d="M7 6c1.6 1.6 3.2 3 5 3s3.4-1.4 5-3M7 18c1.6-1.6 3.2-3 5-3s3.4 1.4 5 3" stroke="#00A3E0" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+      DOGE:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#C2A633"/><path d="M8 7h6.2a3.8 3.8 0 0 1 0 7.6H8V7zm0 4h7.2" stroke="#fff" stroke-width="2"/></svg>`,
+      MATIC:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#8247E5"/><path d="M7 8l5-3 5 3v8l-5 3-5-3V8z" fill="#fff" opacity=".9"/></svg>`,
+      TON:`<svg viewBox="0 0 24 24"><path d="M12 3l7 8-7 10L5 11 12 3z" fill="#0098EA"/></svg>`,
+      ADA:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#0033AD"/><circle cx="12" cy="12" r="2" fill="#fff"/><circle cx="6" cy="12" r="1.2" fill="#fff"/><circle cx="18" cy="12" r="1.2" fill="#fff"/></svg>`
     };
-    return M[s] || `<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#6B7280"/></svg>`;
+    return M[s] || `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#6B7280"/></svg>`;
   }
 
   /* ---------- utils ---------- */
@@ -129,33 +131,29 @@
     const has = (k)=> deepFind(raw,(kk,v)=> kk===k && v!=null);
     const hasNum = (k)=> { const v = deepFind(raw,(kk,vv)=> kk===k && vv!=null); const n=numify(v); return n!=null && n>0; };
 
-    // evidence of payout/broadcast -> SENDING
-    if ( has('payout_txid') || has('payout_hash') || has('payout_tx') || has('broadcast_out') || has('txid_out') )
-      return "sending";
-    // evidence of completion -> COMPLETE
+    // completion first (some providers jump straight there)
     const st = String(firstTruthy(raw.status, raw.state, raw.stage, raw.provider_status, "" )).toLowerCase();
     if (/(complete|finished|done|success|completed)/.test(st)) return "complete";
 
-    // deposit detected -> ROUTING
-    if ( has('payin_txid') || has('payin_hash') || has('payin_tx') || hasNum('confirmations') || hasNum('payin_confirmations') || hasNum('amount_received') )
+    // payout/broadcast → sending
+    if ( has('payout_txid') || has('payout_hash') || has('payout_tx') || has('broadcast_out') || has('txid_out') || /(sending|payout|broadcast|outgoing)/.test(st) )
+      return "sending";
+
+    // deposit detected/confirmations → routing
+    if ( has('payin_txid') || has('payin_hash') || has('payin_tx') || hasNum('confirmations') || hasNum('payin_confirmations') || hasNum('amount_received') || /(detected|paid|confirm|pending|in_progress|awaiting_confirm)/.test(st) )
       return "routing";
 
-    // textual hints
-    if (/(detected|paid|confirm|pending|in_progress|awaiting_confirm)/.test(st)) return "routing";
-    if (/(sending|payout|broadcast|outgoing|transferring)/.test(st)) return "sending";
     return "receiving";
   }
 
   function normalizeFromDirect(raw){
     const address = extractDepositAddress(raw);
     const qr = extractDepositQR(raw);
-    const status = phaseFromEvidence(raw); // smarter
-    const deadline = firstTruthy(raw.expires_at, raw.time_left_iso, raw.deadline) || null;
-
+    const status = phaseFromEvidence(raw);
     const amount  = firstTruthy(raw.in_amount, raw.amount_in, raw.expected_amount_in, raw.request?.amount, raw.amount);
     const asset   = firstTruthy(raw.in_asset,  raw.asset_in,  raw.request?.in_asset,  raw.symbol_in,  raw.asset);
     const network = firstTruthy(raw.in_network,raw.network_in,raw.request?.in_network,raw.chain_in,   raw.network);
-    return { address, qr, status, deadline, amount, asset, network };
+    return { address, qr, status, amount, asset, network };
   }
 
   function normalizeFromAdmin(raw){
@@ -175,8 +173,8 @@
     if (network==null)network = deepFind(swap,(k,v)=>/^(in_?network|network_?in|from(Network|Chain)|chain_from|from_chain)$/i.test(k));
     if (typeof asset==="string") asset=asset.toUpperCase();
     if (typeof network==="string") network=network.toUpperCase();
-    const deadline = firstTruthy(pinfo.expires_at, swap.expires_at, pinfo.deadline, swap.deadline) || null;
-    return { address, qr, status, deadline, amount, asset, network };
+
+    return { address, qr, status, amount, asset, network };
   }
 
   async function detectStatusEndpoint(id){
@@ -197,20 +195,29 @@
     return null;
   }
 
-  function normalizeData(raw, from){ try{ return from==="admin" ? normalizeFromAdmin(raw) : normalizeFromDirect(raw); }catch{ return {address:"",qr:"",status:"receiving",deadline:null}; } }
+  function normalizeData(raw, from){ try{ return from==="admin" ? normalizeFromAdmin(raw) : normalizeFromDirect(raw); }catch{ return {address:"",qr:"",status:"receiving"}; } }
 
   /* ---------- render ---------- */
   function setAddress(addr){ $("addr").textContent = addr || "—"; }
+
   function renderAmount(amount, asset, network){
     const box=$("amountLine"); if (!box) return;
     box.style.marginTop="10px";
+
+    const sym = (asset||"").toUpperCase();
+    const showNet = network && String(network).toUpperCase() !== sym ? `(${network})` : "";
+
     $("needAmount").textContent = (amount ?? "—").toString();
-    $("needAsset").textContent  = (asset ?? "—").toString();
-    $("needNet").textContent    = network ? `(${network})` : "";
+    $("needAsset").textContent  = sym || "—";
+    $("needNet").textContent    = showNet;
+
     const iconHost=$("needIcon");
-    if (iconHost){ iconHost.innerHTML=coinIconSVG(asset); iconHost.style.display="inline-flex"; iconHost.style.marginRight="6px"; }
+    if (iconHost){
+      iconHost.innerHTML = coinIconSVG(sym);
+    }
     box.hidden = false;
   }
+
   function showCheck(){ const box=$("qrBox"); if(!box) return; box.innerHTML=""; const d=document.createElement("div"); d.className="mx-qr-ok"; d.textContent="✓"; box.appendChild(d); }
 
   function updateSteps(status){
@@ -237,7 +244,6 @@
 
       if (data.amount && data.asset) renderAmount(data.amount, data.asset, data.network);
       else {
-        // admin fallback
         fetch(`/api/admin/swaps/${encodeURIComponent(swapId)}`,{cache:"no-store"})
           .then(x=>x.ok?x.json():null)
           .then(obj=>{ if(!obj) return; const ad = normalizeFromAdmin(obj); renderAmount(ad.amount ?? data.amount, ad.asset ?? data.asset, ad.network ?? data.network); })
@@ -282,6 +288,7 @@
     setAddress(first.address);
     if (first.qr) { hadProviderQR=true; setQR(first.qr); } else if (first.address) { setFallbackQR(first.address); }
     if (first.amount && first.asset) renderAmount(first.amount, first.asset, first.network);
+
     updateSteps(first.status); lastStatus = first.status;
 
     pollTimer = setInterval(pollOnce, 5000);
