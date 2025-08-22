@@ -44,7 +44,7 @@
     }
     return undefined;
   };
-  function deepFind(obj, testFn, maxNodes=8000){
+  function deepFind(obj, testFn, maxNodes=12000){
     try{
       const seen = new Set(); const queue = [obj]; let n=0;
       while(queue.length && n<maxNodes){
@@ -109,57 +109,102 @@
     tl.parentElement.style.visibility = show ? "visible" : "hidden";
   }
 
-  /* ---------- Phase detector (LEG‑SCOPED + MONOTONIC) ---------- */
+  /* ---------- Helpers to read “status-like” text anywhere ---------- */
+  function collectStatusTextAnywhere(raw){
+    const keys = ["status","state","stage","message","details","progress","status_text","state_text","stage_text","note","info"];
+    const out = [];
+    deepFind(raw, (k,v)=> {
+      if (keys.includes(k) && typeof v === "string" && v.trim().length){
+        out.push(v.toLowerCase());
+      }
+      return false;
+    });
+    return out.join(" | ");
+  }
+  function getProviderName(raw){
+    return (
+      raw?.provider || raw?.provider_name ||
+      raw?.legs?.[0]?.provider || raw?.leg1?.provider ||
+      raw?.legs?.[0]?.provider_name || raw?.leg1?.provider_name || ""
+    ).toString().toLowerCase();
+  }
+
+  // Default phrase buckets (broad).
+  const WAIT_PHRASES_DEF = /(waiting|awaiting|no payment|no deposit|pending deposit|address created|created|new|idle|looking for|open order|unpaid|not paid|awaiting payment|awaiting deposit|waiting for payment|waiting for deposit)/i;
+  const SEEN_PHRASES_DEF = /(confirm|detected|received|paid|payment|deposit|processing|exchang|in[\s_-]?progress|verif|seen|found)/i;
+  const L2_SENDING_TEXT_DEF = /(sending|payout|outgoing|broadcast|withdrawing|releasing|transfer(?!\s*to\s*us))/i;
+  const COMPLETE_TEXT_DEF   = /(complete|finished|done|success|completed|succeeded)/i;
+
+  // Optional provider-specific overrides: window.MX_STATUS_LEXICON = { changenow:{seen:[...],waiting:[...],sending:[...],complete:[...]} }
+  function lexiconFor(raw){
+    const p = (window.MX_STATUS_LEXICON || {})[getProviderName(raw)] || {};
+    const toRe = (arr, fallback) => {
+      if (!arr || !arr.length) return fallback;
+      const esc = (s)=> s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      return new RegExp(arr.map(esc).join("|"), "i");
+    };
+    return {
+      WAIT:  toRe(p.waiting, WAIT_PHRASES_DEF),
+      SEEN:  toRe(p.seen,    SEEN_PHRASES_DEF),
+      SEND:  toRe(p.sending, L2_SENDING_TEXT_DEF),
+      DONE:  toRe(p.complete,COMPLETE_TEXT_DEF)
+    };
+  }
+
+  /* ---------- Phase detector (LEG-SCOPED + ANYWHERE FALLBACK + MONOTONIC) ---------- */
   const leg1Of = (data)=> Array.isArray(data?.legs) ? (data.legs[0]||{}) : (data?.leg1 || {});
   const leg2Of = (data)=> Array.isArray(data?.legs) ? (data.legs[1]||{}) : (data?.leg2 || {});
 
   const hasField = (obj, re) => deepFind(obj,(k,v)=> re.test(k) && v!=null)!=null;
   const numGt0  = (obj, re) => { const v=deepFind(obj,(k,v)=>re.test(k)&&v!=null); const n=numify(v); return n!=null && n>0; };
 
-  // Provider text helpers (broadened)
-  const getText = (o) => {
-    if (!o || typeof o !== "object") return "";
-    const s = [];
-    for (const k of ["status","state","stage","message","status_text","state_text","stage_text"]) {
-      const v = o[k]; if (typeof v === "string") s.push(v.toLowerCase());
-    }
-    return s.join(" | ");
-  };
-  // phrases that still mean "waiting for first payment"
-  const WAIT_PHRASES = /(waiting|awaiting|no payment|no deposit|pending deposit|address created|created|new|idle|looking for|open order|unpaid|not paid|awaiting payment|awaiting deposit|waiting for payment|waiting for deposit)/i;
-  // any hint that deposit is seen/processing/confirming
-  const SEEN_PHRASES = /(confirm|detected|received|paid|payment|deposit|processing|exchang|in[\s_-]?progress|verif|seen|found)/i;
-
   function phaseFromEvidence(raw){
+    const { WAIT, SEEN, SEND, DONE } = lexiconFor(raw);
+
     const l1 = leg1Of(raw), p1 = l1.provider_info || l1.info || {};
     const l2 = leg2Of(raw), p2 = l2.provider_info || l2.info || {};
 
-    // LEG‑1: advance if hard evidence OR any non-waiting text that hints activity
-    const l1Text = [getText(l1), getText(p1)].join(" | ");
-    const leg1DepositEvidence =
+    const l1Text = [
+      collectStatusTextAnywhere(l1),
+      collectStatusTextAnywhere(p1)
+    ].join(" | ") || collectStatusTextAnywhere(raw); // fallback to anywhere
+
+    // Leave RECEIVING if:
+    //  - leg1 has structured deposit evidence, OR
+    //  - anywhere text suggests deposit seen/confirming and not waiting.
+    const leg1Structured =
       hasField(p1, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
       hasField(l1, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
       numGt0(p1, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i) ||
-      (l1Text.length > 0 && !WAIT_PHRASES.test(l1Text) && SEEN_PHRASES.test(l1Text));
+      numGt0(l1, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i);
 
-    // LEG‑2: start Sending only when leg‑2 has *hard* pay‑in evidence
-    const leg2RecvEvidence =
+    const leg1TextSeen = l1Text && !WAIT.test(l1Text) && SEEN.test(l1Text);
+
+    // Leg‑2: stay in ROUTING until actual customer payout starts
+    const l2Text = [
+      collectStatusTextAnywhere(l2),
+      collectStatusTextAnywhere(p2)
+    ].join(" | ") || collectStatusTextAnywhere(raw);
+
+    const leg2RecvStructured =
       hasField(p2, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
       hasField(l2, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
-      numGt0(p2, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i);
+      numGt0(p2, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i) ||
+      numGt0(l2, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i);
 
-    // LEG‑2 payout & completion (need explicit finished/success/complete text)
-    const leg2PayoutEvidence =
+    const leg2RecvText = l2Text && !WAIT.test(l2Text) && SEEN.test(l2Text);
+
+    const leg2SendingEvidence =
       hasField(p2, /^(payout_?tx(id)?|txid[_-]?out|out_?tx(id)?|broadcast[_-]?out|tx_hash_out)$/i) ||
       hasField(l2, /^(payout_?tx(id)?|txid[_-]?out|out_?tx(id)?|broadcast[_-]?out|tx_hash_out)$/i) ||
-      numGt0(p2, /^(payout_confirmations|out_confirmations)$/i);
-    const leg2Text = [getText(l2), getText(p2)].join(" | ");
-    const leg2CompleteText = /(complete|finished|done|success|completed|succeeded)/i;
+      SEND.test(l2Text);
+
+    const leg2Complete = DONE.test(l2Text);
 
     // Order: complete > sending > routing > receiving
-    if (leg2PayoutEvidence && leg2CompleteText.test(leg2Text)) return "complete";
-    if (leg2RecvEvidence) return "sending";
-    if (leg1DepositEvidence) return "routing";
+    if (leg2Complete && leg2SendingEvidence) return "complete";
+    if (leg2SendingEvidence)               return "sending";
+    if (leg2RecvStructured || leg2RecvText || leg1Structured || leg1TextSeen) return "routing";
     return "receiving";
   }
 
@@ -439,7 +484,7 @@
     updateSteps(first.status);
     lastStatus = first.status;
 
-    // If we land already past Receiving, show badge and remove white background now
+    // If we land already past Receiving, show badge and remove timer now
     if (first.status && String(first.status).toLowerCase() !== "receiving") {
       showDepositReceivedBadge();
       showTimer(false);
