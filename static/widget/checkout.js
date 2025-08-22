@@ -285,16 +285,38 @@
     }
   }
 
+  // *** Only visual change: bluish "Congrats" banner ***
   function showDoneMessage(){
     const stepsWrap = document.getElementById("steps");
     if (stepsWrap) stepsWrap.style.display = "none";
-    // append a small congrats line under the grid
+
     const grid = document.querySelector(".mx-grid");
     if (grid && !document.getElementById("mxDoneNote")) {
       const note = document.createElement("div");
       note.id = "mxDoneNote";
-      note.className = "mx-subtle";
-      note.textContent = "🎉 Congratulations! Your swap is completed.";
+      // bluish pill/card with subtle border and glow
+      note.setAttribute("style", [
+        "margin-top:10px",
+        "padding:12px 14px",
+        "border-radius:12px",
+        "display:flex",
+        "align-items:center",
+        "gap:10px",
+        "background:linear-gradient(135deg, rgba(16,179,255,.14), rgba(16,179,255,.08))",
+        "border:1px solid rgba(16,179,255,.35)",
+        "box-shadow:0 8px 22px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.15)",
+        "color:var(--fg)",
+        "font-weight:700"
+      ].join(";"));
+
+      note.innerHTML = `
+        <span aria-hidden="true" style="display:inline-grid;place-items:center;width:28px;height:28px;border-radius:999px;background:rgba(16,179,255,.25);border:1px solid rgba(16,179,255,.45);">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path d="M6 12l4 4 8-8" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span>🎉 Congratulations! Your swap is completed.</span>
+      `;
       grid.appendChild(note);
     }
   }
