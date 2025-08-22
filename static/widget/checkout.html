@@ -36,6 +36,28 @@
     }
     .mx-qrbox img { width:100%; height:100%; object-fit:contain; }
 
+    /* NEW: sleek badge that replaces the QR after Receiving */
+    .mx-qr-badge {
+      width:220px; height:220px; border-radius:14px;
+      background:linear-gradient(160deg,#26d59a,#12b36c);
+      box-shadow:
+        0 10px 24px rgba(0,0,0,.25),
+        inset 0 1px 0 rgba(255,255,255,.35);
+      display:grid; place-items:center;
+      position:relative;
+    }
+    .mx-qr-badge::after{
+      content:""; position:absolute; inset:0; border-radius:14px;
+      box-shadow:0 0 0 1px rgba(0,0,0,.08), inset 0 0 20px rgba(255,255,255,.2);
+      pointer-events:none;
+    }
+    .mx-qr-badge svg { width:120px; height:120px; }
+    .mx-qr-badge path {
+      fill:none; stroke:#082f22; stroke-width:10; stroke-linecap:round; stroke-linejoin:round;
+      filter: drop-shadow(0 1px 0 rgba(255,255,255,.35));
+    }
+
+    /* (kept for backward compat; not used anymore) */
     .mx-qr-ok {
       width:220px; height:220px; border-radius:50%;
       background: var(--accent);

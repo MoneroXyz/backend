@@ -3,17 +3,16 @@
   const params = new URLSearchParams(window.location.search);
   const swapId = params.get("sid") || params.get("swapId") || "";
 
-  // UI step mapping — unchanged
+  // Step mapping
   const STEP_INDEX = { receiving:0, routing:1, sending:2, complete:3, finished:3, done:3 };
 
-  // timers/polling
   let pollTimer = null;
-  let lastStatus = null;
-  let statusEndpoint = null;   // { url, from, firstJson }
+  let lastStatus = null;           // "receiving" | "routing" | "sending" | "complete"
+  let statusEndpoint = null;       // { url, from, firstJson }
   let timerHandle = null;
   let hadProviderQR = false;
 
-  /* ---------- Icons (inline SVG; unchanged semantics) ---------- */
+  /* ---------- Icons (inline SVG) ---------- */
   function coinIconSVG(sym){
     const s = (sym||"").toUpperCase();
     const M = {
@@ -63,7 +62,7 @@
   }
   const numify = (x) => x == null ? null : (typeof x === "number" ? x : (typeof x === "string" && x.trim()!=="" ? Number(x) : null));
 
-  /* ---------- Persisted deadline per swap (Receiving only) ---------- */
+  /* ---------- Timer (Receiving only) ---------- */
   function deadlineKey(id){ return `monerizer_timer_deadline_${id}`; }
   function getOrCreateDeadline(id, minutes=25){
     const k = deadlineKey(id);
@@ -83,16 +82,14 @@
     const ss = String(s % 60).padStart(2,"0");
     return `${h}:${m}:${ss}`;
   }
-
   function expireUI(){
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     const q = $("qrBox"); if (q) q.innerHTML = "";
-    const addr = $("addr"); if (addr) addr.textContent = "—";
+    setAddr("—");
     const btn = $("copyBtn"); if (btn) { btn.disabled = true; btn.textContent = "Expired"; }
     const exp = $("expiredBox"); if (exp) exp.classList.remove("mx-hidden");
   }
-
-  // Receiving-only timer; hidden/cleared as soon as we leave Receiving
+  const setAddr = (v) => { const a = $("addr"); if (a) a.textContent = v ?? "—"; };
   function ensureReceivingTimerForSwap(id){
     const tl = $("timeLeft");
     if (!tl) return;
@@ -112,72 +109,70 @@
     tl.parentElement.style.visibility = show ? "visible" : "hidden";
   }
 
-  /* ---------- Provider-agnostic phase detector (rock solid) ---------- */
+  /* ---------- Phase detector (LEG‑SCOPED + MONOTONIC) ---------- */
+  const leg1Of = (data)=> Array.isArray(data?.legs) ? (data.legs[0]||{}) : (data?.leg1 || {});
+  const leg2Of = (data)=> Array.isArray(data?.legs) ? (data.legs[1]||{}) : (data?.leg2 || {});
+
+  const hasField = (obj, re) => deepFind(obj,(k,v)=> re.test(k) && v!=null)!=null;
+  const numGt0  = (obj, re) => { const v=deepFind(obj,(k,v)=>re.test(k)&&v!=null); const n=numify(v); return n!=null && n>0; };
+
+  // Provider text helpers (broadened)
+  const getText = (o) => {
+    if (!o || typeof o !== "object") return "";
+    const s = [];
+    for (const k of ["status","state","stage","message","status_text","state_text","stage_text"]) {
+      const v = o[k]; if (typeof v === "string") s.push(v.toLowerCase());
+    }
+    return s.join(" | ");
+  };
+  // phrases that still mean "waiting for first payment"
+  const WAIT_PHRASES = /(waiting|awaiting|no payment|no deposit|pending deposit|address created|created|new|idle|looking for|open order|unpaid|not paid|awaiting payment|awaiting deposit|waiting for payment|waiting for deposit)/i;
+  // any hint that deposit is seen/processing/confirming
+  const SEEN_PHRASES = /(confirm|detected|received|paid|payment|deposit|processing|exchang|in[\s_-]?progress|verif|seen|found)/i;
+
   function phaseFromEvidence(raw){
-    // collect status-like strings from several places
-    const statusCandidates = [];
-    const collectStatus = (o) => {
-      if (!o || typeof o!=="object") return;
-      const keys = [
-        "status","state","stage","provider_status","status_text","state_text","stage_text",
-        "progress","details","message"
-      ];
-      for (const k of keys){
-        const v = o[k];
-        if (typeof v === "string") statusCandidates.push(v);
-        else if (v && typeof v === "object"){
-          if (typeof v.status === "string") statusCandidates.push(v.status);
-          if (typeof v.state  === "string") statusCandidates.push(v.state);
-          if (typeof v.stage  === "string") statusCandidates.push(v.stage);
-          if (Array.isArray(v)) v.forEach(x => { if (typeof x === "string") statusCandidates.push(x); });
-        }
-      }
-    };
-    collectStatus(raw);
-    const l1 = Array.isArray(raw?.legs) ? (raw.legs[0]||{}) : (raw?.leg1 || {});
-    collectStatus(l1);
-    collectStatus(l1?.provider_info || l1?.info || {});
-    const st = statusCandidates.map(s => String(s).toLowerCase()).join(" | ");
+    const l1 = leg1Of(raw), p1 = l1.provider_info || l1.info || {};
+    const l2 = leg2Of(raw), p2 = l2.provider_info || l2.info || {};
 
-    // helpers
-    const hasField = (name) => deepFind(raw, (k,v)=> k === name && v != null) != null;
-    const getNum   = (name) => {
-      const v = deepFind(raw, (k,v)=> k === name && v != null);
-      const n = numify(v); return n==null ? 0 : n;
-    };
-    const matchAny = (hay, words) => words.some(w => hay.includes(w));
+    // LEG‑1: advance if hard evidence OR any non-waiting text that hints activity
+    const l1Text = [getText(l1), getText(p1)].join(" | ");
+    const leg1DepositEvidence =
+      hasField(p1, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
+      hasField(l1, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
+      numGt0(p1, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i) ||
+      (l1Text.length > 0 && !WAIT_PHRASES.test(l1Text) && SEEN_PHRASES.test(l1Text));
 
-    const WORDS_COMPLETE = ["complete","finished","done","success","completed","succeeded"];
-    const WORDS_SENDING  = ["sending","payout","broadcast","outgoing","transferring","withdrawing","releasing"];
-    const WORDS_ROUTING  = [
-      "detected","paid","confirm","confirming","awaiting_confirm","awaiting_deposit",
-      "depositing","received","in_progress","processing","payment_received","exchanging","swapping"
-    ];
+    // LEG‑2: start Sending only when leg‑2 has *hard* pay‑in evidence
+    const leg2RecvEvidence =
+      hasField(p2, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
+      hasField(l2, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
+      numGt0(p2, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i);
 
-    // Order matters: complete > sending > routing > receiving
-    if (matchAny(st, WORDS_COMPLETE)) return "complete";
+    // LEG‑2 payout & completion (need explicit finished/success/complete text)
+    const leg2PayoutEvidence =
+      hasField(p2, /^(payout_?tx(id)?|txid[_-]?out|out_?tx(id)?|broadcast[_-]?out|tx_hash_out)$/i) ||
+      hasField(l2, /^(payout_?tx(id)?|txid[_-]?out|out_?tx(id)?|broadcast[_-]?out|tx_hash_out)$/i) ||
+      numGt0(p2, /^(payout_confirmations|out_confirmations)$/i);
+    const leg2Text = [getText(l2), getText(p2)].join(" | ");
+    const leg2CompleteText = /(complete|finished|done|success|completed|succeeded)/i;
 
-    if (
-      hasField("payout_txid") || hasField("payout_hash") || hasField("payout_tx") ||
-      hasField("broadcast_out") || hasField("txid_out") ||
-      hasField("out_txid") || hasField("out_hash") || // extra aliases
-      matchAny(st, WORDS_SENDING)
-    ) return "sending";
-
-    if (
-      hasField("payin_txid") || hasField("payin_hash") || hasField("payin_tx") ||
-      hasField("input_txid") || hasField("deposit_txid") || // extra aliases
-      getNum("confirmations") > 0 || getNum("payin_confirmations") > 0 || getNum("amount_received") > 0 ||
-      matchAny(st, WORDS_ROUTING)
-    ) return "routing";
-
+    // Order: complete > sending > routing > receiving
+    if (leg2PayoutEvidence && leg2CompleteText.test(leg2Text)) return "complete";
+    if (leg2RecvEvidence) return "sending";
+    if (leg1DepositEvidence) return "routing";
     return "receiving";
   }
 
-  /* ---------- Address/QR (strictly Leg‑1 deposit) ---------- */
+  function clampMonotonic(nextPhase){
+    if (!lastStatus) return nextPhase;
+    const cur = STEP_INDEX[String(lastStatus).toLowerCase()] ?? 0;
+    const nxt = STEP_INDEX[String(nextPhase).toLowerCase()] ?? 0;
+    return (nxt < cur) ? lastStatus : nextPhase;
+  }
+
+  /* ---------- Address/QR (strictly leg‑1 deposit) ---------- */
   const looksOut = (k)=> /(payout|withdraw|out|recipient|to_address|toAddress|destination|payoutAddress|withdrawal)/i.test(k);
   const looksIn  = (k)=> /(deposit|payin|pay_in|address_in|in_address|inAddress|input_address|payIn|payinAddress)/i.test(k);
-  const leg1Of   = (data)=> Array.isArray(data?.legs) ? (data.legs[0]||{}) : (data?.leg1 || {});
 
   function extractDepositAddress(data){
     const l1 = leg1Of(data), p = l1.provider_info || l1.info || {};
@@ -219,31 +214,35 @@
     if (!img.src || img.src !== processed) img.src = processed;
     img.alt = "Deposit QR";
   }
+
+  // Sleek badge (no white background) when Receiving finishes
+  function showDepositReceivedBadge() {
+    const box = $("qrBox");
+    if (!box) return;
+    box.style.background = "transparent";
+    box.style.padding = "0";
+    box.innerHTML = `
+      <div class="mx-qr-badge" aria-label="Deposit received" style="width:260px;height:260px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(160deg,#26d59a,#12b36c);box-shadow:0 10px 24px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.35);">
+        <svg viewBox="0 0 64 64" role="img" aria-hidden="true" style="width:120px;height:120px">
+          <path d="M18 34l10 10L46 24" fill="none" stroke="#082f22" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    `;
+  }
+
   function setFallbackQRFromAddress(addr) {
     if (!addr) return;
     const url = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(addr)}`;
     setQR(url);
   }
 
-  function showDepositReceivedBadge() {
-    const box = $("qrBox");
-    if (!box) return;
-    box.innerHTML = "";
-    const badge = document.createElement("div");
-    badge.className = "mx-qr-ok";
-    badge.textContent = "✓";
-    box.appendChild(badge);
-  }
-
   function renderAmountReminder(amount, asset, network) {
     const box = $("amountLine");
     if (!box) return;
-    box.style.marginTop = "10px"; // breathing room under Swap ID
-
+    box.style.marginTop = "10px";
     $("needAmount").textContent = (amount ?? "—").toString();
     $("needAsset").textContent = asset ? String(asset).toUpperCase() : "—";
     $("needNet").textContent   = network ? `(${network})` : "";
-
     const sym = (asset||"").toUpperCase();
     const iconHost = $("needIcon");
     if (iconHost){
@@ -275,7 +274,7 @@
     }
   }
 
-  /* ---------- Endpoint detection (unchanged behavior) ---------- */
+  /* ---------- Endpoint detection ---------- */
   async function detectStatusEndpoint(id) {
     const quick = [
       `/api/status?sid=${encodeURIComponent(id)}`,
@@ -307,19 +306,18 @@
   function normalizeFromDirect(raw) {
     const address = extractDepositAddress(raw);
     const qr = extractDepositQR(raw);
-    const status = phaseFromEvidence(raw);
+    const phase = clampMonotonic(phaseFromEvidence(raw));
     const amount  = firstTruthy(raw.in_amount, raw.amount_in, raw.expected_amount_in, raw.request?.amount, raw.amount);
     const asset   = firstTruthy(raw.in_asset,  raw.asset_in,  raw.request?.in_asset,  raw.symbol_in,  raw.asset);
     const network = firstTruthy(raw.in_network,raw.network_in,raw.request?.in_network,raw.chain_in,   raw.network);
-    return { address, qr, status, amount, asset, network };
+    return { address, qr, status: phase, amount, asset, network };
   }
   function normalizeFromAdmin(raw) {
     const swap = raw.swap || raw;
     const l1 = leg1Of(swap);
-    const pinfo = l1.provider_info || l1.info || {};
     const address = extractDepositAddress({legs:[l1],...swap});
     const qr = extractDepositQR({legs:[l1],...swap});
-    const status = phaseFromEvidence({ ...swap, ...pinfo });
+    const phase = clampMonotonic(phaseFromEvidence(swap));
 
     const req = swap.request || {};
     let amount = firstTruthy(l1.amount_in, req.amount, swap.amount_in);
@@ -331,14 +329,14 @@
     if (typeof asset==="string") asset=asset.toUpperCase();
     if (typeof network==="string") network=network.toUpperCase();
 
-    return { address, qr, status, amount, asset, network };
+    return { address, qr, status: phase, amount, asset, network };
   }
   function normalizeData(raw, from) {
     try { return from === "admin" ? normalizeFromAdmin(raw) : normalizeFromDirect(raw); }
-    catch { return { address:"", qr:"", status:"receiving" }; }
+    catch { return { address:"", qr:"", status: clampMonotonic("receiving") }; }
   }
 
-  /* ---------- Polling (with cache-busting + fast-burst) ---------- */
+  /* ---------- Polling ---------- */
   async function pollOnce() {
     if (!statusEndpoint) return;
     try {
@@ -355,12 +353,12 @@
       const raw = await r.json();
       const data = normalizeData(raw, statusEndpoint.from);
 
-      // Address & QR (DEPOSIT ONLY)
-      $("addr").textContent = data.address || "—";
+      // Address & QR (deposit side only)
+      setAddr(data.address || "—");
       if (data.qr) { hadProviderQR = true; setQR(data.qr); }
       else if (!hadProviderQR && data.address) { setFallbackQRFromAddress(data.address); }
 
-      // Amount/asset/network — direct or admin fallback
+      // Amount/asset/network
       if (data.amount && data.asset) {
         renderAmountReminder(data.amount, data.asset, data.network);
       } else {
@@ -371,34 +369,26 @@
       }
 
       const prev = lastStatus;
-      // Steps + timer
       updateSteps(data.status);
 
-      // Receiving -> (Routing/Sending/Complete): overlay ✓ when leaving Receiving
+      // When leaving Receiving, replace QR and hide timer
       if (prev !== data.status) {
-        if ((prev===null && data.status!=="receiving") || (prev==="receiving" && data.status!=="receiving")) showDepositReceivedBadge();
+        if ((prev===null && data.status!=="receiving") || (prev==="receiving" && data.status!=="receiving")) {
+          showDepositReceivedBadge();
+          showTimer(false);
+          clearDeadline(swapId);
+        }
         lastStatus = data.status;
-
-        // fast burst polling for 20s after a phase change (snappier)
-        if (pollTimer) clearInterval(pollTimer);
-        let bursts = 10; // 10 * 2s = 20s
-        pollTimer = setInterval(() => {
-          if (--bursts <= 0) {
-            clearInterval(pollTimer);
-            pollTimer = setInterval(pollOnce, 5000); // back to normal
-          }
-          pollOnce();
-        }, 2000);
       }
 
       // Stop polling on completion
-      if (["complete","finished","done","success"].includes((data.status||"").toLowerCase())) {
+      if (String(data.status).toLowerCase() === "complete") {
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
         showDepositReceivedBadge();
         clearDeadline(swapId);
         showTimer(false);
       }
-    } catch { /* ignore and keep polling next tick */ }
+    } catch { /* ignore and poll again later */ }
   }
 
   /* ---------- boot ---------- */
@@ -412,7 +402,7 @@
 
     if (!swapId) return;
 
-    // Receiving-only 25‑min timer (persisted per swap) — we’ll hide/clear it once status > receiving
+    // Receiving-only 25‑min timer (persisted per swap)
     ensureReceivingTimerForSwap(swapId);
     showTimer(true);
 
@@ -430,7 +420,7 @@
 
     // First paint
     const first = normalizeData(found.firstJson || {}, found.from);
-    $("addr").textContent = first.address || "—";
+    setAddr(first.address || "—");
     if (first.qr) { hadProviderQR = true; setQR(first.qr); }
     else if (first.address) { setFallbackQRFromAddress(first.address); }
 
@@ -449,7 +439,14 @@
     updateSteps(first.status);
     lastStatus = first.status;
 
-    // Start live polling
+    // If we land already past Receiving, show badge and remove white background now
+    if (first.status && String(first.status).toLowerCase() !== "receiving") {
+      showDepositReceivedBadge();
+      showTimer(false);
+      clearDeadline(swapId);
+    }
+
+    // Poll
     pollTimer = setInterval(pollOnce, 5000);
   })();
 })();
