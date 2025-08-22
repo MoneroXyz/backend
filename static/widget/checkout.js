@@ -3,17 +3,19 @@
   const params = new URLSearchParams(window.location.search);
   const swapId = params.get("sid") || params.get("swapId") || "";
 
+  // UI step mapping
   const STEP_INDEX = { receiving:0, routing:1, sending:2, complete:3, finished:3, done:3 };
 
+  // timers/polling
   let pollTimer = null;
   let lastStatus = null;
   let statusEndpoint = null;   // { url, from, firstJson }
   let timerHandle = null;
   let hadProviderQR = false;
 
-  /* ---------- Asset icon (inline SVG) ---------- */
+  /* ---------- Icons ---------- */
   function coinIconSVG(sym){
-    const s = (sym||'').toUpperCase();
+    const s = (sym||"").toUpperCase();
     const C = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>';
     const MAP = {
       BTC: '<svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="10"/><text x="12" y="16" font-size="10" text-anchor="middle" fill="var(--bg)"><tspan>฿</tspan></text></svg>',
@@ -27,55 +29,60 @@
     return MAP[s] || C;
   }
 
-  /* ---------- Deep helpers ---------- */
+  /* ---------- Utils ---------- */
   const isObj = (v) => v && typeof v === "object";
-  function deepFind(obj, testFn, maxDepth=7){
+  const firstTruthy = (...vals) => {
+    for (const v of vals) {
+      if (v === null || v === undefined) continue;
+      if (typeof v === "string" && v.trim() === "") continue;
+      return v;
+    }
+    return undefined;
+  };
+  function deepFind(obj, testFn, maxDepth=8){
     try{
       const seen = new Set();
-      const queue = [obj];
-      while(queue.length && maxDepth-- > 0){
-        const cur = queue.shift();
+      const stack = [obj];
+      while(stack.length && maxDepth-- > 0){
+        const cur = stack.shift();
         if(!isObj(cur) || seen.has(cur)) continue;
         seen.add(cur);
         for(const k of Object.keys(cur)){
           const v = cur[k];
           if(testFn(k, v, cur)) return v;
-          if(isObj(v)) queue.push(v);
+          if(isObj(v)) stack.push(v);
         }
       }
     }catch{}
     return null;
   }
-  const numify = (x) => x == null ? null : (typeof x === "string" ? (x.trim()===""?null:Number(x)) : (typeof x === "number" ? x : (typeof x === "boolean" ? Number(x) : null)));
+  const numify = (x) => x == null ? null : (typeof x === "string" ? (x.trim()===""?null:Number(x)) : (typeof x === "number" ? x : null));
 
-  /* ---------- Admin fallback fetch ---------- */
-  async function fetchAdminMeta(id){
+  /* ---------- Admin fallback ---------- */
+  async function fetchAdminSwap(id){
     try{
       const r = await fetch(`/api/admin/swaps/${encodeURIComponent(id)}`, {cache:'no-store'});
       if(!r.ok) return null;
-      const obj = await r.json();
-      const swap = obj?.swap || obj || {};
-
-      const request = swap.request || {};
-      const legs = swap.legs || swap.leg || [];
-      const leg1 = Array.isArray(legs) ? (legs[0]||{}) : (swap.leg1 || {});
-
-      // primary
-      let amount = request.amount ?? leg1.amount_in ?? swap.amount_in;
-      let asset  = request.in_asset ?? leg1.asset_in ?? swap.in_asset;
-      let network= request.in_network ?? leg1.network_in ?? swap.in_network;
-
-      // deep scan
-      if(amount == null) amount = deepFind(swap, (k,v)=>/^(amount(_in)?|inAmount|amountIn|payin_amount)$/i.test(k) && numify(v)!=null);
-      if(asset  == null) asset  = deepFind(swap, (k,v)=>/^(in_?asset|asset_?in|from(asset|Coin|Symbol)|coinFrom|symbol_in)$/i.test(k));
-      if(network== null) network= deepFind(swap, (k,v)=>/^(in_?network|network_?in|from(Network|Chain)|chain_from|from_chain)$/i.test(k));
-
-      amount = numify(amount) ?? amount;
-      if (typeof asset === "string") asset = asset.toUpperCase();
-      if (typeof network === "string") network = network.toUpperCase();
-
-      return { amount, asset, network };
-    }catch(e){ return null; }
+      return await r.json();
+    }catch{ return null; }
+  }
+  async function fetchAdminMeta(id){
+    const obj = await fetchAdminSwap(id);
+    if(!obj) return null;
+    const swap = obj?.swap || obj || {};
+    const request = swap.request || {};
+    const legs = swap.legs || swap.leg || [];
+    const leg1 = Array.isArray(legs) ? (legs[0]||{}) : (swap.leg1 || {});
+    let amount = request.amount ?? leg1.amount_in ?? swap.amount_in;
+    let asset  = request.in_asset ?? leg1.asset_in ?? swap.in_asset;
+    let network= request.in_network ?? leg1.network_in ?? swap.in_network;
+    if(amount == null) amount = deepFind(swap, (k,v)=>/^(amount(_in)?|inAmount|amountIn)$/i.test(k) && numify(v)!=null);
+    if(asset  == null) asset  = deepFind(swap, (k,v)=>/^(in_?asset|asset_?in|from(asset|Coin|Symbol)|coinFrom|symbol_in)$/i.test(k));
+    if(network== null) network= deepFind(swap, (k,v)=>/^(in_?network|network_?in|from(Network|Chain)|chain_from|from_chain)$/i.test(k));
+    amount = numify(amount) ?? amount;
+    if (typeof asset === "string") asset = asset.toUpperCase();
+    if (typeof network === "string") network = network.toUpperCase();
+    return { amount, asset, network, raw: swap };
   }
 
   /* ---------- UI helpers ---------- */
@@ -118,6 +125,21 @@
     const ss = String(s % 60).padStart(2,"0");
     return `${h}:${m}:${ss}`;
   }
+
+  // Persisted 25‑min visual deadline per swap
+  function deadlineKey(id){ return `monerizer_timer_deadline_${id}`; }
+  function getOrCreateDeadline(id, minutes=25){
+    const k = deadlineKey(id);
+    const saved = Number(localStorage.getItem(k) || "");
+    const now = Date.now();
+    // Reuse if still in the future; else create a new one
+    if (Number.isFinite(saved) && saved > now) return saved;
+    const newDeadline = now + minutes*60*1000;
+    localStorage.setItem(k, String(newDeadline));
+    return newDeadline;
+  }
+  function clearDeadline(id){ try { localStorage.removeItem(deadlineKey(id)); } catch {} }
+
   function expireUI(){
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     const q = $("qrBox"); if (q) q.innerHTML = "";
@@ -125,23 +147,26 @@
     const btn = $("copyBtn"); if (btn) { btn.disabled = true; btn.textContent = "Expired"; }
     const exp = $("expiredBox"); if (exp) exp.classList.remove("mx-hidden");
   }
-  function ensureTimerFromNow(minutes=25){
+
+  function ensureTimerForSwap(id){
     const tl = $("timeLeft");
     if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
-    const hardDeadline = Date.now() + minutes*60*1000;
+    const deadline = getOrCreateDeadline(id, 25);
     const tick = () => {
-      const left = hardDeadline - Date.now();
+      const left = deadline - Date.now();
       if (tl) tl.textContent = humanTimeLeft(left);
-      if (left <= 0) { clearInterval(timerHandle); timerHandle = null; expireUI(); }
+      if (left <= 0) { clearInterval(timerHandle); timerHandle = null; expireUI(); clearDeadline(id); }
     };
     tick();
     timerHandle = setInterval(tick, 1000);
   }
+
   function showTimer(show) {
     const tl = $("timeLeft");
     if (!tl) return;
     tl.parentElement.style.visibility = show ? "visible" : "hidden";
   }
+
   function updateSteps(status) {
     const norm = (status || "").toLowerCase();
     const idx = STEP_INDEX[norm] ?? STEP_INDEX.receiving;
@@ -155,14 +180,7 @@
     showTimer(true);
   }
 
-  const firstTruthy = (...vals) => {
-    for (const v of vals) {
-      if (v === null || v === undefined) continue;
-      if (typeof v === "string" && v.trim() === "") continue;
-      return v;
-    }
-    return undefined;
-  };
+  /* ---------- Status normalization ---------- */
   function normalizeDeadline(obj) {
     const iso = firstTruthy(obj?.expires_at, obj?.time_left_iso, obj?.deadline, obj?.expire_at);
     if (iso) return iso;
@@ -172,11 +190,21 @@
     }
     return null;
   }
+  function mapProviderStatusToUI(s){
+    const x = (s||"").toLowerCase();
+    if (!x) return "receiving";
+    if (/(confirm|detected|payin|received|pending)/.test(x)) return "routing"; // as soon as deposit seen
+    if (/(sending|payout|transfer_out|broadcast_out)/.test(x)) return "sending";
+    if (/(complete|finished|done|success)/.test(x)) return "complete";
+    if (/(refund)/.test(x)) return "receiving"; // keep it in first bubble for UI
+    return x;
+  }
   function normalizeFromDirect(raw) {
+    const statusRaw = firstTruthy(raw.status, raw.state, raw.stage, "receiving");
     return {
       address: firstTruthy(raw.deposit_address, raw.address, raw.addr, raw.depositAddr),
       qr: firstTruthy(raw.qr_png, raw.qr, raw.deposit_qr, raw.qr_image, raw.qr_base64, raw.qrPng, raw.qrUrl),
-      status: (firstTruthy(raw.status, raw.state, raw.stage, "receiving") + "").toLowerCase(),
+      status: mapProviderStatusToUI(statusRaw),
       deadline: normalizeDeadline(raw),
       amount: firstTruthy(raw.in_amount, raw.amount_in, raw.amount),
       asset: firstTruthy(raw.in_asset, raw.asset_in, raw.asset),
@@ -187,6 +215,7 @@
     const swap = raw.swap || raw;
     const leg1 = swap.leg1 || (Array.isArray(swap.legs) ? swap.legs[0] : {}) || {};
     const pinfo = leg1.provider_info || leg1.info || {};
+
     const address = firstTruthy(
       pinfo.deposit_address, pinfo.address, pinfo.addr, pinfo.payin_address, pinfo.address_in,
       leg1.deposit_address, leg1.address
@@ -194,28 +223,19 @@
     const qr = firstTruthy(
       pinfo.qr_png, pinfo.qr, pinfo.deposit_qr, pinfo.qr_image, pinfo.qr_base64, pinfo.qrPng, pinfo.qrUrl
     );
-    const status = (firstTruthy(
-      swap.status, swap.state, leg1.status, pinfo.status, pinfo.state, pinfo.stage, "receiving"
-    )+"").toLowerCase();
-    const deadline = normalizeDeadline(pinfo) || normalizeDeadline(swap) || null;
 
-    const request = swap.request || {};
-    const legs = swap.legs || [];
-    const primaryLeg = Array.isArray(legs) ? (legs[0] || {}) : {};
-    let amount  = firstTruthy(primaryLeg.amount_in, request.amount, swap.amount_in);
-    let asset   = firstTruthy(request.in_asset, primaryLeg.asset_in, swap.in_asset);
-    let network = firstTruthy(request.in_network, primaryLeg.network_in, swap.in_network);
+    // Status (with heuristic: any deposit evidence => routing)
+    let s = firstTruthy(swap.status, swap.state, leg1.status, pinfo.status, pinfo.state, pinfo.stage, "receiving");
+    const depositHints = ["payin_hash","payinTxId","payin_tx","txid","deposit_received","received","confirmations","payin_confirmations","amount_received","in_confirmations"];
+    const hasDeposit = depositHints.some(k => deepFind(pinfo, (kk,v)=>kk===k && v!=null) != null);
+    if (hasDeposit) s = "routing";
 
-    // deep scan if still missing
-    if (amount == null)  amount  = deepFind(swap, (k,v)=>/^(amount(_in)?|inAmount|amountIn|payin_amount)$/i.test(k));
-    if (asset == null)   asset   = deepFind(swap, (k,v)=>/^(in_?asset|asset_?in|from(asset|Coin|Symbol)|coinFrom|symbol_in)$/i.test(k));
-    if (network == null) network = deepFind(swap, (k,v)=>/^(in_?network|network_?in|from(Network|Chain)|chain_from|from_chain)$/i.test(k));
-
-    if (typeof amount === "string" && amount.trim() !== "") amount = Number(amount);
-    if (typeof asset === "string") asset = asset.toUpperCase();
-    if (typeof network === "string") network = network.toUpperCase();
-
-    return { address, qr, status, deadline, amount, asset, network };
+    return {
+      address, qr,
+      status: mapProviderStatusToUI(s),
+      deadline: normalizeDeadline(pinfo) || normalizeDeadline(swap) || null,
+      amount: null, asset: null, network: null
+    };
   }
 
   async function detectStatusEndpoint(id) {
@@ -224,7 +244,8 @@
       `/api/status?sid=${encodeURIComponent(id)}`,
       `/api/order?sid=${encodeURIComponent(id)}`,
       `/api/swap?sid=${encodeURIComponent(id)}`,
-      `/api/checkout/${encodeURIComponent(id)}`
+      `/api/checkout/${encodeURIComponent(id)}`,
+      `/api/status/${encodeURIComponent(id)}` // path param variant
     ];
     for (const url of quick) {
       try {
@@ -235,6 +256,7 @@
         }
       } catch(_) {}
     }
+    // fallback to admin
     try {
       const url = `/api/admin/swaps/${encodeURIComponent(id)}`;
       const r = await fetch(url, { cache: "no-store" });
@@ -245,10 +267,12 @@
     } catch(_) {}
     return null;
   }
+
   function normalizeData(raw, from) {
     try { return from === "admin" ? normalizeFromAdmin(raw) : normalizeFromDirect(raw); }
     catch { return { address:"", qr:"", status:"receiving", deadline:null }; }
   }
+
   function renderAmountReminder(amount, asset, network) {
     const box = $("amountLine");
     if (!box) return;
@@ -259,6 +283,7 @@
     const iconHost = $("needIcon"); if (iconHost){ iconHost.innerHTML = coinIconSVG(sym); iconHost.style.display="inline-flex"; }
     box.hidden = false;
   }
+
   async function pollOnce() {
     if (!statusEndpoint) return;
     try {
@@ -271,27 +296,32 @@
       if (data.qr) { hadProviderQR = true; setQR(data.qr); }
       else if (!hadProviderQR && data.address) { setFallbackQRFromAddress(data.address); }
 
-      renderAmountReminder(data.amount, data.asset, data.network);
-      if(!data.amount || !data.asset){
-        fetchAdminMeta(swapId).then(meta=>{
-          if(meta && (meta.amount || meta.asset)){
-            renderAmountReminder(meta.amount ?? data.amount, meta.asset ?? data.asset, meta.network ?? data.network);
-          }
+      // Amount/asset/network — try direct then admin meta
+      if (data.amount && data.asset) {
+        renderAmountReminder(data.amount, data.asset, data.network);
+      } else {
+        fetchAdminMeta(swapId).then(meta => {
+          if(meta) renderAmountReminder(meta.amount, meta.asset, meta.network);
         });
       }
 
       updateSteps(data.status);
 
+      // Receiving -> Routing tick when deposit is detected
       if (lastStatus !== data.status) {
         if (lastStatus === null && data.status !== "receiving") showDepositReceivedBadge();
         else if (lastStatus === "receiving" && data.status !== "receiving") showDepositReceivedBadge();
         lastStatus = data.status;
       }
 
+      // Stop polling on completion
       if (["complete","finished","done"].includes((data.status||"").toLowerCase())) {
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        // Show big ✓ and clear deadline so a refresh doesn't show timer again
+        showDepositReceivedBadge();
+        clearDeadline(swapId);
       }
-    } catch {/* keep polling */}
+    } catch { /* keep polling */ }
   }
 
   // boot
@@ -305,11 +335,11 @@
 
     if (!swapId) return;
 
-    // 25-minute visual timer
-    ensureTimerFromNow(25);
+    // Persisted 25‑minute visual timer per swap (no reset on refresh)
+    ensureTimerForSwap(swapId);
     showTimer(true);
 
-    // Detect endpoint
+    // Detect best status endpoint
     const found = await detectStatusEndpoint(swapId);
     if (!found) {
       const msg = document.createElement("div");
@@ -321,26 +351,22 @@
     }
     statusEndpoint = found;
 
-    // First payload
+    // First paint
     const first = normalizeData(found.firstJson || {}, found.from);
     setAddress(first.address);
     if (first.qr) { hadProviderQR = true; setQR(first.qr); }
     else if (first.address) { setFallbackQRFromAddress(first.address); }
 
-    renderAmountReminder(first.amount, first.asset, first.network);
-    (async()=>{
-      if(!first.amount || !first.asset){
-        const meta = await fetchAdminMeta(swapId);
-        if(meta && (meta.amount || meta.asset)){
-          renderAmountReminder(meta.amount ?? first.amount, meta.asset ?? first.asset, meta.network ?? first.network);
-        }
-      }
-    })();
+    if (first.amount && first.asset) renderAmountReminder(first.amount, first.asset, first.network);
+    else {
+      const meta = await fetchAdminMeta(swapId);
+      if (meta) renderAmountReminder(meta.amount, meta.asset, meta.network);
+    }
 
     updateSteps(first.status);
     lastStatus = first.status;
 
-    // Poll
+    // Start live polling
     pollTimer = setInterval(pollOnce, 5000);
   })();
 })();
