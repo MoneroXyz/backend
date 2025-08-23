@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Deposit • Monerizer</title>
+  <title>Deposit • Monerize</title>
   <link rel="stylesheet" href="./widget.css" />
   <style>
     .mx-checkout { width:min(680px,95vw); margin:24px auto; }
@@ -85,7 +85,6 @@
     .mx-swapid-pill.copied {
       background:rgba(16,179,255,.2); border:1px solid rgba(16,179,255,.5);
     }
-    /* New styles for grayed-out QR and animated text */
     .mx-qrbox.grayed {
       opacity: 0.3;
       position: relative;
@@ -95,23 +94,32 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      color: var(--fg);
-      font-size: 16px;
+      color: #10b3ff; /* Muted blue for better contrast against grayed QR */
+      font-size: 20px; /* Larger text size */
       font-weight: 700;
       text-align: center;
       width: 80%;
     }
-    .mx-waiting-text .dots::after {
-      content: '...';
+    .mx-waiting-text .dots {
       display: inline-block;
       width: 1em;
       text-align: left;
-      animation: dots 1.5s steps(3, end) infinite;
+      vertical-align: bottom;
     }
-    @keyframes dots {
-      0% { content: '.'; }
-      33% { content: '..'; }
-      66% { content: '...'; }
+    .mx-waiting-text .dots span {
+      display: inline-block;
+      animation: jump 1.4s infinite;
+    }
+    .mx-waiting-text .dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .mx-waiting-text .dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes jump {
+      0% { transform: translateY(0); }
+      20% { transform: translateY(-10px); }
+      40% { transform: translateY(0); }
     }
   </style>
 </head>

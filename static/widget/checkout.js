@@ -203,7 +203,7 @@
     box.style.padding = "12px";
     const text = document.createElement("div");
     text.className = "mx-waiting-text";
-    text.innerHTML = 'Wait until we monerize your assets<span class="dots"></span>';
+    text.innerHTML = 'This may take a while, rest assured <span class="dots"><span>.</span><span>.</span><span>.</span></span>';
     box.appendChild(text);
   }
   function setFallbackQRFromAddress(addr) {
