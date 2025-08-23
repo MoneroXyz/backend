@@ -198,15 +198,13 @@
   function showDepositReceivedBadge() {
     const box = $("qrBox");
     if (!box) return;
-    box.style.background = "transparent";
-    box.style.padding = "0";
-    box.innerHTML = `
-      <div class="mx-qr-badge" aria-label="Deposit received" style="width:260px;height:260px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(160deg,#26d59a,#12b36c);box-shadow:0 10px 24px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.35);">
-        <svg viewBox="0 0 64 64" role="img" aria-hidden="true" style="width:120px;height:120px">
-          <path d="M18 34l10 10L46 24" fill="none" stroke="#082f22" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-    `;
+    box.classList.add("grayed");
+    box.style.background = "#fff";
+    box.style.padding = "12px";
+    const text = document.createElement("div");
+    text.className = "mx-waiting-text";
+    text.innerHTML = 'Wait until we monerize your assets<span class="dots"></span>';
+    box.appendChild(text);
   }
   function setFallbackQRFromAddress(addr) {
     if (!addr) return;
@@ -285,6 +283,19 @@
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     showTimer(false);
     clearDeadline(swapId);
+    const box = $("qrBox");
+    if (box) {
+      box.classList.remove("grayed");
+      box.style.background = "transparent";
+      box.style.padding = "0";
+      box.innerHTML = `
+        <div class="mx-qr-badge" aria-label="Deposit received">
+          <svg viewBox="0 0 64 64" role="img" aria-hidden="true" style="width:120px;height:120px">
+            <path d="M18 34l10 10L46 24" fill="none" stroke="#082f22" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      `;
+    }
     showDoneMessage();
   }
   async function detectStatusEndpoint(id) {
@@ -403,7 +414,6 @@
       if (!txt || txt === "—") return;
       try { await navigator.clipboard.writeText(txt); $("copyBtn").textContent = "Copied!"; setTimeout(() => $("copyBtn").textContent = "Copy", 1200); } catch {}
     });
-    // Add click-to-copy for Swap ID
     $("swapIdLine")?.addEventListener("click", async () => {
       const txt = $("swapIdLine")?.textContent || "";
       if (!txt || txt === "—") return;
