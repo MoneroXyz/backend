@@ -11678,7 +11678,7 @@
       "provider_info": {
         "id": "208619642a7516",
         "amount": 500,
-        "amountTo": 1.90278,
+        "amountTo": 1.897045,
         "coinFrom": {
           "coinCode": "USDT",
           "coinName": "TetherUS",
@@ -11717,10 +11717,10 @@
           "hash": null,
           "link": null
         },
-        "rate": 0.00380556,
+        "rate": 0.00379409,
         "rateType": "float",
         "affiliateToken": null,
-        "status": "wait",
+        "status": "overdue",
         "source": "api",
         "email": null,
         "clickId": null
