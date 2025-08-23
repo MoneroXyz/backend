@@ -48,11 +48,13 @@ Monero wallet RPC: Runs locally, generates subaddresses, tracks balances, sends 
 
 Providers: Currently Exolix, ChangeNOW, SimpleSwap, and StealthEX are integrated.
 
+
+
 \[NEW] Providers are now extracted into a dedicated folder so app.py is slimmer and easier to maintain:
 
 
 
-providers/: Exolix / ChangeNOW (and future providers).
+providers/: Exolix / ChangeNOW / SimpleSwap / StealthEX.
 
 
 
@@ -68,6 +70,22 @@ routers/: API endpoints split out cleanly.
 
 
 
+\[NEW Today] Widget integration is live:
+
+
+
+Embeddable widget (index.html + widget.css + widget.js).
+
+
+
+Checkout panel: shows deposit address, QR code, swap ID, timeline (Receiving → Routing → Sending → Complete).
+
+
+
+Swap panel dynamically updates once exchange starts.
+
+
+
 Flow
 
 
@@ -76,7 +94,11 @@ Quote (/api/quote)
 
 
 
-Queries both providers for IN → XMR and XMR → OUT pairs. Calculates implied provider fee.
+Queries all providers for IN → XMR and XMR → OUT pairs.
+
+
+
+Calculates implied provider fee.
 
 
 
@@ -148,11 +170,7 @@ Provider finishes OUT delivery. Status = done.
 
 
 
-\[NEW] Admin status buckets
-
-
-
-The admin UI groups swaps as: Active, Expired, Failed, Completed, Refunded.
+🆕 Admin status buckets
 
 
 
@@ -168,9 +186,7 @@ Failed: something went wrong after deposit (provider reject/error, or leg-2 send
 
 
 
-Completed: both legs finished successfully.
-
-(UI label “Completed” — underlying status done/finished)
+Completed: both legs finished successfully. (UI label “Completed” — underlying status done/finished)
 
 
 
@@ -184,9 +200,15 @@ Fee Policy
 
 Basis: Our fee mirrors provider spread but capped.
 
+
+
 Formula: our\_fee = min(provider\_fee, OUR\_FEE\_MAX\_RATIO × leg1\_xmr)
 
+
+
 Retention: Fee stays in Monero. We never pay it forward.
+
+
 
 Reserve: A small constant (XMR\_SEND\_FEE\_RESERVE, default 0.00030) is subtracted to ensure transactions succeed without dust errors.
 
@@ -210,15 +232,27 @@ Swap Status Lifecycle
 
 created → Swap object created.
 
+
+
 waiting\_deposit → Awaiting IN deposit to provider.
+
+
 
 leg1\_in\_progress → Provider processing leg 1.
 
+
+
 leg1\_complete → Provider marked done and payout detected at subaddress.
+
+
 
 leg2\_in\_progress → Monerizer sent XMR to second provider.
 
+
+
 done → OUT asset delivered.
+
+
 
 failed → Any unrecoverable error.
 
@@ -336,7 +370,31 @@ app.v5.js → Logic (quotes, start, status).
 
 
 
-Current state: Pair selector fixed. Quote button functional again. Timeline shows Deposit → Routing → Sending → Done. Visual design = basic (to be improved).
+\[NEW Today] /ui/widget → Embeddable widget with checkout flow.
+
+
+
+Current state
+
+
+
+Pair selector fixed.
+
+
+
+Quote button functional again.
+
+
+
+Timeline shows Receiving → Routing → Sending → Complete.
+
+
+
+Visual design = basic (to be improved).
+
+
+
+Widget integration complete.
 
 
 
@@ -396,7 +454,7 @@ Kept fee retention in XMR only (never forwarded on leg-2).
 
 
 
-➕ \[Update: Mid-Aug 2025]
+➕ Update: Mid-Aug 2025
 
 
 
