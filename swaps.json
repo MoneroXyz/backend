@@ -13693,5 +13693,118 @@
       "routing_xmr_to_leg2"
     ],
     "last_sent_txid": "60dab6b2ba5ebf09a0e9747dbf44a4b88bf177a597d77156520c2a55ed96de49"
+  },
+  "f413bc6a-dcea-47a5-a981-30a8743c898b": {
+    "id": "f413bc6a-dcea-47a5-a981-30a8743c898b",
+    "created": 1755973864.7526762,
+    "req": {
+      "leg1_provider": "StealthEX",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "ETH",
+      "in_network": "ETH",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 0.01,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.01256483410654155,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 185,
+    "subaddr": "82tcAjNSb9YL63NxvKZ1F4iG9WY9ywDi3H6DkaYKT18PRg7HZrKZuXcQ6SkdZagsmRBNQ42DKPza8NUXDB6wSYkmFGBT99C",
+    "our_fee_xmr": 0.01256483410654155,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.01256483410654155
+    },
+    "leg1": {
+      "provider": "StealthEX",
+      "order": {
+        "id": "qkrMbpPOV",
+        "depositAddress": "0xA0531f6ed6648950E3f78c7EECe98549459d9311",
+        "depositExtraId": null,
+        "_raw": {
+          "id": "qkrMbpPOV",
+          "status": "waiting",
+          "rate": "floating",
+          "deposit": {
+            "symbol": "eth",
+            "network": "mainnet",
+            "amount": 0.01,
+            "expected_amount": 0.01,
+            "address": "0xA0531f6ed6648950E3f78c7EECe98549459d9311",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": "https://blockchair.com/ethereum/address/0xA0531f6ed6648950E3f78c7EECe98549459d9311",
+            "tx_explorer_url": null
+          },
+          "withdrawal": {
+            "symbol": "xmr",
+            "network": "mainnet",
+            "amount": 0.1672022,
+            "expected_amount": 0.1672022,
+            "address": "82tcAjNSb9YL63NxvKZ1F4iG9WY9ywDi3H6DkaYKT18PRg7HZrKZuXcQ6SkdZagsmRBNQ42DKPza8NUXDB6wSYkmFGBT99C",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": null,
+            "tx_explorer_url": null
+          },
+          "refund_address": null,
+          "refund_extra_id": null,
+          "created_at": "2025-08-23T18:30:48.633Z",
+          "expires_at": null
+        }
+      },
+      "tx_id": "qkrMbpPOV",
+      "deposit_address": "0xA0531f6ed6648950E3f78c7EECe98549459d9311",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "qkrMbpPOV",
+        "status": "sending",
+        "rate": "floating",
+        "deposit": {
+          "symbol": "eth",
+          "network": "mainnet",
+          "amount": 0.01,
+          "expected_amount": 0.01,
+          "address": "0xA0531f6ed6648950E3f78c7EECe98549459d9311",
+          "extra_id": null,
+          "tx_hash": "0x671b080ac9b5b5dcd15f12e2008c868d3acfa883bcf2906a90ed98df8b2b3ca4",
+          "address_explorer_url": "https://blockchair.com/ethereum/address/0xA0531f6ed6648950E3f78c7EECe98549459d9311",
+          "tx_explorer_url": "https://blockchair.com/ethereum/transaction/0x671b080ac9b5b5dcd15f12e2008c868d3acfa883bcf2906a90ed98df8b2b3ca4"
+        },
+        "withdrawal": {
+          "symbol": "xmr",
+          "network": "mainnet",
+          "amount": 0.1672022,
+          "expected_amount": 0.1672022,
+          "address": "82tcAjNSb9YL63NxvKZ1F4iG9WY9ywDi3H6DkaYKT18PRg7HZrKZuXcQ6SkdZagsmRBNQ42DKPza8NUXDB6wSYkmFGBT99C",
+          "extra_id": null,
+          "tx_hash": null,
+          "address_explorer_url": null,
+          "tx_explorer_url": null
+        },
+        "refund_address": null,
+        "refund_extra_id": null,
+        "created_at": "2025-08-23T18:30:49.000Z",
+        "expires_at": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": false,
+      "creating": false,
+      "order": null,
+      "tx_id": "",
+      "status": "pending"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit"
+    ],
+    "last_sent_txid": null
   }
 }
