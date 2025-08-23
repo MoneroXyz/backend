@@ -23,9 +23,10 @@ UI (index.html, style.css, app.v5.js): Client interface to get quotes, start swa
 Monero wallet RPC: Runs locally, generates subaddresses, tracks balances, sends leg-2 payouts.
 
 Providers: Currently Exolix, ChangeNOW, SimpleSwap, and StealthEX are integrated.
+
 [NEW] Providers are now extracted into a dedicated folder so app.py is slimmer and easier to maintain:
 
-providers/: Exolix / ChangeNOW (and future providers).
+providers/: Exolix / ChangeNOW / SimpleSwap / StealthEX.
 
 services/: wallet helpers and related logic.
 
@@ -33,11 +34,21 @@ routers/: API endpoints split out cleanly.
 
 [NEW] Admin UI is available in static/admin and served at /ui/admin. It lists swaps by status and shows details (providers, IDs, amounts, fees, subaddress, txids, timestamps).
 
+[NEW Today] Widget integration is live:
+
+Embeddable widget (index.html + widget.css + widget.js).
+
+Checkout panel: shows deposit address, QR code, swap ID, timeline (Receiving → Routing → Sending → Complete).
+
+Swap panel dynamically updates once exchange starts.
+
 Flow
 
 Quote (/api/quote)
 
-Queries both providers for IN → XMR and XMR → OUT pairs. Calculates implied provider fee.
+Queries all providers for IN → XMR and XMR → OUT pairs.
+
+Calculates implied provider fee.
 
 Applies our fee policy:
 our_fee = min(provider_spread, OUR_FEE_MAX_RATIO × leg1_xmr)
@@ -73,9 +84,7 @@ Completion
 
 Provider finishes OUT delivery. Status = done.
 
-[NEW] Admin status buckets
-
-The admin UI groups swaps as: Active, Expired, Failed, Completed, Refunded.
+🆕 Admin status buckets
 
 Active: swap created or in progress.
 
@@ -83,16 +92,18 @@ Expired: no user deposit to provider’s Leg-1 address within 2 hours.
 
 Failed: something went wrong after deposit (provider reject/error, or leg-2 send failed).
 
-Completed: both legs finished successfully.
-(UI label “Completed” — underlying status done/finished)
+Completed: both legs finished successfully. (UI label “Completed” — underlying status done/finished)
 
 Refunded: a provider marked the swap as refunded/returned (e.g., leg-1 refund before leg-2).
 
 Fee Policy
 
 Basis: Our fee mirrors provider spread but capped.
+
 Formula: our_fee = min(provider_fee, OUR_FEE_MAX_RATIO × leg1_xmr)
+
 Retention: Fee stays in Monero. We never pay it forward.
+
 Reserve: A small constant (XMR_SEND_FEE_RESERVE, default 0.00030) is subtracted to ensure transactions succeed without dust errors.
 
 Example:
@@ -104,11 +115,17 @@ Available for leg-2 = 9.9 − 0.0003 = 9.8997 XMR.
 Swap Status Lifecycle
 
 created → Swap object created.
+
 waiting_deposit → Awaiting IN deposit to provider.
+
 leg1_in_progress → Provider processing leg 1.
+
 leg1_complete → Provider marked done and payout detected at subaddress.
+
 leg2_in_progress → Monerizer sent XMR to second provider.
+
 done → OUT asset delivered.
+
 failed → Any unrecoverable error.
 
 [NEW] Admin status mapping:
@@ -167,7 +184,19 @@ app.v5.js → Logic (quotes, start, status).
 
 [NEW] /ui/admin → Admin dashboard (Active, Expired, Failed, Completed, Refunded; details show provider IDs, subaddress, txids, fees with % and USD, and timestamps with timezone/UTC note).
 
-Current state: Pair selector fixed. Quote button functional again. Timeline shows Deposit → Routing → Sending → Done. Visual design = basic (to be improved).
+[NEW Today] /ui/widget → Embeddable widget with checkout flow.
+
+Current state
+
+Pair selector fixed.
+
+Quote button functional again.
+
+Timeline shows Receiving → Routing → Sending → Complete.
+
+Visual design = basic (to be improved).
+
+Widget integration complete.
 
 Changelog
 
@@ -197,7 +226,7 @@ Kept fee retention in XMR only (never forwarded on leg-2).
 
 (Already integrated) SimpleSwap support for quotes and execution.
 
-➕ [Update: Mid-Aug 2025]
+➕ Update: Mid-Aug 2025
 
 Integrated third provider: SimpleSwap (for both quote and swap execution).
 
