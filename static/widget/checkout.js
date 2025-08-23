@@ -2,18 +2,13 @@
   const $ = (id) => document.getElementById(id);
   const params = new URLSearchParams(window.location.search);
   const swapId = params.get("sid") || params.get("swapId") || "";
-
-  // 3-step flow (Receiving, Routing, Sending)
   const STEP_INDEX = { receiving:0, routing:1, sending:2 };
-
   let pollTimer = null;
-  let lastStatus = null;      // "receiving" | "routing" | "sending"
-  let statusEndpoint = null;  // { url, from, firstJson }
+  let lastStatus = null;
+  let statusEndpoint = null;
   let timerHandle = null;
   let hadProviderQR = false;
   let finalized = false;
-
-  /* ---------- Icons (bright) ---------- */
   function coinIconSVG(sym){
     const s = (sym||"").toUpperCase();
     const M = {
@@ -34,8 +29,6 @@
     };
     return M[s] || `<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#6B7280"/></svg>`;
   }
-
-  /* ---------- Utils ---------- */
   const isObj = (v) => v && typeof v === "object";
   const firstTruthy = (...vals) => {
     for (const v of vals) {
@@ -62,8 +55,6 @@
     return null;
   }
   const numify = (x) => x == null ? null : (typeof x === "number" ? x : (typeof x === "string" && x.trim()!=="" ? Number(x) : null));
-
-  /* ---------- Timer (Receiving only, 25m persisted) ---------- */
   function deadlineKey(id){ return `monerizer_timer_deadline_${id}`; }
   function getOrCreateDeadline(id, minutes=25){
     const k = deadlineKey(id);
@@ -109,8 +100,6 @@
     if (!tl) return;
     tl.parentElement.style.visibility = show ? "visible" : "hidden";
   }
-
-  /* ---------- Status text helpers ---------- */
   function collectStatusText(obj){
     const texts = [];
     (function sweep(o){
@@ -128,26 +117,18 @@
     })(obj);
     return texts.join(" | ");
   }
-
-  // Exact keyword sets (StealthEX / Exolix / ChangeNOW / SimpleSwap-like)
   const K_WAIT_OR_NEW = /(waiting|wait|new)/i;
-  const K_ROUTING = /(confirming|confirmation|confirmed|exchanging|verifying)/i; // deposit detected/processing
-  const K_SENDING = /(sending)/i;                         // payout started
-  const K_DONE    = /(finished|success)/i;                // finished/success
-  const K_DETECTED = /(detect|detected|received|paid|payment received|payment|tx detected)/i; // fallback
-
-  /* ---------- LEG helpers ---------- */
+  const K_ROUTING = /(confirming|confirmation|confirmed|exchanging|verifying)/i;
+  const K_SENDING = /(sending)/i;
+  const K_DONE = /(finished|success)/i;
+  const K_DETECTED = /(detect|detected|received|paid|payment received|payment|tx detected)/i;
   const leg1Of = (data)=> Array.isArray(data?.legs) ? (data.legs[0]||{}) : (data?.leg1 || {});
   const leg2Of = (data)=> Array.isArray(data?.legs) ? (data.legs[1]||{}) : (data?.leg2 || {});
   const hasField = (obj, re) => deepFind(obj,(k,v)=> re.test(k) && v!=null)!=null;
-  const numGt0  = (obj, re) => { const v=deepFind(obj,(k,v)=>re.test(k)&&v!=null); const n=numify(v); return n!=null && n>0; };
-
-  /* ---------- Phase detector (3 steps, monotonic) ---------- */
+  const numGt0 = (obj, re) => { const v=deepFind(obj,(k,v)=>re.test(k)&&v!=null); const n=numify(v); return n!=null && n>0; };
   function phaseFromEvidence(raw){
     const l1 = leg1Of(raw), p1 = l1.provider_info || l1.info || {};
     const l2 = leg2Of(raw), p2 = l2.provider_info || l2.info || {};
-
-    // Receiving → Routing (any confirming/exchanging/verifying OR clear payin evidence)
     const l1Text = collectStatusText({l:l1, p:p1});
     const leg1Detected =
       K_ROUTING.test(l1Text) ||
@@ -155,23 +136,17 @@
       hasField(p1, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
       hasField(l1, /^(payin_?tx(id)?|deposit_?tx(id)?|input_?tx(id)?|payin_hash)$/i) ||
       numGt0(p1, /^(amount_received|confirmations|payin_confirmations|in_confirmations)$/i);
-
-    // Routing → Sending (explicit sending OR payout tx evidence)
     const l2Text = collectStatusText({l:l2, p:p2});
     const leg2Sending =
       K_SENDING.test(l2Text) ||
       hasField(p2, /^(payout_?tx(id)?|txid[_-]?out|out_?tx(id)?|broadcast[_-]?out|tx_hash_out)$/i) ||
       hasField(l2, /^(payout_?tx(id)?|txid[_-]?out|out_?tx(id)?|broadcast[_-]?out|tx_hash_out)$/i);
-
-    // Done (finished/success on leg‑2)
     const leg2Done = K_DONE.test(l2Text);
-
-    if (leg2Done) return "sending_done"; // signal to show Congrats and stop
+    if (leg2Done) return "sending_done";
     if (leg2Sending) return "sending";
     if (leg1Detected) return "routing";
     return "receiving";
   }
-
   function clampMonotonic(nextPhase){
     const canonical = (nextPhase === "sending_done") ? "sending" : nextPhase;
     if (!lastStatus) return canonical;
@@ -179,11 +154,8 @@
     const nxt = STEP_INDEX[String(canonical).toLowerCase()] ?? 0;
     return (nxt < cur) ? lastStatus : canonical;
   }
-
-  /* ---------- Address & QR (leg‑1 deposit only) ---------- */
   const looksOut = (k)=> /(payout|withdraw|out|recipient|to_address|toAddress|destination|payoutAddress|withdrawal)/i.test(k);
-  const looksIn  = (k)=> /(deposit|payin|pay_in|address_in|in_address|inAddress|input_address|payIn|payinAddress)/i.test(k);
-
+  const looksIn = (k)=> /(deposit|payin|pay_in|address_in|in_address|inAddress|input_address|payIn|payinAddress)/i.test(k);
   function extractDepositAddress(data){
     const l1 = leg1Of(data), p = l1.provider_info || l1.info || {};
     let a = firstTruthy(
@@ -207,7 +179,6 @@
              || deepFind(data,(k,v)=>/qr|qrcode/i.test(k)&&typeof v==="string"&&v.length>10);
     return deep || "";
   }
-
   function toDataUrlIfNeeded(qr) {
     if (!qr) return "";
     if (/^(data:|https?:)/i.test(qr)) return qr;
@@ -224,8 +195,6 @@
     if (!img.src || img.src !== processed) img.src = processed;
     img.alt = "Deposit QR";
   }
-
-  // Sleek badge (no white box) when Receiving finishes
   function showDepositReceivedBadge() {
     const box = $("qrBox");
     if (!box) return;
@@ -239,20 +208,18 @@
       </div>
     `;
   }
-
   function setFallbackQRFromAddress(addr) {
     if (!addr) return;
     const url = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(addr)}`;
     setQR(url);
   }
-
   function renderAmountReminder(amount, asset, network) {
     const box = $("amountLine");
     if (!box) return;
     box.style.marginTop = "10px";
     $("needAmount").textContent = (amount ?? "—").toString();
     $("needAsset").textContent = asset ? String(asset).toUpperCase() : "—";
-    $("needNet").textContent   = network ? `(${network})` : "";
+    $("needNet").textContent = network ? `(${network})` : "";
     const sym = (asset||"").toUpperCase();
     const iconHost = $("needIcon");
     if (iconHost){
@@ -263,19 +230,16 @@
     }
     box.hidden = false;
   }
-
   function updateSteps(status) {
     const steps = Array.from(document.querySelectorAll("#steps .mx-step"));
     const norm = (status || "").toLowerCase();
     const idx = STEP_INDEX[norm] ?? STEP_INDEX.receiving;
-
     steps.forEach((li, i) => {
       li.classList.remove("done","active","upcoming");
       if (i < idx) li.classList.add("done");
       else if (i === idx) li.classList.add("active");
       else li.classList.add("upcoming");
     });
-
     if (norm === "receiving") {
       showTimer(true);
     } else {
@@ -284,17 +248,13 @@
       if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
     }
   }
-
-  // *** Only visual change: bluish "Congrats" banner ***
   function showDoneMessage(){
     const stepsWrap = document.getElementById("steps");
     if (stepsWrap) stepsWrap.style.display = "none";
-
     const grid = document.querySelector(".mx-grid");
     if (grid && !document.getElementById("mxDoneNote")) {
       const note = document.createElement("div");
       note.id = "mxDoneNote";
-      // bluish pill/card with subtle border and glow
       note.setAttribute("style", [
         "margin-top:10px",
         "padding:12px 14px",
@@ -308,7 +268,6 @@
         "color:var(--fg)",
         "font-weight:700"
       ].join(";"));
-
       note.innerHTML = `
         <span aria-hidden="true" style="display:inline-grid;place-items:center;width:28px;height:28px;border-radius:999px;background:rgba(16,179,255,.25);border:1px solid rgba(16,179,255,.45);">
           <svg viewBox="0 0 24 24" width="16" height="16">
@@ -320,7 +279,6 @@
       grid.appendChild(note);
     }
   }
-
   function finalizeSwapUI(){
     if (finalized) return;
     finalized = true;
@@ -329,8 +287,6 @@
     clearDeadline(swapId);
     showDoneMessage();
   }
-
-  /* ---------- Endpoint detection ---------- */
   async function detectStatusEndpoint(id) {
     const quick = [
       `/api/status?sid=${encodeURIComponent(id)}`,
@@ -358,15 +314,14 @@
     } catch(_) {}
     return null;
   }
-
   function normalizeFromDirect(raw) {
     const address = extractDepositAddress(raw);
     const qr = extractDepositQR(raw);
-    const rawPhase = phaseFromEvidence(raw); // may be "sending_done"
+    const rawPhase = phaseFromEvidence(raw);
     const phase = clampMonotonic(rawPhase);
-    const amount  = firstTruthy(raw.in_amount, raw.amount_in, raw.expected_amount_in, raw.request?.amount, raw.amount);
-    const asset   = firstTruthy(raw.in_asset,  raw.asset_in,  raw.request?.in_asset,  raw.symbol_in,  raw.asset);
-    const network = firstTruthy(raw.in_network,raw.network_in,raw.request?.in_network,raw.chain_in,   raw.network);
+    const amount = firstTruthy(raw.in_amount, raw.amount_in, raw.expected_amount_in, raw.request?.amount, raw.amount);
+    const asset = firstTruthy(raw.in_asset, raw.asset_in, raw.request?.in_asset, raw.symbol_in, raw.asset);
+    const network = firstTruthy(raw.in_network,raw.network_in,raw.request?.in_network,raw.chain_in, raw.network);
     return { address, qr, status: phase, rawPhase: rawPhase, amount, asset, network };
   }
   function normalizeFromAdmin(raw) {
@@ -378,10 +333,10 @@
     const phase = clampMonotonic(rawPhase);
     const req = swap.request || {};
     let amount = firstTruthy(l1.amount_in, req.amount, swap.amount_in);
-    let asset  = firstTruthy(req.in_asset,  l1.asset_in,  swap.in_asset);
+    let asset = firstTruthy(req.in_asset, l1.asset_in, swap.in_asset);
     let network= firstTruthy(req.in_network,l1.network_in,swap.in_network);
-    if (amount==null) amount  = deepFind(swap,(k,v)=>/^(amount(_in)?|inAmount|amountIn)$/i.test(k)&&v!=null);
-    if (asset==null)  asset   = deepFind(swap,(k,v)=>/^(in_?asset|asset_?in|from(asset|Coin|Symbol)|coinFrom|symbol_in)$/i.test(k));
+    if (amount==null) amount = deepFind(swap,(k,v)=>/^(amount(_in)?|inAmount|amountIn)$/i.test(k)&&v!=null);
+    if (asset==null) asset = deepFind(swap,(k,v)=>/^(in_?asset|asset_?in|from(asset|Coin|Symbol)|coinFrom|symbol_in)$/i.test(k));
     if (network==null)network = deepFind(swap,(k,v)=>/^(in_?network|network_?in|from(Network|Chain)|chain_from|from_chain)$/i.test(k));
     if (typeof asset==="string") asset=asset.toUpperCase();
     if (typeof network==="string") network=network.toUpperCase();
@@ -391,8 +346,6 @@
     try { return from === "admin" ? normalizeFromAdmin(raw) : normalizeFromDirect(raw); }
     catch { return { address:"", qr:"", status: clampMonotonic("receiving"), rawPhase:"receiving" }; }
   }
-
-  /* ---------- Polling ---------- */
   async function pollOnce() {
     if (!statusEndpoint || finalized) return;
     try {
@@ -408,13 +361,9 @@
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const raw = await r.json();
       const data = normalizeData(raw, statusEndpoint.from);
-
-      // Address & QR (deposit side)
       setAddr(data.address || "—");
       if (data.qr) { hadProviderQR = true; setQR(data.qr); }
       else if (!hadProviderQR && data.address) { setFallbackQRFromAddress(data.address); }
-
-      // Amount/asset/network
       if (data.amount && data.asset) {
         renderAmountReminder(data.amount, data.asset, data.network);
       } else {
@@ -423,12 +372,8 @@
           .then(obj=>{ if(!obj) return; const ad = normalizeFromAdmin(obj); renderAmountReminder(ad.amount ?? data.amount, ad.asset ?? data.asset, ad.network ?? data.network); })
           .catch(()=>{});
       }
-
-      // Steps + timer
       const prev = lastStatus;
       updateSteps(data.status);
-
-      // Leaving Receiving → badge & hide timer
       if (prev !== data.status) {
         if ((prev===null && data.status!=="receiving") || (prev==="receiving" && data.status!=="receiving")) {
           showDepositReceivedBadge();
@@ -437,8 +382,6 @@
         }
         lastStatus = data.status;
       }
-
-      // Completion (no 4th step — show Congrats)
       if (data.rawPhase === "sending_done") {
         finalizeSwapUI();
         return;
@@ -453,8 +396,6 @@
       // ignore and continue
     }
   }
-
-  /* ---------- boot ---------- */
   (async function init(){
     $("swapIdLine").textContent = swapId || "—";
     $("copyBtn")?.addEventListener("click", async () => {
@@ -462,14 +403,23 @@
       if (!txt || txt === "—") return;
       try { await navigator.clipboard.writeText(txt); $("copyBtn").textContent = "Copied!"; setTimeout(() => $("copyBtn").textContent = "Copy", 1200); } catch {}
     });
-
+    // Add click-to-copy for Swap ID
+    $("swapIdLine")?.addEventListener("click", async () => {
+      const txt = $("swapIdLine")?.textContent || "";
+      if (!txt || txt === "—") return;
+      try {
+        await navigator.clipboard.writeText(txt);
+        $("swapIdLine").textContent = "Copied!";
+        $("swapIdLine").classList.add("copied");
+        setTimeout(() => {
+          $("swapIdLine").textContent = swapId || "—";
+          $("swapIdLine").classList.remove("copied");
+        }, 1200);
+      } catch {}
+    });
     if (!swapId) return;
-
-    // Receiving-only 25m timer (persisted)
     ensureReceivingTimerForSwap(swapId);
     showTimer(true);
-
-    // Detect endpoint
     const found = await detectStatusEndpoint(swapId);
     if (!found) {
       const msg = document.createElement("div");
@@ -480,13 +430,10 @@
       return;
     }
     statusEndpoint = found;
-
-    // First paint
     const first = normalizeData(found.firstJson || {}, found.from);
     setAddr(first.address || "—");
     if (first.qr) { hadProviderQR = true; setQR(first.qr); }
     else if (first.address) { setFallbackQRFromAddress(first.address); }
-
     if (first.amount && first.asset) renderAmountReminder(first.amount, first.asset, first.network);
     else {
       try {
@@ -498,24 +445,17 @@
         }
       } catch {}
     }
-
     updateSteps(first.status);
     lastStatus = first.status;
-
-    // If already past Receiving on load
     if (first.status && String(first.status).toLowerCase() !== "receiving") {
       showDepositReceivedBadge();
       showTimer(false);
       clearDeadline(swapId);
     }
-
-    // If already done on first payload
     if (first.rawPhase === "sending_done") {
       finalizeSwapUI();
       return;
     }
-
-    // Poll
     pollTimer = setInterval(pollOnce, 5000);
   })();
 })();
