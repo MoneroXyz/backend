@@ -14363,7 +14363,7 @@
       "status": "waiting_deposit",
       "provider_info": {
         "id": "FTKTtGarV",
-        "status": "sending",
+        "status": "finished",
         "rate": "floating",
         "deposit": {
           "symbol": "eth",
@@ -14383,9 +14383,9 @@
           "expected_amount": 0.1658843,
           "address": "89T9bZALbmJemrS1sMzkFaXrzZC6Z52uWYDLPdPAYNfoDeXxoEbaSsX5tavKbseiGfXrjC7W55A95hKbJno7Aqit7DT3b7V",
           "extra_id": null,
-          "tx_hash": null,
+          "tx_hash": "409e1f4b892b3cf12ea86a15670d2bf90fbecf62553a076a9b0abfc833e848f4",
           "address_explorer_url": null,
-          "tx_explorer_url": null
+          "tx_explorer_url": "https://xmrchain.net/tx/409e1f4b892b3cf12ea86a15670d2bf90fbecf62553a076a9b0abfc833e848f4"
         },
         "refund_address": null,
         "refund_extra_id": null,
@@ -14416,16 +14416,16 @@
       "status": "routing_xmr_to_leg2",
       "provider_info": {
         "id": "6951e703a94ad2",
-        "status": "confirming",
+        "status": "finished",
         "actionsAvailable": false,
         "fromCurrency": "xmr",
         "fromNetwork": "xmr",
         "toCurrency": "eth",
         "toNetwork": "eth",
-        "expectedAmountFrom": 0.15310559,
+        "expectedAmountFrom": null,
         "expectedAmountTo": 0.008167,
         "amountFrom": 0.15310559,
-        "amountTo": null,
+        "amountTo": 0.00818698,
         "payinAddress": "89zxf92VhAbiYktTSpNvBvcL7B2yF8KDL4v7YayGVXw1MQmzLGdm4vAGM8EyKHgteSQSZtiSMYJYEfbXaaQHWzEKJU1WxYp",
         "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
         "payinExtraId": null,
@@ -14433,11 +14433,11 @@
         "refundAddress": "89T9bZALbmJemrS1sMzkFaXrzZC6Z52uWYDLPdPAYNfoDeXxoEbaSsX5tavKbseiGfXrjC7W55A95hKbJno7Aqit7DT3b7V",
         "refundExtraId": null,
         "createdAt": "2025-08-23T21:46:08.570Z",
-        "updatedAt": "2025-08-23T21:48:37.703Z",
+        "updatedAt": "2025-08-23T21:51:56.323Z",
         "validUntil": null,
-        "depositReceivedAt": null,
+        "depositReceivedAt": "2025-08-23T21:50:32.531Z",
         "payinHash": "9432a87a3b7399a12fdfcfe68808b0972af960e9f44172033009b91220496a69",
-        "payoutHash": null,
+        "payoutHash": "0x892bb057cd5cfef09616f56972c119d2ca40e127fb3823c8611aa0f7e224b617",
         "fromLegacyTicker": "xmr",
         "toLegacyTicker": "eth",
         "refundHash": null,
@@ -14454,5 +14454,568 @@
       "routing_xmr_to_leg2"
     ],
     "last_sent_txid": "9432a87a3b7399a12fdfcfe68808b0972af960e9f44172033009b91220496a69"
+  },
+  "90566284-037e-4052-a617-9ca16548de0b": {
+    "id": "90566284-037e-4052-a617-9ca16548de0b",
+    "created": 1755986174.7717338,
+    "req": {
+      "leg1_provider": "StealthEX",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "ETH",
+      "in_network": "ETH",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 0.01,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.012549011613085193,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 190,
+    "subaddr": "88qh9pNdMjzM18oiPeQxzWFBy6J7hpXfYYyLXnmLEm8g1VtfzPDAXrXAXFuY6k6Uwd6abBXeUxZkrNQ8TP3Vhe9UFph3EKP",
+    "our_fee_xmr": 0.012549011613085193,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.012549011613085193
+    },
+    "leg1": {
+      "provider": "StealthEX",
+      "order": {
+        "id": "haKhSLcZr",
+        "depositAddress": "0x119a3Bb116B36fEFF76E55C0fE73E0c6F2612Cc9",
+        "depositExtraId": null,
+        "_raw": {
+          "id": "haKhSLcZr",
+          "status": "waiting",
+          "rate": "floating",
+          "deposit": {
+            "symbol": "eth",
+            "network": "mainnet",
+            "amount": 0.01,
+            "expected_amount": 0.01,
+            "address": "0x119a3Bb116B36fEFF76E55C0fE73E0c6F2612Cc9",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": "https://blockchair.com/ethereum/address/0x119a3Bb116B36fEFF76E55C0fE73E0c6F2612Cc9",
+            "tx_explorer_url": null
+          },
+          "withdrawal": {
+            "symbol": "xmr",
+            "network": "mainnet",
+            "amount": 0.1657585,
+            "expected_amount": 0.1657585,
+            "address": "88qh9pNdMjzM18oiPeQxzWFBy6J7hpXfYYyLXnmLEm8g1VtfzPDAXrXAXFuY6k6Uwd6abBXeUxZkrNQ8TP3Vhe9UFph3EKP",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": null,
+            "tx_explorer_url": null
+          },
+          "refund_address": null,
+          "refund_extra_id": null,
+          "created_at": "2025-08-23T21:55:58.086Z",
+          "expires_at": null
+        }
+      },
+      "tx_id": "haKhSLcZr",
+      "deposit_address": "0x119a3Bb116B36fEFF76E55C0fE73E0c6F2612Cc9",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "haKhSLcZr",
+        "status": "finished",
+        "rate": "floating",
+        "deposit": {
+          "symbol": "eth",
+          "network": "mainnet",
+          "amount": 0.01,
+          "expected_amount": 0.01,
+          "address": "0x119a3Bb116B36fEFF76E55C0fE73E0c6F2612Cc9",
+          "extra_id": null,
+          "tx_hash": "0x12a74c298fb6abdd955e4c97c5b317fd3a56417f60449e839c31005b01c78372",
+          "address_explorer_url": "https://blockchair.com/ethereum/address/0x119a3Bb116B36fEFF76E55C0fE73E0c6F2612Cc9",
+          "tx_explorer_url": "https://blockchair.com/ethereum/transaction/0x12a74c298fb6abdd955e4c97c5b317fd3a56417f60449e839c31005b01c78372"
+        },
+        "withdrawal": {
+          "symbol": "xmr",
+          "network": "mainnet",
+          "amount": 0.16511362,
+          "expected_amount": 0.1657585,
+          "address": "88qh9pNdMjzM18oiPeQxzWFBy6J7hpXfYYyLXnmLEm8g1VtfzPDAXrXAXFuY6k6Uwd6abBXeUxZkrNQ8TP3Vhe9UFph3EKP",
+          "extra_id": null,
+          "tx_hash": "4fe010b8af493deaff49ec6f7b287e8e84aae831fc0535b4cb427adbcddec6ed",
+          "address_explorer_url": null,
+          "tx_explorer_url": "https://xmrchain.net/tx/4fe010b8af493deaff49ec6f7b287e8e84aae831fc0535b4cb427adbcddec6ed"
+        },
+        "refund_address": null,
+        "refund_extra_id": null,
+        "created_at": "2025-08-23T21:55:58.000Z",
+        "expires_at": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": true,
+      "creating": true,
+      "order": {
+        "fromAmount": 0.1522646083869148,
+        "toAmount": 0.0081585,
+        "flow": "standard",
+        "type": "direct",
+        "payinAddress": "83oqvHSTzZ1MZkJCSHPueH6DTz7JdefkLYtz6trmJKXYDQMCisqivoLWTEww6WtcwAJbFumamNuuYd1Mw9eHUJSuEpD5xA3",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "fromCurrency": "xmr",
+        "toCurrency": "eth",
+        "refundAddress": "88qh9pNdMjzM18oiPeQxzWFBy6J7hpXfYYyLXnmLEm8g1VtfzPDAXrXAXFuY6k6Uwd6abBXeUxZkrNQ8TP3Vhe9UFph3EKP",
+        "id": "ac9f3e0855c996",
+        "directedAmount": 0.1522646,
+        "fromNetwork": "xmr",
+        "toNetwork": "eth"
+      },
+      "tx_id": "ac9f3e0855c996",
+      "status": "routing_xmr_to_leg2",
+      "provider_info": {
+        "id": "ac9f3e0855c996",
+        "status": "finished",
+        "actionsAvailable": false,
+        "fromCurrency": "xmr",
+        "fromNetwork": "xmr",
+        "toCurrency": "eth",
+        "toNetwork": "eth",
+        "expectedAmountFrom": null,
+        "expectedAmountTo": 0.0081585,
+        "amountFrom": 0.1522646,
+        "amountTo": 0.00817068,
+        "payinAddress": "83oqvHSTzZ1MZkJCSHPueH6DTz7JdefkLYtz6trmJKXYDQMCisqivoLWTEww6WtcwAJbFumamNuuYd1Mw9eHUJSuEpD5xA3",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "payinExtraId": null,
+        "payoutExtraId": null,
+        "refundAddress": "88qh9pNdMjzM18oiPeQxzWFBy6J7hpXfYYyLXnmLEm8g1VtfzPDAXrXAXFuY6k6Uwd6abBXeUxZkrNQ8TP3Vhe9UFph3EKP",
+        "refundExtraId": null,
+        "createdAt": "2025-08-23T22:01:10.056Z",
+        "updatedAt": "2025-08-23T22:09:27.262Z",
+        "validUntil": null,
+        "depositReceivedAt": "2025-08-23T22:07:45.769Z",
+        "payinHash": "f3c6e5441e0cd9f55d4b2d9e873df3edc61996908dc175f667876a13d6f8b0ac",
+        "payoutHash": "0x0e7fc7dc8f4fa5f4ae54f162db9a6f0097192dd6c047e4c481f063adcb08afb7",
+        "fromLegacyTicker": "xmr",
+        "toLegacyTicker": "eth",
+        "refundHash": null,
+        "refundAmount": null,
+        "userId": null,
+        "originalExchangeInfo": null,
+        "relatedExchangesInfo": [],
+        "repeatedExchangesInfo": []
+      }
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "routing_xmr_to_leg2"
+    ],
+    "last_sent_txid": "f3c6e5441e0cd9f55d4b2d9e873df3edc61996908dc175f667876a13d6f8b0ac"
+  },
+  "e776f1a6-ac48-49c3-b295-f2c8031230f9": {
+    "id": "e776f1a6-ac48-49c3-b295-f2c8031230f9",
+    "created": 1755986445.6290972,
+    "req": {
+      "leg1_provider": "StealthEX",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "ETH",
+      "in_network": "ETH",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 0.01,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.013124999999999998,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 191,
+    "subaddr": "8Axy9qatV8zFkJyPwe2j1YViTBis4R5SF6pjwiscgvEd1UGfADwcdqZcJoe6G8BkBw2Qoq3XMvpQWU8wPTwWpZQA9roZs6p",
+    "our_fee_xmr": 0.013124999999999998,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.013124999999999998
+    },
+    "leg1": {
+      "provider": "StealthEX",
+      "order": {
+        "id": "k64L70XY1",
+        "depositAddress": "0xb03f3bb122e7b673D69FA4b7042074ADAe7014E3",
+        "depositExtraId": null,
+        "_raw": {
+          "id": "k64L70XY1",
+          "status": "waiting",
+          "rate": "floating",
+          "deposit": {
+            "symbol": "eth",
+            "network": "mainnet",
+            "amount": 0.01,
+            "expected_amount": 0.01,
+            "address": "0xb03f3bb122e7b673D69FA4b7042074ADAe7014E3",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": "https://blockchair.com/ethereum/address/0xb03f3bb122e7b673D69FA4b7042074ADAe7014E3",
+            "tx_explorer_url": null
+          },
+          "withdrawal": {
+            "symbol": "xmr",
+            "network": "mainnet",
+            "amount": 0.1648665,
+            "expected_amount": 0.1648665,
+            "address": "8Axy9qatV8zFkJyPwe2j1YViTBis4R5SF6pjwiscgvEd1UGfADwcdqZcJoe6G8BkBw2Qoq3XMvpQWU8wPTwWpZQA9roZs6p",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": null,
+            "tx_explorer_url": null
+          },
+          "refund_address": null,
+          "refund_extra_id": null,
+          "created_at": "2025-08-23T22:00:28.873Z",
+          "expires_at": null
+        }
+      },
+      "tx_id": "k64L70XY1",
+      "deposit_address": "0xb03f3bb122e7b673D69FA4b7042074ADAe7014E3",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "k64L70XY1",
+        "status": "waiting",
+        "rate": "floating",
+        "deposit": {
+          "symbol": "eth",
+          "network": "mainnet",
+          "amount": 0.01,
+          "expected_amount": 0.01,
+          "address": "0xb03f3bb122e7b673D69FA4b7042074ADAe7014E3",
+          "extra_id": null,
+          "tx_hash": null,
+          "address_explorer_url": "https://blockchair.com/ethereum/address/0xb03f3bb122e7b673D69FA4b7042074ADAe7014E3",
+          "tx_explorer_url": null
+        },
+        "withdrawal": {
+          "symbol": "xmr",
+          "network": "mainnet",
+          "amount": 0.1648665,
+          "expected_amount": 0.1648665,
+          "address": "8Axy9qatV8zFkJyPwe2j1YViTBis4R5SF6pjwiscgvEd1UGfADwcdqZcJoe6G8BkBw2Qoq3XMvpQWU8wPTwWpZQA9roZs6p",
+          "extra_id": null,
+          "tx_hash": null,
+          "address_explorer_url": null,
+          "tx_explorer_url": null
+        },
+        "refund_address": null,
+        "refund_extra_id": null,
+        "created_at": "2025-08-23T22:00:29.000Z",
+        "expires_at": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": false,
+      "creating": false,
+      "order": null,
+      "tx_id": "",
+      "status": "pending"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit"
+    ],
+    "last_sent_txid": null
+  },
+  "0e067983-68a6-4ee3-9f66-1bda1d4bb339": {
+    "id": "0e067983-68a6-4ee3-9f66-1bda1d4bb339",
+    "created": 1755987398.7872982,
+    "req": {
+      "leg1_provider": "StealthEX",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "ETH",
+      "in_network": "ETH",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 0.01,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.012452377341090198,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 192,
+    "subaddr": "88UuMxKJB3w58RtvKyyhngihJRPBMmhnqSHrb6tL8m3vh3BuY2qN7XYStuB1eXc91v8ArHRMSiTRCJJLj4sAWjRS3EChHkX",
+    "our_fee_xmr": 0.012452377341090198,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.012452377341090198
+    },
+    "leg1": {
+      "provider": "StealthEX",
+      "order": {
+        "id": "SH15R1zie",
+        "depositAddress": "0x1b9185575cbB406571De8f821a78Cf8d8A784977",
+        "depositExtraId": null,
+        "_raw": {
+          "id": "SH15R1zie",
+          "status": "waiting",
+          "rate": "floating",
+          "deposit": {
+            "symbol": "eth",
+            "network": "mainnet",
+            "amount": 0.01,
+            "expected_amount": 0.01,
+            "address": "0x1b9185575cbB406571De8f821a78Cf8d8A784977",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": "https://blockchair.com/ethereum/address/0x1b9185575cbB406571De8f821a78Cf8d8A784977",
+            "tx_explorer_url": null
+          },
+          "withdrawal": {
+            "symbol": "xmr",
+            "network": "mainnet",
+            "amount": 0.1652952,
+            "expected_amount": 0.1652952,
+            "address": "88UuMxKJB3w58RtvKyyhngihJRPBMmhnqSHrb6tL8m3vh3BuY2qN7XYStuB1eXc91v8ArHRMSiTRCJJLj4sAWjRS3EChHkX",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": null,
+            "tx_explorer_url": null
+          },
+          "refund_address": null,
+          "refund_extra_id": null,
+          "created_at": "2025-08-23T22:16:22.335Z",
+          "expires_at": null
+        }
+      },
+      "tx_id": "SH15R1zie",
+      "deposit_address": "0x1b9185575cbB406571De8f821a78Cf8d8A784977",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "SH15R1zie",
+        "status": "finished",
+        "rate": "floating",
+        "deposit": {
+          "symbol": "eth",
+          "network": "mainnet",
+          "amount": 0.01,
+          "expected_amount": 0.01,
+          "address": "0x1b9185575cbB406571De8f821a78Cf8d8A784977",
+          "extra_id": null,
+          "tx_hash": "0xc120b1a174f1c09ae06efb53b2aa02fed43f33fa3a89a805cd73ba963f918f3b",
+          "address_explorer_url": "https://blockchair.com/ethereum/address/0x1b9185575cbB406571De8f821a78Cf8d8A784977",
+          "tx_explorer_url": "https://blockchair.com/ethereum/transaction/0xc120b1a174f1c09ae06efb53b2aa02fed43f33fa3a89a805cd73ba963f918f3b"
+        },
+        "withdrawal": {
+          "symbol": "xmr",
+          "network": "mainnet",
+          "amount": 0.16522328,
+          "expected_amount": 0.1652952,
+          "address": "88UuMxKJB3w58RtvKyyhngihJRPBMmhnqSHrb6tL8m3vh3BuY2qN7XYStuB1eXc91v8ArHRMSiTRCJJLj4sAWjRS3EChHkX",
+          "extra_id": null,
+          "tx_hash": "085060fc4408c7a270376600634b386f3ba9ee71f6bf2f376724f42b8c080c7b",
+          "address_explorer_url": null,
+          "tx_explorer_url": "https://xmrchain.net/tx/085060fc4408c7a270376600634b386f3ba9ee71f6bf2f376724f42b8c080c7b"
+        },
+        "refund_address": null,
+        "refund_extra_id": null,
+        "created_at": "2025-08-23T22:16:22.000Z",
+        "expires_at": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": true,
+      "creating": true,
+      "order": {
+        "fromAmount": 0.1524709026589098,
+        "toAmount": 0.0081631,
+        "flow": "standard",
+        "type": "direct",
+        "payinAddress": "893aRogrwuhPi3Yvkngd5UWtMxsRFMpwkQynXpA2Qx6rQzzQnZE1n2DAgoBWoyFpxzMfutTyRvJCe3bxWHmAH24p8kqPWUd",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "fromCurrency": "xmr",
+        "toCurrency": "eth",
+        "refundAddress": "88UuMxKJB3w58RtvKyyhngihJRPBMmhnqSHrb6tL8m3vh3BuY2qN7XYStuB1eXc91v8ArHRMSiTRCJJLj4sAWjRS3EChHkX",
+        "id": "d87d5392265716",
+        "directedAmount": 0.1524709,
+        "fromNetwork": "xmr",
+        "toNetwork": "eth"
+      },
+      "tx_id": "d87d5392265716",
+      "status": "routing_xmr_to_leg2",
+      "provider_info": {
+        "id": "d87d5392265716",
+        "status": "finished",
+        "actionsAvailable": false,
+        "fromCurrency": "xmr",
+        "fromNetwork": "xmr",
+        "toCurrency": "eth",
+        "toNetwork": "eth",
+        "expectedAmountFrom": null,
+        "expectedAmountTo": 0.0081631,
+        "amountFrom": 0.1524709,
+        "amountTo": 0.00816987,
+        "payinAddress": "893aRogrwuhPi3Yvkngd5UWtMxsRFMpwkQynXpA2Qx6rQzzQnZE1n2DAgoBWoyFpxzMfutTyRvJCe3bxWHmAH24p8kqPWUd",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "payinExtraId": null,
+        "payoutExtraId": null,
+        "refundAddress": "88UuMxKJB3w58RtvKyyhngihJRPBMmhnqSHrb6tL8m3vh3BuY2qN7XYStuB1eXc91v8ArHRMSiTRCJJLj4sAWjRS3EChHkX",
+        "refundExtraId": null,
+        "createdAt": "2025-08-23T22:19:41.946Z",
+        "updatedAt": "2025-08-23T22:27:07.646Z",
+        "validUntil": null,
+        "depositReceivedAt": "2025-08-23T22:25:36.059Z",
+        "payinHash": "1aef590e4aaf006a3dec545bae559ef0eea4a66cf1a35f951005336a2b518159",
+        "payoutHash": "0x23a00cc68c4fa8faf946779cbb37a34a31b6e6b994833389e711e7701433a183",
+        "fromLegacyTicker": "xmr",
+        "toLegacyTicker": "eth",
+        "refundHash": null,
+        "refundAmount": null,
+        "userId": null,
+        "originalExchangeInfo": null,
+        "relatedExchangesInfo": [],
+        "repeatedExchangesInfo": []
+      }
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "routing_xmr_to_leg2"
+    ],
+    "last_sent_txid": "1aef590e4aaf006a3dec545bae559ef0eea4a66cf1a35f951005336a2b518159"
+  },
+  "cf3cc354-4be1-4d18-a25b-4dcb4b8ddf83": {
+    "id": "cf3cc354-4be1-4d18-a25b-4dcb4b8ddf83",
+    "created": 1755988120.1630316,
+    "req": {
+      "leg1_provider": "StealthEX",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "ETH",
+      "in_network": "ETH",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 0.01,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.012425327541406517,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 193,
+    "subaddr": "82VkqJ8nBX2Qcp9WUMCqraS2NFv6ERrPFdyNA3vhoyivJ4vYXaUBm743S1wJf2Nomh3PLK8CeB31pUTnXuNQXE3oRQAgBAL",
+    "our_fee_xmr": 0.012425327541406517,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.012425327541406517
+    },
+    "leg1": {
+      "provider": "StealthEX",
+      "order": {
+        "id": "3jJRey2tq",
+        "depositAddress": "0x264D4ABfFf29ccc9EDa47c16665ee7043d4b8467",
+        "depositExtraId": null,
+        "_raw": {
+          "id": "3jJRey2tq",
+          "status": "waiting",
+          "rate": "floating",
+          "deposit": {
+            "symbol": "eth",
+            "network": "mainnet",
+            "amount": 0.01,
+            "expected_amount": 0.01,
+            "address": "0x264D4ABfFf29ccc9EDa47c16665ee7043d4b8467",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": "https://blockchair.com/ethereum/address/0x264D4ABfFf29ccc9EDa47c16665ee7043d4b8467",
+            "tx_explorer_url": null
+          },
+          "withdrawal": {
+            "symbol": "xmr",
+            "network": "mainnet",
+            "amount": 0.1652463,
+            "expected_amount": 0.1652463,
+            "address": "82VkqJ8nBX2Qcp9WUMCqraS2NFv6ERrPFdyNA3vhoyivJ4vYXaUBm743S1wJf2Nomh3PLK8CeB31pUTnXuNQXE3oRQAgBAL",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": null,
+            "tx_explorer_url": null
+          },
+          "refund_address": null,
+          "refund_extra_id": null,
+          "created_at": "2025-08-23T22:28:23.587Z",
+          "expires_at": null
+        }
+      },
+      "tx_id": "3jJRey2tq",
+      "deposit_address": "0x264D4ABfFf29ccc9EDa47c16665ee7043d4b8467",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "3jJRey2tq",
+        "status": "sending",
+        "rate": "floating",
+        "deposit": {
+          "symbol": "eth",
+          "network": "mainnet",
+          "amount": 0.01,
+          "expected_amount": 0.01,
+          "address": "0x264D4ABfFf29ccc9EDa47c16665ee7043d4b8467",
+          "extra_id": null,
+          "tx_hash": "0x6eef1e943f8213466e5109e43d488fe32785d2805927a405b3334aeaaabf1b3c",
+          "address_explorer_url": "https://blockchair.com/ethereum/address/0x264D4ABfFf29ccc9EDa47c16665ee7043d4b8467",
+          "tx_explorer_url": "https://blockchair.com/ethereum/transaction/0x6eef1e943f8213466e5109e43d488fe32785d2805927a405b3334aeaaabf1b3c"
+        },
+        "withdrawal": {
+          "symbol": "xmr",
+          "network": "mainnet",
+          "amount": 0.1657311,
+          "expected_amount": 0.1652463,
+          "address": "82VkqJ8nBX2Qcp9WUMCqraS2NFv6ERrPFdyNA3vhoyivJ4vYXaUBm743S1wJf2Nomh3PLK8CeB31pUTnXuNQXE3oRQAgBAL",
+          "extra_id": null,
+          "tx_hash": null,
+          "address_explorer_url": null,
+          "tx_explorer_url": null
+        },
+        "refund_address": null,
+        "refund_extra_id": null,
+        "created_at": "2025-08-23T22:28:24.000Z",
+        "expires_at": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": true,
+      "creating": true,
+      "order": {
+        "fromAmount": 0.15300577245859348,
+        "toAmount": 0.00819,
+        "flow": "standard",
+        "type": "direct",
+        "payinAddress": "88zkgsxes5d1V3XMTiVMrD2wBquM1gXC7MBaoMnrdiJpLzk8p6PXNYfgmcrv7WQgUJNj97f4AWWcUif57PuVGhPcVpHVwT2",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "fromCurrency": "xmr",
+        "toCurrency": "eth",
+        "refundAddress": "82VkqJ8nBX2Qcp9WUMCqraS2NFv6ERrPFdyNA3vhoyivJ4vYXaUBm743S1wJf2Nomh3PLK8CeB31pUTnXuNQXE3oRQAgBAL",
+        "id": "f21750dfa2590e",
+        "directedAmount": 0.15300577,
+        "fromNetwork": "xmr",
+        "toNetwork": "eth"
+      },
+      "tx_id": "f21750dfa2590e",
+      "status": "routing_xmr_to_leg2"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "routing_xmr_to_leg2"
+    ],
+    "last_sent_txid": "44ba8078efa80cef0c01665a39a299da1f00b1be7980ebb32d112e6b79d922f6"
   }
 }

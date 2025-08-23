@@ -10,6 +10,14 @@
   let hadProviderQR = false;
   let finalized = false;
 
+  // Handle the QR hint element (works with id or class)
+  const qrHintEl = document.getElementById("qrHint") || document.querySelector(".mx-qr-hint");
+  const setQrHintVisible = (show) => {
+    if (!qrHintEl) return;
+    if (show) qrHintEl.classList.remove("mx-hidden");
+    else qrHintEl.classList.add("mx-hidden");
+  };
+
   // Persist lastStatus with expiration (5 minutes)
   function getPersistedStatus(id) {
     const key = `monerizer_status_${id}`;
@@ -107,6 +115,7 @@
     if (btn) { btn.disabled = true; btn.textContent = "Expired"; }
     const exp = $("expiredBox");
     if (exp) exp.classList.remove("mx-hidden");
+    setQrHintVisible(false);
   }
   const setAddr = (v) => { const a = $("addr"); if (a) a.textContent = v ?? "—"; };
   function ensureReceivingTimerForSwap(id) {
@@ -236,6 +245,7 @@
       </div>
       <div class="mx-waiting-text">Wait until we monerize your assets <span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
     `;
+    setQrHintVisible(false);
   }
   function setFallbackQRFromAddress(addr) {
     if (!addr) return;
@@ -278,6 +288,7 @@
       if (amountLine) amountLine.style.display = "flex";
       const depositLabel = document.querySelector(".mx-label");
       if (depositLabel) depositLabel.style.display = "block";
+      setQrHintVisible(true);
     } else {
       showTimer(false);
       clearDeadline(swapId);
@@ -289,8 +300,9 @@
       if (amountLine) amountLine.style.display = "none";
       const depositLabel = document.querySelector(".mx-label");
       if (depositLabel) depositLabel.style.display = "none";
+      setQrHintVisible(false);
     }
-    console.log("Current status:", norm, "Step index:", idx); // Debug log
+    console.log("Current status:", norm, "Step index:", idx);
   }
   function showDoneMessage() {
     const stepsWrap = document.getElementById("steps");
@@ -300,25 +312,32 @@
       const note = document.createElement("div");
       note.id = "mxDoneNote";
       note.setAttribute("style", [
-        "margin-top:10px",
+        "margin-top:20px",
         "padding:12px 14px",
         "border-radius:12px",
         "display:flex",
+        "flex-direction:column",
         "align-items:center",
-        "gap:10px",
+        "gap:6px",
         "background:linear-gradient(135deg, rgba(16,179,255,.14), rgba(16,179,255,.08))",
         "border:1px solid rgba(16,179,255,.35)",
         "box-shadow:0 8px 22px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.15)",
         "color:var(--fg)",
-        "font-weight:700"
+        "font-weight:700",
+        "text-align:center"
       ].join(";"));
       note.innerHTML = `
-        <span aria-hidden="true" style="display:inline-grid;place-items:center;width:28px;height:28px;border-radius:999px;background:rgba(16,179,255,.25);border:1px solid rgba(16,179,255,.45);">
-          <svg viewBox="0 0 24 24" width="16" height="16">
-            <path d="M6 12l4 4 8-8" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
-        <span>🎉 Congratulations! Your swap is completed.</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span aria-hidden="true" style="display:inline-grid;place-items:center;width:28px;height:28px;border-radius:999px;background:rgba(16,179,255,.25);border:1px solid rgba(16,179,255,.45);">
+            <svg viewBox="0 0 24 24" width="16" height="16">
+              <path d="M6 12l4 4 8-8" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span>🎉 Congratulations! Your swap is completed.</span>
+        </div>
+        <div style="font-weight:400;color:#9aa8b5;font-size:14px;margin-top:4px;">
+          We'll be here when you're ready for your next swap
+        </div>
       `;
       grid.appendChild(note);
     }
@@ -335,13 +354,14 @@
       box.style.background = "transparent";
       box.style.padding = "0";
       box.innerHTML = `
-        <div class="mx-qr-badge" aria-label="Deposit received">
+        <div class="mx-qr-badge" aria-label="Deposit received" style="margin-top:40px; margin-bottom:10px;">
           <svg viewBox="0 0 64 64" role="img" aria-hidden="true" style="width:120px;height:120px">
             <path d="M18 34l10 10L46 24" fill="none" stroke="#082f22" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
       `;
     }
+    setQrHintVisible(false);
     showDoneMessage();
   }
   async function detectStatusEndpoint(id) {
@@ -406,7 +426,7 @@
   async function pollOnce() {
     if (!statusEndpoint || finalized) return;
     try {
-      console.log("Polling...", statusEndpoint.url); // Debug log
+      console.log("Polling...", statusEndpoint.url);
       const bustUrl = statusEndpoint.url + (statusEndpoint.url.includes("?") ? "&" : "?") + `_t=${Date.now()}`;
       const r = await fetch(bustUrl, {
         cache: "no-store",
@@ -418,7 +438,7 @@
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const raw = await r.json();
-      console.log("Raw data:", raw); // Debug raw response
+      console.log("Raw data:", raw);
       const data = normalizeData(raw, statusEndpoint.from);
       setAddr(data.address || "—");
       if (data.qr) { hadProviderQR = true; setQR(data.qr); }
@@ -434,7 +454,7 @@
       const prev = lastStatus;
       updateSteps(data.status);
       if (prev !== data.status) {
-        console.log("Status changed from", prev, "to", data.status); // Debug status change
+        console.log("Status changed from", prev, "to", data.status);
         if ((prev === null && data.status !== "receiving") || (prev === "receiving" && data.status !== "receiving")) {
           showDepositReceivedBadge();
           showTimer(false);
@@ -446,9 +466,10 @@
           if (amountLine) amountLine.style.display = "none";
           const depositLabel = document.querySelector(".mx-label");
           if (depositLabel) depositLabel.style.display = "none";
+          setQrHintVisible(false);
         }
         lastStatus = data.status;
-        setPersistedStatus(swapId, data.status); // Persist new status
+        setPersistedStatus(swapId, data.status);
       }
       if (data.rawPhase === "sending_done") {
         finalizeSwapUI();
@@ -496,6 +517,8 @@
     if (!swapId) return;
     ensureReceivingTimerForSwap(swapId);
     showTimer(true);
+    setQrHintVisible(true);
+
     const found = await detectStatusEndpoint(swapId);
     if (!found) {
       const msg = document.createElement("div");
@@ -507,7 +530,7 @@
     }
     statusEndpoint = found;
     const first = normalizeData(found.firstJson || {}, found.from);
-    console.log("Initial data:", first); // Debug initial state
+    console.log("Initial data:", first);
     setAddr(first.address || "—");
     if (first.qr) { hadProviderQR = true; setQR(first.qr); }
     else if (first.address) { setFallbackQRFromAddress(first.address); }
@@ -524,8 +547,8 @@
     }
     const persistedStatus = getPersistedStatus(swapId);
     const initialStatus = persistedStatus || first.status;
-    updateSteps(initialStatus); // Set initial status from persisted or API
-    lastStatus = initialStatus; // Preserve last status
+    updateSteps(initialStatus);
+    lastStatus = initialStatus;
     if (initialStatus && String(initialStatus).toLowerCase() !== "receiving") {
       showDepositReceivedBadge();
       showTimer(false);
@@ -537,6 +560,7 @@
       if (amountLine) amountLine.style.display = "none";
       const depositLabel = document.querySelector(".mx-label");
       if (depositLabel) depositLabel.style.display = "none";
+      setQrHintVisible(false);
     }
     if (first.rawPhase === "sending_done") {
       finalizeSwapUI();
