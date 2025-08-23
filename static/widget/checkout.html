@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Deposit • Monerize</title>
+  <title>Deposit • Monerizer</title>
   <link rel="stylesheet" href="./widget.css" />
   <style>
     .mx-checkout { width:min(680px,95vw); margin:24px auto; }
@@ -85,40 +85,21 @@
     .mx-swapid-pill.copied {
       background:rgba(16,179,255,.2); border:1px solid rgba(16,179,255,.5);
     }
-    .mx-qrbox.grayed {
-      opacity: 0.3;
-      position: relative;
+    .mx-gif-box {
+      width:260px; height:260px; border-radius:12px;
+      display:grid; place-items:center; background: transparent;
+      box-shadow:none; 
     }
+    .mx-gif-box img { width:100%; height:100%; object-fit:contain; }
     .mx-waiting-text {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #10b3ff; /* Muted blue for better contrast against grayed QR */
-      font-size: 20px; /* Larger text size */
-      font-weight: 700;
-      text-align: center;
-      width: 80%;
+      color:var(--fg); font-size:16px; font-weight:700; text-align:center; margin-top:10px;
     }
-    .mx-waiting-text .dots {
-      display: inline-block;
-      width: 1em;
-      text-align: left;
-      vertical-align: bottom;
-    }
-    .mx-waiting-text .dots span {
-      display: inline-block;
-      animation: jump 1.4s infinite;
-    }
-    .mx-waiting-text .dots span:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-    .mx-waiting-text .dots span:nth-child(3) {
-      animation-delay: 0.4s;
-    }
+    .mx-waiting-text .dots span { animation: jump 1.4s infinite; display:inline-block; }
+    .mx-waiting-text .dots span:nth-child(2) { animation-delay:0.2s; }
+    .mx-waiting-text .dots span:nth-child(3) { animation-delay:0.4s; }
     @keyframes jump {
       0% { transform: translateY(0); }
-      20% { transform: translateY(-10px); }
+      20% { transform: translateY(-5px); }
       40% { transform: translateY(0); }
     }
   </style>
