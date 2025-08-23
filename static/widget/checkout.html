@@ -48,7 +48,7 @@
     .mx-dot { z-index:1; width:20px; height:20px; border-radius:50%; background:var(--border);
       display:grid; place-items:center; color:#111; font-size:12px; font-weight:900; box-shadow:0 0 0 3px var(--card); }
     .mx-step.active .mx-dot { background:transparent; border:2px solid #9aa8b5; border-top-color: transparent; animation: mxspin .9s linear infinite; }
-    .mx-step.done .mx-dot { background:var(--accent); color:#111; animation:none; border:none; }
+    .mx-step.done .mx-dot { background:#26d59a; color:#fff; animation:none; border:none; } /* Green checkmark */
     .mx-step.done .mx-dot::after{ content:"✓"; }
     .mx-step.upcoming .mx-dot { background:var(--border); }
     .mx-step.upcoming .mx-label { color:#6f7e8f; }
@@ -86,7 +86,7 @@
       background:rgba(16,179,255,.2); border:1px solid rgba(16,179,255,.5);
     }
     .mx-gif-box {
-      width:260px; height:200px; border-radius:12px; /* Reduced height to lower GIF */
+      width:260px; height:260px; border-radius:12px; /* Reverted to original height */
       display:grid; place-items:center; background: transparent;
       box-shadow:none; 
     }
@@ -95,7 +95,7 @@
       background: transparent; /* Minimize background effect */
     }
     .mx-waiting-text {
-      color:var(--fg); font-size:16px; font-weight:700; text-align:center; margin-top:80px; /* Increased spacing to avoid overlap */
+      color:var(--fg); font-size:16px; font-weight:700; text-align:center; margin-top:80px; /* Maintain increased spacing */
     }
     .mx-waiting-text .dots span {
       animation: jump 1.4s infinite; display:inline-block;
