@@ -10,6 +10,24 @@
   let hadProviderQR = false;
   let finalized = false;
 
+  // Persist lastStatus with expiration (5 minutes)
+  function getPersistedStatus(id) {
+    const key = `monerizer_status_${id}`;
+    const timestampKey = `monerizer_status_timestamp_${id}`;
+    const stored = localStorage.getItem(key);
+    const timestamp = localStorage.getItem(timestampKey);
+    if (stored && timestamp && (Date.now() - Number(timestamp) < 5 * 60 * 1000)) {
+      return stored;
+    }
+    return null;
+  }
+  function setPersistedStatus(id, status) {
+    const key = `monerizer_status_${id}`;
+    const timestampKey = `monerizer_status_timestamp_${id}`;
+    localStorage.setItem(key, status);
+    localStorage.setItem(timestampKey, Date.now().toString());
+  }
+
   function coinIconSVG(sym) {
     const s = (sym || "").toUpperCase();
     const M = {
@@ -388,6 +406,7 @@
   async function pollOnce() {
     if (!statusEndpoint || finalized) return;
     try {
+      console.log("Polling...", statusEndpoint.url); // Debug log
       const bustUrl = statusEndpoint.url + (statusEndpoint.url.includes("?") ? "&" : "?") + `_t=${Date.now()}`;
       const r = await fetch(bustUrl, {
         cache: "no-store",
@@ -399,6 +418,7 @@
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const raw = await r.json();
+      console.log("Raw data:", raw); // Debug raw response
       const data = normalizeData(raw, statusEndpoint.from);
       setAddr(data.address || "—");
       if (data.qr) { hadProviderQR = true; setQR(data.qr); }
@@ -414,6 +434,7 @@
       const prev = lastStatus;
       updateSteps(data.status);
       if (prev !== data.status) {
+        console.log("Status changed from", prev, "to", data.status); // Debug status change
         if ((prev === null && data.status !== "receiving") || (prev === "receiving" && data.status !== "receiving")) {
           showDepositReceivedBadge();
           showTimer(false);
@@ -427,6 +448,7 @@
           if (depositLabel) depositLabel.style.display = "none";
         }
         lastStatus = data.status;
+        setPersistedStatus(swapId, data.status); // Persist new status
       }
       if (data.rawPhase === "sending_done") {
         finalizeSwapUI();
@@ -459,7 +481,7 @@
       const txt = $("swapIdLine")?.textContent || "";
       if (!txt || txt === "—") return;
       try {
-        console.log("Attempting to copy Swap ID:", txt); // Debug log
+        console.log("Attempting to copy Swap ID:", txt);
         await navigator.clipboard.writeText(txt);
         $("swapIdLine").textContent = "Copied!";
         $("swapIdLine").classList.add("copied");
@@ -485,6 +507,7 @@
     }
     statusEndpoint = found;
     const first = normalizeData(found.firstJson || {}, found.from);
+    console.log("Initial data:", first); // Debug initial state
     setAddr(first.address || "—");
     if (first.qr) { hadProviderQR = true; setQR(first.qr); }
     else if (first.address) { setFallbackQRFromAddress(first.address); }
@@ -499,9 +522,11 @@
         }
       } catch {}
     }
-    updateSteps(first.status);
-    lastStatus = first.status;
-    if (first.status && String(first.status).toLowerCase() !== "receiving") {
+    const persistedStatus = getPersistedStatus(swapId);
+    const initialStatus = persistedStatus || first.status;
+    updateSteps(initialStatus); // Set initial status from persisted or API
+    lastStatus = initialStatus; // Preserve last status
+    if (initialStatus && String(initialStatus).toLowerCase() !== "receiving") {
       showDepositReceivedBadge();
       showTimer(false);
       clearDeadline(swapId);
