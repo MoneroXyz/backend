@@ -113,6 +113,24 @@
       20% { transform: translateY(-5px); }
       40% { transform: translateY(0); }
     }
+
+    /* Operational Data panel visuals */
+    .mx-ops{ margin-top:16px; }
+    .mx-ops-btn{ width:100%; border:1px solid var(--border); border-radius:14px; background:rgba(255,255,255,.06);
+      padding:12px 14px; font-weight:800; cursor:pointer; }
+    .mx-ops-panel{ margin-top:12px; border:1px solid var(--border); border-radius:16px; padding:12px; background:rgba(255,255,255,.03); }
+    .opsv2 .sec{border:1px solid var(--border); border-radius:14px; padding:12px; background:rgba(255,255,255,.02);}
+    .opsv2 .sec + .sec{margin-top:12px;}
+    .opsv2 .h{display:flex; align-items:center; gap:8px; font-weight:900; margin-bottom:8px;}
+    .opsv2 .grid{display:grid; grid-template-columns: 180px 1fr; gap:10px 14px;}
+    .opsv2 .k{color:var(--muted); font-size:12px;}
+    .opsv2 .v{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+               font-size:13.5px; line-height:1.35; overflow-wrap:anywhere; padding:8px 10px; border:1px solid var(--border);
+               border-radius:10px; background:rgba(255,255,255,.02); cursor:pointer;}
+    .opsv2 .row{height:1px; background:var(--border); grid-column:1 / -1; opacity:.55;}
+    .opsv2 .pending{grid-column:1/-1; padding:8px 10px; border:1px dashed var(--border); border-radius:10px; color:var(--muted); font-size:12.5px;}
+    .opsv2 a.v{color:#67b7ff; text-decoration:underline;}
+    .opsv2 .copied{opacity:.6; transition:opacity .2s;}
   </style>
 </head>
 <body>
@@ -140,7 +158,6 @@
           <div id="qrBox" class="mx-qrbox">
             <img id="qr" alt="Deposit QR" />
           </div>
-          <!-- ✅ New line added below QR -->
           <p class="mx-qr-hint">Use QR or copy the address above</p>
         </div>
         <ul class="mx-steps" id="steps">
@@ -151,6 +168,13 @@
         <div id="doneMsg">🎉 Congratulations! Your swap is completed.</div>
         <div class="mx-timer"><span>Time left:</span> <a id="timeLeft">00:25:00</a></div>
       </div>
+
+      <!-- Operational Data -->
+      <div id="opsWrap" class="mx-ops">
+        <button id="opsToggle" class="mx-ops-btn" type="button">Show operational data</button>
+        <div id="opsPanel" class="mx-ops-panel mx-hidden" aria-live="polite"></div>
+      </div>
+
       <div id="expiredBox" class="mx-softerr mx-hidden">Expired. Please open a new swap.</div>
     </div>
   </div>

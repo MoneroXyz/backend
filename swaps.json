@@ -14682,7 +14682,7 @@
       "tx_id": "k64L70XY1",
       "deposit_address": "0xb03f3bb122e7b673D69FA4b7042074ADAe7014E3",
       "deposit_extra": null,
-      "status": "waiting_deposit",
+      "status": "expired",
       "provider_info": {
         "id": "k64L70XY1",
         "status": "waiting",
@@ -14725,9 +14725,11 @@
     },
     "timeline": [
       "created",
-      "waiting_deposit"
+      "waiting_deposit",
+      "expired"
     ],
-    "last_sent_txid": null
+    "last_sent_txid": null,
+    "expired": true
   },
   "0e067983-68a6-4ee3-9f66-1bda1d4bb339": {
     "id": "0e067983-68a6-4ee3-9f66-1bda1d4bb339",
@@ -15211,5 +15213,2160 @@
       "routing_xmr_to_leg2"
     ],
     "last_sent_txid": "5305095d0856e7efa037cbd8b729b82d715f876129f68ad2756e7153f84b161a"
+  },
+  "628b8d78-149c-44f9-9547-61ed07081d6b": {
+    "id": "628b8d78-149c-44f9-9547-61ed07081d6b",
+    "created": 1756045101.719919,
+    "req": {
+      "leg1_provider": "Exolix",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "USDT",
+      "in_network": "ETH",
+      "out_asset": "USDT",
+      "out_network": "ETH",
+      "amount": 70.0,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.0023211555327343203,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 195,
+    "subaddr": "83oDve181Vk95C835VYd7EWZFt3BZ2GNFTzX8vfhaaDfN8bh5psLUrFFBhsw94VzPab3fDVCy4Ts4jXqYMrpXiQ1H2DVZSJ",
+    "our_fee_xmr": 0.0023211555327343203,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.0023211555327343203
+    },
+    "leg1": {
+      "provider": "Exolix",
+      "order": {
+        "id": "cfb5cdd503c2b7",
+        "amount": 70,
+        "amountTo": 0.2542869,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T14:18:04.618Z",
+        "depositAddress": "0xeEa2395f5A95A143110ce9A9b92f90E36C190191",
+        "depositExtraId": null,
+        "withdrawalAddress": "83oDve181Vk95C835VYd7EWZFt3BZ2GNFTzX8vfhaaDfN8bh5psLUrFFBhsw94VzPab3fDVCy4Ts4jXqYMrpXiQ1H2DVZSJ",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00363267,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      },
+      "tx_id": "cfb5cdd503c2b7",
+      "deposit_address": "0xeEa2395f5A95A143110ce9A9b92f90E36C190191",
+      "deposit_extra": null,
+      "status": "expired",
+      "provider_info": {
+        "id": "cfb5cdd503c2b7",
+        "amount": 70,
+        "amountTo": 0.2537192,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T14:18:04.618Z",
+        "depositAddress": "0xeEa2395f5A95A143110ce9A9b92f90E36C190191",
+        "depositExtraId": null,
+        "withdrawalAddress": "83oDve181Vk95C835VYd7EWZFt3BZ2GNFTzX8vfhaaDfN8bh5psLUrFFBhsw94VzPab3fDVCy4Ts4jXqYMrpXiQ1H2DVZSJ",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00362456,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "overdue",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": false,
+      "creating": false,
+      "order": null,
+      "tx_id": "",
+      "status": "pending"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "expired"
+    ],
+    "last_sent_txid": null,
+    "expired": true
+  },
+  "55e5a3ef-ccb9-4a07-8930-5ca8f61a8006": {
+    "id": "55e5a3ef-ccb9-4a07-8930-5ca8f61a8006",
+    "created": 1756045304.347144,
+    "req": {
+      "leg1_provider": "Exolix",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "USDT",
+      "in_network": "ETH",
+      "out_asset": "USDT",
+      "out_network": "ETH",
+      "amount": 70.0,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.0018034505285892122,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 196,
+    "subaddr": "83Y7uJyjvWRhjrJAHPPPZLTBFko1qRxoz1YyJ85J1mtDDYNbvYwffiCS4GRtqGA7QB6sgiWE3CudCTrJ9zp6qc6cLpUJev9",
+    "our_fee_xmr": 0.0018034505285892122,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.0018034505285892122
+    },
+    "leg1": {
+      "provider": "Exolix",
+      "order": {
+        "id": "7611ef9274e9ae",
+        "amount": 70,
+        "amountTo": 0.2543807,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T14:21:26.164Z",
+        "depositAddress": "0xc85c313516602C54ED390D6353d50E035A7d2C29",
+        "depositExtraId": null,
+        "withdrawalAddress": "83Y7uJyjvWRhjrJAHPPPZLTBFko1qRxoz1YyJ85J1mtDDYNbvYwffiCS4GRtqGA7QB6sgiWE3CudCTrJ9zp6qc6cLpUJev9",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00363401,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      },
+      "tx_id": "7611ef9274e9ae",
+      "deposit_address": "0xc85c313516602C54ED390D6353d50E035A7d2C29",
+      "deposit_extra": null,
+      "status": "expired",
+      "provider_info": {
+        "id": "7611ef9274e9ae",
+        "amount": 70,
+        "amountTo": 0.253813,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T14:21:26.164Z",
+        "depositAddress": "0xc85c313516602C54ED390D6353d50E035A7d2C29",
+        "depositExtraId": null,
+        "withdrawalAddress": "83Y7uJyjvWRhjrJAHPPPZLTBFko1qRxoz1YyJ85J1mtDDYNbvYwffiCS4GRtqGA7QB6sgiWE3CudCTrJ9zp6qc6cLpUJev9",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.0036259,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "overdue",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": false,
+      "creating": false,
+      "order": null,
+      "tx_id": "",
+      "status": "pending"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "expired"
+    ],
+    "last_sent_txid": null,
+    "expired": true
+  },
+  "1253ba23-9bb4-46e3-8292-52af8af46513": {
+    "id": "1253ba23-9bb4-46e3-8292-52af8af46513",
+    "created": 1756045624.766617,
+    "req": {
+      "leg1_provider": "Exolix",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "USDT",
+      "in_network": "ETH",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 70.0,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.0024018791803278594,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 197,
+    "subaddr": "85WjMXsrCQbMum8BMNdFTPDocinezt85KQ2FFiN1xPPWEbRiv6BSetF8TVQYkjsRoxYg1r3mG9GXL3YkjXYSnTpbRrvWovm",
+    "our_fee_xmr": 0.0024018791803278594,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.0024018791803278594
+    },
+    "leg1": {
+      "provider": "Exolix",
+      "order": {
+        "id": "392b9217d30f68",
+        "amount": 70,
+        "amountTo": 0.253694,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T14:26:47.897Z",
+        "depositAddress": "0xeF205Dc4CC86286788f7cD2e67782B414Cba76DC",
+        "depositExtraId": null,
+        "withdrawalAddress": "85WjMXsrCQbMum8BMNdFTPDocinezt85KQ2FFiN1xPPWEbRiv6BSetF8TVQYkjsRoxYg1r3mG9GXL3YkjXYSnTpbRrvWovm",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.0036242,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      },
+      "tx_id": "392b9217d30f68",
+      "deposit_address": "0xeF205Dc4CC86286788f7cD2e67782B414Cba76DC",
+      "deposit_extra": null,
+      "status": "expired",
+      "provider_info": {
+        "id": "392b9217d30f68",
+        "amount": 70,
+        "amountTo": 0.2531277,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T14:26:47.897Z",
+        "depositAddress": "0xeF205Dc4CC86286788f7cD2e67782B414Cba76DC",
+        "depositExtraId": null,
+        "withdrawalAddress": "85WjMXsrCQbMum8BMNdFTPDocinezt85KQ2FFiN1xPPWEbRiv6BSetF8TVQYkjsRoxYg1r3mG9GXL3YkjXYSnTpbRrvWovm",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00361611,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "overdue",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": false,
+      "creating": false,
+      "order": null,
+      "tx_id": "",
+      "status": "pending"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "expired"
+    ],
+    "last_sent_txid": null,
+    "expired": true
+  },
+  "74216dd5-2706-4baf-a8c0-f0cd0169ecaf": {
+    "id": "74216dd5-2706-4baf-a8c0-f0cd0169ecaf",
+    "created": 1756045944.9103293,
+    "req": {
+      "leg1_provider": "Exolix",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "USDT",
+      "in_network": "ETH",
+      "out_asset": "USDT",
+      "out_network": "ETH",
+      "amount": 70.0,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.002233904017853894,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 198,
+    "subaddr": "84iBDUJpJds6tE1qFzNBmKZchWvDFYv8tKg21CRqRYgxYxWf6BLMQGWH8QjFDyeV5HgZrDKkWLyc4WRtcyfP9cDQRWSppXQ",
+    "our_fee_xmr": 0.002233904017853894,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.002233904017853894
+    },
+    "leg1": {
+      "provider": "Exolix",
+      "order": {
+        "id": "b58d285dc81abe",
+        "amount": 70,
+        "amountTo": 0.2539495,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T14:32:07.889Z",
+        "depositAddress": "0xdeb9755b6A234599332eB85BFd10181C31755015",
+        "depositExtraId": null,
+        "withdrawalAddress": "84iBDUJpJds6tE1qFzNBmKZchWvDFYv8tKg21CRqRYgxYxWf6BLMQGWH8QjFDyeV5HgZrDKkWLyc4WRtcyfP9cDQRWSppXQ",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00362785,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      },
+      "tx_id": "b58d285dc81abe",
+      "deposit_address": "0xdeb9755b6A234599332eB85BFd10181C31755015",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "b58d285dc81abe",
+        "amount": 71,
+        "amountTo": 0.25700225,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T14:32:07.889Z",
+        "depositAddress": "0xdeb9755b6A234599332eB85BFd10181C31755015",
+        "depositExtraId": null,
+        "withdrawalAddress": "84iBDUJpJds6tE1qFzNBmKZchWvDFYv8tKg21CRqRYgxYxWf6BLMQGWH8QjFDyeV5HgZrDKkWLyc4WRtcyfP9cDQRWSppXQ",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": "0xed603d6fff66ce1ad20e755f858791c718f4da775bb8f8ebbfb6fc48e574c57d",
+          "link": "https://etherscan.io/tx/0xed603d6fff66ce1ad20e755f858791c718f4da775bb8f8ebbfb6fc48e574c57d"
+        },
+        "hashOut": {
+          "hash": "343b9a56110dae3d99b16075c573f69f8882adf6b35da4ad57199331453a296e",
+          "link": "https://monerohash.com/explorer/search?value=343b9a56110dae3d99b16075c573f69f8882adf6b35da4ad57199331453a296e"
+        },
+        "rate": 0.00361975,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "success",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": true,
+      "creating": true,
+      "order": {
+        "fromAmount": 0.25446824598214607,
+        "toAmount": 67.111656,
+        "flow": "standard",
+        "type": "direct",
+        "payinAddress": "8AspfGAUvTAJ76DYu69RgQiGGhxnk7jb87iqTyLzvnsub8w6wKbmnrKLPvmfdknr2oBcMADmXHrWsf3ewaLnfguBEfPN2cf",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "fromCurrency": "xmr",
+        "toCurrency": "usdt",
+        "refundAddress": "84iBDUJpJds6tE1qFzNBmKZchWvDFYv8tKg21CRqRYgxYxWf6BLMQGWH8QjFDyeV5HgZrDKkWLyc4WRtcyfP9cDQRWSppXQ",
+        "id": "6ac2811185df9a",
+        "directedAmount": 0.25446824,
+        "fromNetwork": "xmr",
+        "toNetwork": "eth"
+      },
+      "tx_id": "6ac2811185df9a",
+      "status": "routing_xmr_to_leg2",
+      "provider_info": {
+        "id": "6ac2811185df9a",
+        "status": "finished",
+        "actionsAvailable": false,
+        "fromCurrency": "xmr",
+        "fromNetwork": "xmr",
+        "toCurrency": "usdt",
+        "toNetwork": "eth",
+        "expectedAmountFrom": null,
+        "expectedAmountTo": 67.111656,
+        "amountFrom": 0.25446824,
+        "amountTo": 67.222938,
+        "payinAddress": "8AspfGAUvTAJ76DYu69RgQiGGhxnk7jb87iqTyLzvnsub8w6wKbmnrKLPvmfdknr2oBcMADmXHrWsf3ewaLnfguBEfPN2cf",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "payinExtraId": null,
+        "payoutExtraId": null,
+        "refundAddress": "84iBDUJpJds6tE1qFzNBmKZchWvDFYv8tKg21CRqRYgxYxWf6BLMQGWH8QjFDyeV5HgZrDKkWLyc4WRtcyfP9cDQRWSppXQ",
+        "refundExtraId": null,
+        "createdAt": "2025-08-24T15:06:34.409Z",
+        "updatedAt": "2025-08-24T15:15:51.513Z",
+        "validUntil": null,
+        "depositReceivedAt": "2025-08-24T15:13:52.031Z",
+        "payinHash": "5ce80b05003b98201a87fccbcd1db873547933681699c743e073ce6c9fcb7f86",
+        "payoutHash": "0x7e177a3a6eecba69a4049022c9283b2026afb3b191393c0e5d040c85af88f91a",
+        "fromLegacyTicker": "xmr",
+        "toLegacyTicker": "usdterc20",
+        "refundHash": null,
+        "refundAmount": null,
+        "userId": null,
+        "originalExchangeInfo": null,
+        "relatedExchangesInfo": [],
+        "repeatedExchangesInfo": []
+      }
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "routing_xmr_to_leg2"
+    ],
+    "last_sent_txid": "5ce80b05003b98201a87fccbcd1db873547933681699c743e073ce6c9fcb7f86"
+  },
+  "70156ef5-537e-4e8d-a3ea-e3073827ed2e": {
+    "id": "70156ef5-537e-4e8d-a3ea-e3073827ed2e",
+    "created": 1756048825.0407896,
+    "req": {
+      "leg1_provider": "Exolix",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "USDT",
+      "in_network": "ETH",
+      "out_asset": "USDT",
+      "out_network": "ETH",
+      "amount": 70.0,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.002216379908592303,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 199,
+    "subaddr": "87ziWuRYRhNAYhznUkczr6EHgp35bN9SRhnp46ybBTonZwTinome3aq67gf1iQsFySidof3Q4NP3DJYQWhx9bLP5FHLuBgu",
+    "our_fee_xmr": 0.002216379908592303,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.002216379908592303
+    },
+    "leg1": {
+      "provider": "Exolix",
+      "order": {
+        "id": "1fbf7d1bb4d25a",
+        "amount": 70,
+        "amountTo": 0.2537409,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T15:20:08.446Z",
+        "depositAddress": "0x4753b6444a08a61417D56fd9D8a56989Fdd49ed9",
+        "depositExtraId": null,
+        "withdrawalAddress": "87ziWuRYRhNAYhznUkczr6EHgp35bN9SRhnp46ybBTonZwTinome3aq67gf1iQsFySidof3Q4NP3DJYQWhx9bLP5FHLuBgu",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00362487,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      },
+      "tx_id": "1fbf7d1bb4d25a",
+      "deposit_address": "0x4753b6444a08a61417D56fd9D8a56989Fdd49ed9",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "1fbf7d1bb4d25a",
+        "amount": 70,
+        "amountTo": 0.2527182,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T15:20:08.446Z",
+        "depositAddress": "0x4753b6444a08a61417D56fd9D8a56989Fdd49ed9",
+        "depositExtraId": null,
+        "withdrawalAddress": "87ziWuRYRhNAYhznUkczr6EHgp35bN9SRhnp46ybBTonZwTinome3aq67gf1iQsFySidof3Q4NP3DJYQWhx9bLP5FHLuBgu",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": "0xffab324d9ab7a62fdee93d2101cc0294164b349a61917b71d23acd626c05288d",
+          "link": "https://etherscan.io/tx/0xffab324d9ab7a62fdee93d2101cc0294164b349a61917b71d23acd626c05288d"
+        },
+        "hashOut": {
+          "hash": "8d2e1c923e5d163108fca229a11690a4e66e794c65a109e600df92c36bacc54d",
+          "link": "https://monerohash.com/explorer/search?value=8d2e1c923e5d163108fca229a11690a4e66e794c65a109e600df92c36bacc54d"
+        },
+        "rate": 0.00361026,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "success",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": true,
+      "creating": true,
+      "order": {
+        "fromAmount": 0.2502014800914077,
+        "toAmount": 66.340334,
+        "flow": "standard",
+        "type": "direct",
+        "payinAddress": "82WrmtZKxBMbeZuowDLvjPEQjvpjseW1aNoMBWk1PeKsU9RPjNjsCk35Ty5VGwvuiYf9akwSk34ueEn4mN6Qi3ve7k6fpPU",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "fromCurrency": "xmr",
+        "toCurrency": "usdt",
+        "refundAddress": "87ziWuRYRhNAYhznUkczr6EHgp35bN9SRhnp46ybBTonZwTinome3aq67gf1iQsFySidof3Q4NP3DJYQWhx9bLP5FHLuBgu",
+        "id": "a2d4a64731a794",
+        "directedAmount": 0.25020148,
+        "fromNetwork": "xmr",
+        "toNetwork": "eth"
+      },
+      "tx_id": "a2d4a64731a794",
+      "status": "routing_xmr_to_leg2",
+      "provider_info": {
+        "id": "a2d4a64731a794",
+        "status": "finished",
+        "actionsAvailable": false,
+        "fromCurrency": "xmr",
+        "fromNetwork": "xmr",
+        "toCurrency": "usdt",
+        "toNetwork": "eth",
+        "expectedAmountFrom": null,
+        "expectedAmountTo": 66.340334,
+        "amountFrom": 0.25020148,
+        "amountTo": 66.281729,
+        "payinAddress": "82WrmtZKxBMbeZuowDLvjPEQjvpjseW1aNoMBWk1PeKsU9RPjNjsCk35Ty5VGwvuiYf9akwSk34ueEn4mN6Qi3ve7k6fpPU",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "payinExtraId": null,
+        "payoutExtraId": null,
+        "refundAddress": "87ziWuRYRhNAYhznUkczr6EHgp35bN9SRhnp46ybBTonZwTinome3aq67gf1iQsFySidof3Q4NP3DJYQWhx9bLP5FHLuBgu",
+        "refundExtraId": null,
+        "createdAt": "2025-08-24T15:56:38.155Z",
+        "updatedAt": "2025-08-24T16:03:02.097Z",
+        "validUntil": null,
+        "depositReceivedAt": "2025-08-24T16:01:29.642Z",
+        "payinHash": "7750ff5ac59146be8243138c855114d9624be0ac26e530ab57a1783d05eb7440",
+        "payoutHash": "0xe83877b1bfbea537c7f3434dac05281dc94ce606999d31b6161f685353c75017",
+        "fromLegacyTicker": "xmr",
+        "toLegacyTicker": "usdterc20",
+        "refundHash": null,
+        "refundAmount": null,
+        "userId": null,
+        "originalExchangeInfo": null,
+        "relatedExchangesInfo": [],
+        "repeatedExchangesInfo": []
+      }
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "routing_xmr_to_leg2"
+    ],
+    "last_sent_txid": "7750ff5ac59146be8243138c855114d9624be0ac26e530ab57a1783d05eb7440"
+  },
+  "27791746-3eef-4cbd-b921-8d9edfbeda61": {
+    "id": "27791746-3eef-4cbd-b921-8d9edfbeda61",
+    "created": 1756051752.1277568,
+    "req": {
+      "leg1_provider": "Exolix",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "USDT",
+      "in_network": "ETH",
+      "out_asset": "USDT",
+      "out_network": "ETH",
+      "amount": 65.0,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.0020690268923926614,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 200,
+    "subaddr": "87R92R5Vfi2NFVRjcYh3Z3UFFwCV85XgR292kJ4hLa3igWuRHVm9wKxA7sd11q8nDuHgePLFjRQkh4VjxxCcK9dYFLRSFPA",
+    "our_fee_xmr": 0.0020690268923926614,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.0020690268923926614
+    },
+    "leg1": {
+      "provider": "Exolix",
+      "order": {
+        "id": "abc700895565de",
+        "amount": 65,
+        "amountTo": 0.2343224,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T16:08:55.916Z",
+        "depositAddress": "0x2648658AC8124f673F3C32213a9F62267c626346",
+        "depositExtraId": null,
+        "withdrawalAddress": "87R92R5Vfi2NFVRjcYh3Z3UFFwCV85XgR292kJ4hLa3igWuRHVm9wKxA7sd11q8nDuHgePLFjRQkh4VjxxCcK9dYFLRSFPA",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00360496,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      },
+      "tx_id": "abc700895565de",
+      "deposit_address": "0x2648658AC8124f673F3C32213a9F62267c626346",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "abc700895565de",
+        "amount": 66,
+        "amountTo": 0.23572362,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T16:08:55.916Z",
+        "depositAddress": "0x2648658AC8124f673F3C32213a9F62267c626346",
+        "depositExtraId": null,
+        "withdrawalAddress": "87R92R5Vfi2NFVRjcYh3Z3UFFwCV85XgR292kJ4hLa3igWuRHVm9wKxA7sd11q8nDuHgePLFjRQkh4VjxxCcK9dYFLRSFPA",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": "0x17663fbf9ee2186dd48b31552b6043caae8a0e759674f98415da8237646fc678",
+          "link": "https://etherscan.io/tx/0x17663fbf9ee2186dd48b31552b6043caae8a0e759674f98415da8237646fc678"
+        },
+        "hashOut": {
+          "hash": "3b05cf89413879608f4fe94572a1b0e9a49ba5ab42502b2b991bca83b004f732",
+          "link": "https://monerohash.com/explorer/search?value=3b05cf89413879608f4fe94572a1b0e9a49ba5ab42502b2b991bca83b004f732"
+        },
+        "rate": 0.00357157,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "success",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": true,
+      "creating": true,
+      "order": {
+        "fromAmount": 0.23335448310760734,
+        "toAmount": 63.511879,
+        "flow": "standard",
+        "type": "direct",
+        "payinAddress": "86Gp8zJq82J1StqWcvBkBv2wJ48T4UA3AS9YVX2Qg9HqEEWqndwsC6mKkCWxvJGhPLAmXkfLiQQ874vEDTr1nNP1JfZRRC7",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "fromCurrency": "xmr",
+        "toCurrency": "usdt",
+        "refundAddress": "87R92R5Vfi2NFVRjcYh3Z3UFFwCV85XgR292kJ4hLa3igWuRHVm9wKxA7sd11q8nDuHgePLFjRQkh4VjxxCcK9dYFLRSFPA",
+        "id": "4559ad46d3a867",
+        "directedAmount": 0.23335448,
+        "fromNetwork": "xmr",
+        "toNetwork": "eth"
+      },
+      "tx_id": "4559ad46d3a867",
+      "status": "routing_xmr_to_leg2",
+      "provider_info": {
+        "id": "4559ad46d3a867",
+        "status": "finished",
+        "actionsAvailable": false,
+        "fromCurrency": "xmr",
+        "fromNetwork": "xmr",
+        "toCurrency": "usdt",
+        "toNetwork": "eth",
+        "expectedAmountFrom": null,
+        "expectedAmountTo": 63.511879,
+        "amountFrom": 0.23335448,
+        "amountTo": 63.513901,
+        "payinAddress": "86Gp8zJq82J1StqWcvBkBv2wJ48T4UA3AS9YVX2Qg9HqEEWqndwsC6mKkCWxvJGhPLAmXkfLiQQ874vEDTr1nNP1JfZRRC7",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "payinExtraId": null,
+        "payoutExtraId": null,
+        "refundAddress": "87R92R5Vfi2NFVRjcYh3Z3UFFwCV85XgR292kJ4hLa3igWuRHVm9wKxA7sd11q8nDuHgePLFjRQkh4VjxxCcK9dYFLRSFPA",
+        "refundExtraId": null,
+        "createdAt": "2025-08-24T16:32:54.724Z",
+        "updatedAt": "2025-08-24T16:42:06.379Z",
+        "validUntil": null,
+        "depositReceivedAt": "2025-08-24T16:40:26.860Z",
+        "payinHash": "ebdf37b6d8bfbb24c592bb5759125d11739dbff6528b117a0df622a4f796d09f",
+        "payoutHash": "0x97ce751da60065435c22a42593a2231873d45cdd9e0c7fe0f2d55493bae58a59",
+        "fromLegacyTicker": "xmr",
+        "toLegacyTicker": "usdterc20",
+        "refundHash": null,
+        "refundAmount": null,
+        "userId": null,
+        "originalExchangeInfo": null,
+        "relatedExchangesInfo": [],
+        "repeatedExchangesInfo": []
+      }
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "routing_xmr_to_leg2"
+    ],
+    "last_sent_txid": "ebdf37b6d8bfbb24c592bb5759125d11739dbff6528b117a0df622a4f796d09f"
+  },
+  "5eb91242-1263-46c0-a0d5-fa865524a496": {
+    "id": "5eb91242-1263-46c0-a0d5-fa865524a496",
+    "created": 1756054206.324794,
+    "req": {
+      "leg1_provider": "StealthEX",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "ETH",
+      "in_network": "ETH",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 0.01,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.011793816096036386,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 201,
+    "subaddr": "8BTbTgScWVcDqdPj6NAzBuSveCBr1NRXDL7hCZyuzdCXW8LTnjHRaNrCcJagdjGCSgTKLm6dpfYJPb9dB7AvsnkAUMJVZWi",
+    "our_fee_xmr": 0.011793816096036386,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.011793816096036386
+    },
+    "leg1": {
+      "provider": "StealthEX",
+      "order": {
+        "id": "MZDQ2ZtF9",
+        "depositAddress": "0x838b7f892F9E646295b5C64a2D902a85aCda76Ef",
+        "depositExtraId": null,
+        "_raw": {
+          "id": "MZDQ2ZtF9",
+          "status": "waiting",
+          "rate": "floating",
+          "deposit": {
+            "symbol": "eth",
+            "network": "mainnet",
+            "amount": 0.01,
+            "expected_amount": 0.01,
+            "address": "0x838b7f892F9E646295b5C64a2D902a85aCda76Ef",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": "https://blockchair.com/ethereum/address/0x838b7f892F9E646295b5C64a2D902a85aCda76Ef",
+            "tx_explorer_url": null
+          },
+          "withdrawal": {
+            "symbol": "xmr",
+            "network": "mainnet",
+            "amount": 0.1589921,
+            "expected_amount": 0.1589921,
+            "address": "8BTbTgScWVcDqdPj6NAzBuSveCBr1NRXDL7hCZyuzdCXW8LTnjHRaNrCcJagdjGCSgTKLm6dpfYJPb9dB7AvsnkAUMJVZWi",
+            "extra_id": null,
+            "tx_hash": null,
+            "address_explorer_url": null,
+            "tx_explorer_url": null
+          },
+          "refund_address": null,
+          "refund_extra_id": null,
+          "created_at": "2025-08-24T16:49:49.750Z",
+          "expires_at": null
+        }
+      },
+      "tx_id": "MZDQ2ZtF9",
+      "deposit_address": "0x838b7f892F9E646295b5C64a2D902a85aCda76Ef",
+      "deposit_extra": null,
+      "status": "expired",
+      "provider_info": {
+        "id": "MZDQ2ZtF9",
+        "status": "waiting",
+        "rate": "floating",
+        "deposit": {
+          "symbol": "eth",
+          "network": "mainnet",
+          "amount": 0.01,
+          "expected_amount": 0.01,
+          "address": "0x838b7f892F9E646295b5C64a2D902a85aCda76Ef",
+          "extra_id": null,
+          "tx_hash": null,
+          "address_explorer_url": "https://blockchair.com/ethereum/address/0x838b7f892F9E646295b5C64a2D902a85aCda76Ef",
+          "tx_explorer_url": null
+        },
+        "withdrawal": {
+          "symbol": "xmr",
+          "network": "mainnet",
+          "amount": 0.1589921,
+          "expected_amount": 0.1589921,
+          "address": "8BTbTgScWVcDqdPj6NAzBuSveCBr1NRXDL7hCZyuzdCXW8LTnjHRaNrCcJagdjGCSgTKLm6dpfYJPb9dB7AvsnkAUMJVZWi",
+          "extra_id": null,
+          "tx_hash": null,
+          "address_explorer_url": null,
+          "tx_explorer_url": null
+        },
+        "refund_address": null,
+        "refund_extra_id": null,
+        "created_at": "2025-08-24T16:49:50.000Z",
+        "expires_at": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": false,
+      "creating": false,
+      "order": null,
+      "tx_id": "",
+      "status": "pending"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "expired"
+    ],
+    "last_sent_txid": null,
+    "expired": true
+  },
+  "1ec13a69-11ed-47bc-8a9e-79dbcecbd5ee": {
+    "id": "1ec13a69-11ed-47bc-8a9e-79dbcecbd5ee",
+    "created": 1756055394.646489,
+    "req": {
+      "leg1_provider": "Exolix",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "USDT",
+      "in_network": "ETH",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 65.0,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.0341533995,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 202,
+    "subaddr": "85VFFjGQnVqUtrJ22WuNa47uBkL8cKtdLX64h6vfBk7befXjEa37kQ9igvXNShghiM5cEC5P4gvpdHQ3Sk38VyTw7gLW42T",
+    "our_fee_xmr": 0.0341533995,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.0341533995
+    },
+    "leg1": {
+      "provider": "Exolix",
+      "order": {
+        "id": "cf662650f70347",
+        "amount": 65,
+        "amountTo": 0.2277379,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T17:09:37.863Z",
+        "depositAddress": "0xC25BFB3E45a0C2AAe60eb3E805a013A3cd6d7aFA",
+        "depositExtraId": null,
+        "withdrawalAddress": "85VFFjGQnVqUtrJ22WuNa47uBkL8cKtdLX64h6vfBk7befXjEa37kQ9igvXNShghiM5cEC5P4gvpdHQ3Sk38VyTw7gLW42T",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00350366,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      },
+      "tx_id": "cf662650f70347",
+      "deposit_address": "0xC25BFB3E45a0C2AAe60eb3E805a013A3cd6d7aFA",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "cf662650f70347",
+        "amount": 66,
+        "amountTo": 0.23022846,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T17:09:37.863Z",
+        "depositAddress": "0xC25BFB3E45a0C2AAe60eb3E805a013A3cd6d7aFA",
+        "depositExtraId": null,
+        "withdrawalAddress": "85VFFjGQnVqUtrJ22WuNa47uBkL8cKtdLX64h6vfBk7befXjEa37kQ9igvXNShghiM5cEC5P4gvpdHQ3Sk38VyTw7gLW42T",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": "0x5d70025ffb41b2023dafe274ab5c36218032b9062c5ec46daaea37125f976c71",
+          "link": "https://etherscan.io/tx/0x5d70025ffb41b2023dafe274ab5c36218032b9062c5ec46daaea37125f976c71"
+        },
+        "hashOut": {
+          "hash": "43aa9bd3fafc797cb1fd59e08288f236a85609e3cbb2acdef075bd83229033b8",
+          "link": "https://monerohash.com/explorer/search?value=43aa9bd3fafc797cb1fd59e08288f236a85609e3cbb2acdef075bd83229033b8"
+        },
+        "rate": 0.00348831,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "success",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": true,
+      "creating": true,
+      "order": {
+        "fromAmount": 0.1957751005,
+        "toAmount": 0.0107817,
+        "flow": "standard",
+        "type": "direct",
+        "payinAddress": "8Btd1zMBAPSaB6un6gdzSSZVoFjGL4jc39gYyGYQGmyDMvAUxnmtnHMUjM26nxrXox18W6aUzLwhj5DiuwbjMbPTNSsWQ7v",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "fromCurrency": "xmr",
+        "toCurrency": "eth",
+        "refundAddress": "85VFFjGQnVqUtrJ22WuNa47uBkL8cKtdLX64h6vfBk7befXjEa37kQ9igvXNShghiM5cEC5P4gvpdHQ3Sk38VyTw7gLW42T",
+        "id": "cbb99557b3179c",
+        "directedAmount": 0.1957751,
+        "fromNetwork": "xmr",
+        "toNetwork": "eth"
+      },
+      "tx_id": "cbb99557b3179c",
+      "status": "routing_xmr_to_leg2",
+      "provider_info": {
+        "id": "cbb99557b3179c",
+        "status": "finished",
+        "actionsAvailable": false,
+        "fromCurrency": "xmr",
+        "fromNetwork": "xmr",
+        "toCurrency": "eth",
+        "toNetwork": "eth",
+        "expectedAmountFrom": null,
+        "expectedAmountTo": 0.0107817,
+        "amountFrom": 0.1957751,
+        "amountTo": 0.0109074,
+        "payinAddress": "8Btd1zMBAPSaB6un6gdzSSZVoFjGL4jc39gYyGYQGmyDMvAUxnmtnHMUjM26nxrXox18W6aUzLwhj5DiuwbjMbPTNSsWQ7v",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "payinExtraId": null,
+        "payoutExtraId": null,
+        "refundAddress": "85VFFjGQnVqUtrJ22WuNa47uBkL8cKtdLX64h6vfBk7befXjEa37kQ9igvXNShghiM5cEC5P4gvpdHQ3Sk38VyTw7gLW42T",
+        "refundExtraId": null,
+        "createdAt": "2025-08-24T17:45:41.398Z",
+        "updatedAt": "2025-08-24T17:51:37.302Z",
+        "validUntil": null,
+        "depositReceivedAt": "2025-08-24T17:49:58.444Z",
+        "payinHash": "1b36d942b9d751973fc344341de7267cb3bbc97bc5c2f89880542d33fcaad251",
+        "payoutHash": "0xb369e7cf30893328bd9624cf439e71e3949d48e4d4f06549bff911dc9af04c24",
+        "fromLegacyTicker": "xmr",
+        "toLegacyTicker": "eth",
+        "refundHash": null,
+        "refundAmount": null,
+        "userId": null,
+        "originalExchangeInfo": null,
+        "relatedExchangesInfo": [],
+        "repeatedExchangesInfo": []
+      }
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "routing_xmr_to_leg2"
+    ],
+    "last_sent_txid": "1b36d942b9d751973fc344341de7267cb3bbc97bc5c2f89880542d33fcaad251"
+  },
+  "684e465c-6a97-4190-9ffd-672198092529": {
+    "id": "684e465c-6a97-4190-9ffd-672198092529",
+    "created": 1756058982.1311185,
+    "req": {
+      "leg1_provider": "ChangeNOW",
+      "leg2_provider": "Exolix",
+      "in_asset": "ETH",
+      "in_network": "ETH",
+      "out_asset": "USDT",
+      "out_network": "ETH",
+      "amount": 0.015,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.011793456082503179,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 203,
+    "subaddr": "88D88izcHEzK46jVvDZZhubYbjWP66SzeCCQHJ7pWFRK93rdjfCVkcvQSwtTxNkWtQPovjQ21wnbYaU5B4i2svJt3moZV2V",
+    "our_fee_xmr": 0.011793456082503179,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.011793456082503179
+    },
+    "leg1": {
+      "provider": "ChangeNOW",
+      "order": {
+        "fromAmount": 0.015,
+        "toAmount": 0.2459092,
+        "flow": "standard",
+        "type": "direct",
+        "payinAddress": "0x12Da24D102890cec1C74a2755FdA35F2b90596E6",
+        "payoutAddress": "88D88izcHEzK46jVvDZZhubYbjWP66SzeCCQHJ7pWFRK93rdjfCVkcvQSwtTxNkWtQPovjQ21wnbYaU5B4i2svJt3moZV2V",
+        "fromCurrency": "eth",
+        "toCurrency": "xmr",
+        "id": "2bd11e2f584927",
+        "directedAmount": 0.015,
+        "fromNetwork": "eth",
+        "toNetwork": "xmr"
+      },
+      "tx_id": "2bd11e2f584927",
+      "deposit_address": "0x12Da24D102890cec1C74a2755FdA35F2b90596E6",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "2bd11e2f584927",
+        "status": "finished",
+        "actionsAvailable": false,
+        "fromCurrency": "eth",
+        "fromNetwork": "eth",
+        "toCurrency": "xmr",
+        "toNetwork": "xmr",
+        "expectedAmountFrom": null,
+        "expectedAmountTo": 0.2459092,
+        "amountFrom": 0.015,
+        "amountTo": 0.24809669,
+        "payinAddress": "0x12Da24D102890cec1C74a2755FdA35F2b90596E6",
+        "payoutAddress": "88D88izcHEzK46jVvDZZhubYbjWP66SzeCCQHJ7pWFRK93rdjfCVkcvQSwtTxNkWtQPovjQ21wnbYaU5B4i2svJt3moZV2V",
+        "payinExtraId": null,
+        "payoutExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "createdAt": "2025-08-24T18:09:25.525Z",
+        "updatedAt": "2025-08-24T19:35:55.416Z",
+        "validUntil": null,
+        "depositReceivedAt": "2025-08-24T19:30:02.515Z",
+        "payinHash": "0xf08d3d9cb34bb3acf3374b2d00a32b823649cb6d5a3d89e3279738a7ab24464f",
+        "payoutHash": "96acc3de25302fd1c668f4aa653bd2319e47bd4474f802e431cd15b1d8fc0c03",
+        "fromLegacyTicker": "eth",
+        "toLegacyTicker": "xmr",
+        "refundHash": null,
+        "refundAmount": null,
+        "userId": null,
+        "originalExchangeInfo": null,
+        "relatedExchangesInfo": [],
+        "repeatedExchangesInfo": []
+      }
+    },
+    "leg2": {
+      "provider": "Exolix",
+      "created": true,
+      "creating": true,
+      "order": {
+        "id": "57fccd6d10febb",
+        "amount": 0.23600323,
+        "amountTo": 63.93640677,
+        "coinFrom": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "coinTo": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T19:52:17.055Z",
+        "depositAddress": "88o9xQv326rijN8TfRoAGUQmtpG4r2TKYMcdh6vazMZ9Qu9k84UQsUzA4HXwBZki9HUDNosMc3VpfAzrQBnztWkB4vcMEWD",
+        "depositExtraId": null,
+        "withdrawalAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 270.91327,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      },
+      "tx_id": "57fccd6d10febb",
+      "status": "routing_xmr_to_leg2",
+      "provider_info": {
+        "id": "57fccd6d10febb",
+        "amount": 0.23600323,
+        "amountTo": 62.87239801,
+        "coinFrom": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "coinTo": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T19:52:17.055Z",
+        "depositAddress": "88o9xQv326rijN8TfRoAGUQmtpG4r2TKYMcdh6vazMZ9Qu9k84UQsUzA4HXwBZki9HUDNosMc3VpfAzrQBnztWkB4vcMEWD",
+        "depositExtraId": null,
+        "withdrawalAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": "28eb517e802e16ab45d4c271fecb5a4e94a42246fadc5b5968bab8bbcb100ac9",
+          "link": "https://monerohash.com/explorer/search?value=28eb517e802e16ab45d4c271fecb5a4e94a42246fadc5b5968bab8bbcb100ac9"
+        },
+        "hashOut": {
+          "hash": "0x5464428fd5d26d83d7aec8d3dcfe3998e02d5104a6056a9dd6dd5f1f794291e0",
+          "link": "https://etherscan.io/tx/0x5464428fd5d26d83d7aec8d3dcfe3998e02d5104a6056a9dd6dd5f1f794291e0"
+        },
+        "rate": 266.40482,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "success",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      }
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "routing_xmr_to_leg2"
+    ],
+    "last_sent_txid": "28eb517e802e16ab45d4c271fecb5a4e94a42246fadc5b5968bab8bbcb100ac9"
+  },
+  "0805a572-0d77-4f5f-817d-7156ba68846f": {
+    "id": "0805a572-0d77-4f5f-817d-7156ba68846f",
+    "created": 1756065763.8340023,
+    "req": {
+      "leg1_provider": "Exolix",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "USDT",
+      "in_network": "ETH",
+      "out_asset": "USDT",
+      "out_network": "ETH",
+      "amount": 65.0,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.010771283730255182,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 204,
+    "subaddr": "86GFyaWbGLLg6qgPrJfFsfEnmKgbKNJAq51J9d1jjtCfi4eSanN7yrR1zTfe59iuTjaRQSgKesmuuieecYzN4xuY7ywPmvb",
+    "our_fee_xmr": 0.010771283730255182,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.010771283730255182
+    },
+    "leg1": {
+      "provider": "Exolix",
+      "order": {
+        "id": "5f13fd07299405",
+        "amount": 65,
+        "amountTo": 0.2214576,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T20:02:26.612Z",
+        "depositAddress": "0xfa6462AB27560E80BFeEC3B7B9e44515647f7a33",
+        "depositExtraId": null,
+        "withdrawalAddress": "86GFyaWbGLLg6qgPrJfFsfEnmKgbKNJAq51J9d1jjtCfi4eSanN7yrR1zTfe59iuTjaRQSgKesmuuieecYzN4xuY7ywPmvb",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00340704,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      },
+      "tx_id": "5f13fd07299405",
+      "deposit_address": "0xfa6462AB27560E80BFeEC3B7B9e44515647f7a33",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "5f13fd07299405",
+        "amount": 65,
+        "amountTo": 0.21686405,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T20:02:26.612Z",
+        "depositAddress": "0xfa6462AB27560E80BFeEC3B7B9e44515647f7a33",
+        "depositExtraId": null,
+        "withdrawalAddress": "86GFyaWbGLLg6qgPrJfFsfEnmKgbKNJAq51J9d1jjtCfi4eSanN7yrR1zTfe59iuTjaRQSgKesmuuieecYzN4xuY7ywPmvb",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": "0x3f1485e885a4b71a91e3cf09e8c083fb80f4fa9cd23b0d12916e86b648e29c36",
+          "link": "https://etherscan.io/tx/0x3f1485e885a4b71a91e3cf09e8c083fb80f4fa9cd23b0d12916e86b648e29c36"
+        },
+        "hashOut": {
+          "hash": "9bc93fe703fc2a9fc084a5e651cc8809ea9df12178593e75eebe9cf07ceb30dd",
+          "link": "https://monerohash.com/explorer/search?value=9bc93fe703fc2a9fc084a5e651cc8809ea9df12178593e75eebe9cf07ceb30dd"
+        },
+        "rate": 0.00333637,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "success",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": true,
+      "creating": true,
+      "order": {
+        "fromAmount": 0.2057924762697448,
+        "toAmount": 54.89954,
+        "flow": "standard",
+        "type": "direct",
+        "payinAddress": "8BPUJekwKJ8Br8bLpjFRAWe6psSQZhFW6HELsJywFdLcP1HSTCfTWTP2hHbrXjpwkBAxBTbUE8HhbiezFXfyyNL2Fh9tLCY",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "fromCurrency": "xmr",
+        "toCurrency": "usdt",
+        "refundAddress": "86GFyaWbGLLg6qgPrJfFsfEnmKgbKNJAq51J9d1jjtCfi4eSanN7yrR1zTfe59iuTjaRQSgKesmuuieecYzN4xuY7ywPmvb",
+        "id": "cea503b5bbd7b2",
+        "directedAmount": 0.20579247,
+        "fromNetwork": "xmr",
+        "toNetwork": "eth"
+      },
+      "tx_id": "cea503b5bbd7b2",
+      "status": "routing_xmr_to_leg2",
+      "provider_info": {
+        "id": "cea503b5bbd7b2",
+        "status": "finished",
+        "actionsAvailable": false,
+        "fromCurrency": "xmr",
+        "fromNetwork": "xmr",
+        "toCurrency": "usdt",
+        "toNetwork": "eth",
+        "expectedAmountFrom": null,
+        "expectedAmountTo": 54.89954,
+        "amountFrom": 0.20579247,
+        "amountTo": 54.491668,
+        "payinAddress": "8BPUJekwKJ8Br8bLpjFRAWe6psSQZhFW6HELsJywFdLcP1HSTCfTWTP2hHbrXjpwkBAxBTbUE8HhbiezFXfyyNL2Fh9tLCY",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "payinExtraId": null,
+        "payoutExtraId": null,
+        "refundAddress": "86GFyaWbGLLg6qgPrJfFsfEnmKgbKNJAq51J9d1jjtCfi4eSanN7yrR1zTfe59iuTjaRQSgKesmuuieecYzN4xuY7ywPmvb",
+        "refundExtraId": null,
+        "createdAt": "2025-08-24T20:04:52.134Z",
+        "updatedAt": "2025-08-24T20:11:50.353Z",
+        "validUntil": null,
+        "depositReceivedAt": "2025-08-24T20:09:55.134Z",
+        "payinHash": "1640584ecb9562fe08bb08411cebb5464274cd21e8b15d44d39888947e1b62f5",
+        "payoutHash": "0x09b3a7f746aedc0210e66170ba961bc296885d51f1bfb6f0623e02b25aaf2620",
+        "fromLegacyTicker": "xmr",
+        "toLegacyTicker": "usdterc20",
+        "refundHash": null,
+        "refundAmount": null,
+        "userId": null,
+        "originalExchangeInfo": null,
+        "relatedExchangesInfo": [],
+        "repeatedExchangesInfo": []
+      }
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "routing_xmr_to_leg2"
+    ],
+    "last_sent_txid": "1640584ecb9562fe08bb08411cebb5464274cd21e8b15d44d39888947e1b62f5"
+  },
+  "7e86c621-4f51-4d97-9a2f-23e4bce5fa0a": {
+    "id": "7e86c621-4f51-4d97-9a2f-23e4bce5fa0a",
+    "created": 1756066243.7281194,
+    "req": {
+      "leg1_provider": "Exolix",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "USDT",
+      "in_network": "TRX",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 55.0,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.009745601454050568,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 205,
+    "subaddr": "86sttUKe3coDb6ejERiBdA1eZxsVDnR3PX9Jz8V9VipmKzTNvovtzbjYYTr8Y8eDosPiJCv41a9XFFXB9XsWqNH4S1ZHURn",
+    "our_fee_xmr": 0.009745601454050568,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.009745601454050568
+    },
+    "leg1": {
+      "provider": "Exolix",
+      "order": {
+        "id": "223733c9ddd761",
+        "amount": 55,
+        "amountTo": 0.18702915,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "TRX",
+          "networkName": "Tron",
+          "networkShortName": "TRC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/TRX.png",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T20:10:27.513Z",
+        "depositAddress": "TQrubsceEJeXAJMABYscvRofQqk6818brK",
+        "depositExtraId": null,
+        "withdrawalAddress": "86sttUKe3coDb6ejERiBdA1eZxsVDnR3PX9Jz8V9VipmKzTNvovtzbjYYTr8Y8eDosPiJCv41a9XFFXB9XsWqNH4S1ZHURn",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00340053,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      },
+      "tx_id": "223733c9ddd761",
+      "deposit_address": "TQrubsceEJeXAJMABYscvRofQqk6818brK",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "223733c9ddd761",
+        "amount": 55,
+        "amountTo": 0.18702915,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "TRX",
+          "networkName": "Tron",
+          "networkShortName": "TRC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/TRX.png",
+          "contract": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T20:10:27.513Z",
+        "depositAddress": "TQrubsceEJeXAJMABYscvRofQqk6818brK",
+        "depositExtraId": null,
+        "withdrawalAddress": "86sttUKe3coDb6ejERiBdA1eZxsVDnR3PX9Jz8V9VipmKzTNvovtzbjYYTr8Y8eDosPiJCv41a9XFFXB9XsWqNH4S1ZHURn",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00340053,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": false,
+      "creating": false,
+      "order": null,
+      "tx_id": "",
+      "status": "pending"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit"
+    ],
+    "last_sent_txid": null
+  },
+  "01b4f8bf-06b4-4b46-ab3f-483ef9569bd9": {
+    "id": "01b4f8bf-06b4-4b46-ab3f-483ef9569bd9",
+    "created": 1756066358.045379,
+    "req": {
+      "leg1_provider": "ChangeNOW",
+      "leg2_provider": "Exolix",
+      "in_asset": "ETH",
+      "in_network": "ETH",
+      "out_asset": "ETH",
+      "out_network": "ETH",
+      "amount": 0.1,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.20090070000000004,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 206,
+    "subaddr": "87CSQBxZv3FVXx4KAM6YAmTDo3WHBrEh3GP2ksF5rRLBVcoSrZUqPMD2GjTtrwQhmkcaoKbX8Ktp5K1AKKLG6uyG34FCjrF",
+    "our_fee_xmr": 0.20090070000000004,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.20090070000000004
+    },
+    "leg1": {
+      "provider": "ChangeNOW",
+      "order": {
+        "fromAmount": 0.1,
+        "toAmount": 1.675069,
+        "flow": "standard",
+        "type": "direct",
+        "payinAddress": "0x4acE79BB3655Fe2725E5Af7fe886545f99113961",
+        "payoutAddress": "87CSQBxZv3FVXx4KAM6YAmTDo3WHBrEh3GP2ksF5rRLBVcoSrZUqPMD2GjTtrwQhmkcaoKbX8Ktp5K1AKKLG6uyG34FCjrF",
+        "fromCurrency": "eth",
+        "toCurrency": "xmr",
+        "id": "cf1c7c7af10754",
+        "directedAmount": 0.1,
+        "fromNetwork": "eth",
+        "toNetwork": "xmr"
+      },
+      "tx_id": "cf1c7c7af10754",
+      "deposit_address": "0x4acE79BB3655Fe2725E5Af7fe886545f99113961",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "cf1c7c7af10754",
+        "status": "waiting",
+        "actionsAvailable": false,
+        "fromCurrency": "eth",
+        "fromNetwork": "eth",
+        "toCurrency": "xmr",
+        "toNetwork": "xmr",
+        "expectedAmountFrom": 0.1,
+        "expectedAmountTo": 1.675069,
+        "amountFrom": null,
+        "amountTo": null,
+        "payinAddress": "0x4acE79BB3655Fe2725E5Af7fe886545f99113961",
+        "payoutAddress": "87CSQBxZv3FVXx4KAM6YAmTDo3WHBrEh3GP2ksF5rRLBVcoSrZUqPMD2GjTtrwQhmkcaoKbX8Ktp5K1AKKLG6uyG34FCjrF",
+        "payinExtraId": null,
+        "payoutExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "createdAt": "2025-08-24T20:12:21.873Z",
+        "updatedAt": "2025-08-24T20:12:21.873Z",
+        "validUntil": null,
+        "depositReceivedAt": null,
+        "payinHash": null,
+        "payoutHash": null,
+        "fromLegacyTicker": "eth",
+        "toLegacyTicker": "xmr",
+        "refundHash": null,
+        "refundAmount": null,
+        "userId": null,
+        "originalExchangeInfo": null,
+        "relatedExchangesInfo": [],
+        "repeatedExchangesInfo": []
+      }
+    },
+    "leg2": {
+      "provider": "Exolix",
+      "created": false,
+      "creating": false,
+      "order": null,
+      "tx_id": "",
+      "status": "pending"
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit"
+    ],
+    "last_sent_txid": null
+  },
+  "faf9a173-8dc9-4fa0-a95d-14c686c59ea5": {
+    "id": "faf9a173-8dc9-4fa0-a95d-14c686c59ea5",
+    "created": 1756066860.5029948,
+    "req": {
+      "leg1_provider": "Exolix",
+      "leg2_provider": "ChangeNOW",
+      "in_asset": "USDT",
+      "in_network": "ETH",
+      "out_asset": "USDT",
+      "out_network": "ETH",
+      "amount": 55.0,
+      "payout_address": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+      "rate_type": "float",
+      "our_fee_xmr": 0.00945285984954325,
+      "refund_address_user": null,
+      "provider_spread_xmr": null
+    },
+    "user_refund_address": null,
+    "subaddr_index": 207,
+    "subaddr": "88ff5mjEaNRcX1CB2sgkVr9rNLAxSJFawVoyH2QRR2G3fejB2LX3nQe2QQFxZ6jUVjfeGnMx6GX7TYLoz2u6t4Ff4z2Mdx1",
+    "our_fee_xmr": 0.00945285984954325,
+    "fee": {
+      "provider_spread_xmr": 0.0,
+      "our_fee_xmr": 0.00945285984954325
+    },
+    "leg1": {
+      "provider": "Exolix",
+      "order": {
+        "id": "5699033c91a63c",
+        "amount": 55,
+        "amountTo": 0.1875687,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T20:20:43.759Z",
+        "depositAddress": "0xdC594BFc5917a68AF73ad9690CF5AFB4EC055191",
+        "depositExtraId": null,
+        "withdrawalAddress": "88ff5mjEaNRcX1CB2sgkVr9rNLAxSJFawVoyH2QRR2G3fejB2LX3nQe2QQFxZ6jUVjfeGnMx6GX7TYLoz2u6t4Ff4z2Mdx1",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": null,
+          "link": null
+        },
+        "hashOut": {
+          "hash": null,
+          "link": null
+        },
+        "rate": 0.00341034,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "wait",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      },
+      "tx_id": "5699033c91a63c",
+      "deposit_address": "0xdC594BFc5917a68AF73ad9690CF5AFB4EC055191",
+      "deposit_extra": null,
+      "status": "waiting_deposit",
+      "provider_info": {
+        "id": "5699033c91a63c",
+        "amount": 55,
+        "amountTo": 0.1840839,
+        "coinFrom": {
+          "coinCode": "USDT",
+          "coinName": "TetherUS",
+          "network": "ETH",
+          "networkName": "Ethereum",
+          "networkShortName": "ERC20",
+          "icon": "https://exolix.com/icons/coins/USDT.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/ETH.png",
+          "contract": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        "coinTo": {
+          "coinCode": "XMR",
+          "coinName": "Monero",
+          "network": "XMR",
+          "networkName": "Monero",
+          "networkShortName": "XMR",
+          "icon": "https://exolix.com/icons/coins/XMR.png",
+          "memoName": "",
+          "networkIcon": "https://exolix.com/icons/networks/XMR.png",
+          "contract": null
+        },
+        "comment": null,
+        "createdAt": "2025-08-24T20:20:43.759Z",
+        "depositAddress": "0xdC594BFc5917a68AF73ad9690CF5AFB4EC055191",
+        "depositExtraId": null,
+        "withdrawalAddress": "88ff5mjEaNRcX1CB2sgkVr9rNLAxSJFawVoyH2QRR2G3fejB2LX3nQe2QQFxZ6jUVjfeGnMx6GX7TYLoz2u6t4Ff4z2Mdx1",
+        "withdrawalExtraId": null,
+        "refundAddress": null,
+        "refundExtraId": null,
+        "hashIn": {
+          "hash": "0xd2c127e5fe2a846bed658da53cf9b154461970317623bbbf95c250c47d4288de",
+          "link": "https://etherscan.io/tx/0xd2c127e5fe2a846bed658da53cf9b154461970317623bbbf95c250c47d4288de"
+        },
+        "hashOut": {
+          "hash": "a6861525b6587e56572ab484213a71df0e9be712341851c55be5120ea0a7d7b0",
+          "link": "https://monerohash.com/explorer/search?value=a6861525b6587e56572ab484213a71df0e9be712341851c55be5120ea0a7d7b0"
+        },
+        "rate": 0.00334698,
+        "rateType": "float",
+        "affiliateToken": null,
+        "status": "success",
+        "source": "api",
+        "email": null,
+        "clickId": null
+      }
+    },
+    "leg2": {
+      "provider": "ChangeNOW",
+      "created": true,
+      "creating": true,
+      "order": {
+        "fromAmount": 0.17433120015045675,
+        "toAmount": 46.126495,
+        "flow": "standard",
+        "type": "direct",
+        "payinAddress": "89p2pDbGXH5eWF9w2R4A8h9ZcTWc4fjfuf3BQgB2aSJYcibWmBY5Drd9sLcKNq7F8YF1pGhJe8Sw3M8qeJpZyr2kS33h5Up",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "fromCurrency": "xmr",
+        "toCurrency": "usdt",
+        "refundAddress": "88ff5mjEaNRcX1CB2sgkVr9rNLAxSJFawVoyH2QRR2G3fejB2LX3nQe2QQFxZ6jUVjfeGnMx6GX7TYLoz2u6t4Ff4z2Mdx1",
+        "id": "085aabbf5293c7",
+        "directedAmount": 0.1743312,
+        "fromNetwork": "xmr",
+        "toNetwork": "eth"
+      },
+      "tx_id": "085aabbf5293c7",
+      "status": "routing_xmr_to_leg2",
+      "provider_info": {
+        "id": "085aabbf5293c7",
+        "status": "finished",
+        "actionsAvailable": false,
+        "fromCurrency": "xmr",
+        "fromNetwork": "xmr",
+        "toCurrency": "usdt",
+        "toNetwork": "eth",
+        "expectedAmountFrom": null,
+        "expectedAmountTo": 46.126495,
+        "amountFrom": 0.1743312,
+        "amountTo": 46.146692,
+        "payinAddress": "89p2pDbGXH5eWF9w2R4A8h9ZcTWc4fjfuf3BQgB2aSJYcibWmBY5Drd9sLcKNq7F8YF1pGhJe8Sw3M8qeJpZyr2kS33h5Up",
+        "payoutAddress": "0x67bB07f71EE03c39036662Eff2FfEe9a1a8FB27d",
+        "payinExtraId": null,
+        "payoutExtraId": null,
+        "refundAddress": "88ff5mjEaNRcX1CB2sgkVr9rNLAxSJFawVoyH2QRR2G3fejB2LX3nQe2QQFxZ6jUVjfeGnMx6GX7TYLoz2u6t4Ff4z2Mdx1",
+        "refundExtraId": null,
+        "createdAt": "2025-08-24T20:22:40.885Z",
+        "updatedAt": "2025-08-24T20:32:58.318Z",
+        "validUntil": null,
+        "depositReceivedAt": "2025-08-24T20:31:26.565Z",
+        "payinHash": "8e1f19f230d52aaacd0113e1753c5f76d612cf7d94bd584a2abe0b95780ba34e",
+        "payoutHash": "0x4cbbe0b9960cc3cb7bd605b9c69dd7c63f2fa4b9709db91fe4c30c5b67603cc7",
+        "fromLegacyTicker": "xmr",
+        "toLegacyTicker": "usdterc20",
+        "refundHash": null,
+        "refundAmount": null,
+        "userId": null,
+        "originalExchangeInfo": null,
+        "relatedExchangesInfo": [],
+        "repeatedExchangesInfo": []
+      }
+    },
+    "timeline": [
+      "created",
+      "waiting_deposit",
+      "routing_xmr_to_leg2"
+    ],
+    "last_sent_txid": "8e1f19f230d52aaacd0113e1753c5f76d612cf7d94bd584a2abe0b95780ba34e"
   }
 }
