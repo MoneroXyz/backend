@@ -104,6 +104,8 @@ Calculates implied provider fee.
 
 Applies our fee policy:
 
+
+
 our\_fee = min(provider\_spread, OUR\_FEE\_MAX\_RATIO × leg1\_xmr)
 
 
@@ -149,6 +151,8 @@ Leg 2 auto-execution
 
 
 Monerizer checks:
+
+
 
 unlocked\_balance(subaddress) ≥ (received\_xmr - our\_fee) + XMR\_SEND\_FEE\_RESERVE
 
@@ -216,11 +220,19 @@ Reserve: A small constant (XMR\_SEND\_FEE\_RESERVE, default 0.00030) is subtract
 
 Example:
 
+
+
 User swaps 1 ETH → Exolix converts → 10 XMR received.
+
+
 
 Provider implied fee = 1%. Our cap = 15%.
 
+
+
 Our fee = 0.1 XMR (1%).
+
+
 
 Available for leg-2 = 9.9 − 0.0003 = 9.8997 XMR.
 
@@ -326,15 +338,11 @@ Run Monero daemon:
 
 
 
-
-
 Run Wallet RPC:
 
 
 
 .\\monero-wallet-rpc.exe --wallet-file "E:\\MoneroCLI\\monero-x86\_64-w64-mingw32-v0.18.4.1\\smartRPC" --password "1234" --rpc-bind-port 18083 --disable-rpc-login --confirm-external-bind
-
-
 
 
 
@@ -472,7 +480,11 @@ Extended leg-2 guards: swap now executes only after unlocked balance check passe
 
 Tested SimpleSwap on both legs:
 
+
+
 – Works as leg-1 provider (IN → XMR).
+
+
 
 – Works as leg-2 provider (XMR → OUT).
 
@@ -507,4 +519,18 @@ Added Checkout panel: shows deposit address, QR code, swap ID, timeline (Receivi
 
 
 Swap panel dynamically updates once exchange starts.
+
+
+
+➕ Update Today (Late Aug 2025): Checkout page polish
+
+
+
+– After user deposit is detected (leaving Receiving), the QR box switches to a SpongeBob processing GIF during routing/sending.
+
+– Under the QR (while in Receiving), we show the helper line: “Use QR or copy the address above.”
+
+– On the final success screen (green checkmark), we show: “We’ll be here when you’re ready for your next swap.”
+
+– Minor UX touches retained: Swap ID is click‑to‑copy; address copy button; 25‑minute receiving timer with persistence; status persistence across refresh.
 
